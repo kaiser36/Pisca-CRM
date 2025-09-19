@@ -40,16 +40,18 @@ const findBooleanValue = (row: any, possibleKeys: string[]): boolean => {
   return value === '1' || value?.toLowerCase() === 'verdadeiro' || value?.toLowerCase() === 'true'; // Returns true if value is '1', 'verdadeiro', or 'true', false otherwise
 };
 
-// Modified to accept ArrayBuffer or a file path
-export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Company[]> => {
+interface ParsedCrmData {
+  companies: Company[];
+  stands: Stand[];
+}
+
+export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<ParsedCrmData> => {
   let arrayBuffer: ArrayBuffer;
 
   if (typeof source === 'string') {
-    // If source is a string, assume it's a file path and fetch it
     const response = await fetch(source);
     arrayBuffer = await response.arrayBuffer();
   } else {
-    // If source is an ArrayBuffer, use it directly
     arrayBuffer = source;
   }
 
@@ -59,6 +61,7 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
   const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
   const companiesMap = new Map<string, Company>();
+  const allStands: Stand[] = [];
 
   json.forEach((row: any) => {
     const companyId = findValue(row, ['Company_id', 'Company ID', 'CompanyID']) || '';
@@ -92,7 +95,7 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
     const amOld = findValue(row, ['AM_OLD', 'AM Old']) || '';
     const amCurrent = findValue(row, ['AM', 'AM_Current']) || '';
     const stockStv = findNumericValue(row, ['Stock STV', 'Stock_STV']) || 0;
-    const companyApiInfo = findValue(row, ['API', 'Company_API_Info']) || ''; // Re-using API for company level if it's different from stand API
+    const companyApiInfo = findValue(row, ['API', 'Company_API_Info']) || '';
     const companyStock = findNumericValue(row, ['Stock na empresa', 'Company_Stock']) || 0;
     const logoUrl = findValue(row, ['Logotipo', 'Logo_URL']) || '';
     const classification = findValue(row, ['Classificação', 'Classification']) || '';
@@ -119,7 +122,7 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
 
     const stand: Stand = {
       Stand_ID: findValue(row, ['Stand_ID', 'Stand ID', 'StandID']) || '',
-      Company_id: companyId,
+      Company_id: companyId, // Excel Company_id
       Company_Name: companyName,
       NIF: companyNIF,
       Address: findValue(row, ['Stand Address', 'StandAddress', 'Address']) || '',
@@ -143,9 +146,9 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
     };
 
     // Only process if Company_id is not empty
-    if (stand.Company_id) {
-      if (!companiesMap.has(stand.Company_id)) {
-        companiesMap.set(stand.Company_id, {
+    if (companyId) {
+      if (!companiesMap.has(companyId)) {
+        companiesMap.set(companyId, {
           Company_id: companyId,
           Company_Name: companyName,
           NIF: companyNIF,
@@ -201,12 +204,87 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
           Wants_CRB_Partner: wantsCrbPartner,
           Autobiz_Info: autobizInfo,
 
-          stands: [],
+          stands: [], // Stands will be handled separately
         });
       }
-      companiesMap.get(stand.Company_id)?.stands.push(stand);
+      allStands.push(stand);
     }
   });
 
-  return Array.from(companiesMap.values());
+  return {
+    companies: Array.from(companiesMap.values()),
+    stands: allStands,
+  };
+};
+
+// New parser for additional company info (can be the same structure as main company info)
+export const parseAdditionalCompanyInfoExcel = async (source: ArrayBuffer): Promise<Company[]> => {
+  const workbook = XLSX.read(source, { type: 'array' });
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+  const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+  const companiesWithAdditionalInfo: Company[] = json.map((row: any) => {
+    const companyId = findValue(row, ['Company_ID', 'Company ID', 'CompanyID']) || '';
+
+    return {
+      Company_id: companyId,
+      Company_Name: findValue(row, ['Company']) || '', // Placeholder, not used for update
+      NIF: findValue(row, ['NIF']) || '', // Placeholder, not used for update
+      Company_Email: findValue(row, ['Email da empresa', 'Company Person Email']) || '',
+      Company_Contact_Person: findValue(row, ['Company Person', 'Company_Contact_Person']) || '',
+      Website: findValue(row, ['Website', 'Site']) || '',
+      Plafond: findNumericValue(row, ['Plafond (€)', 'Plafond']) || 0,
+      Supervisor: findValue(row, ['Supervisor', 'AM']) || '',
+      Is_CRB_Partner: findBooleanValue(row, ['Match Parceiro CRB', 'Flag CRB', 'Quer ser parceiro Credibom']),
+      Is_APDCA_Partner: findBooleanValue(row, ['Flag APDCA']),
+      Creation_Date: findValue(row, ['DT_Criação', 'Creation_Date']) || '',
+      Last_Login_Date: findValue(row, ['DT_Log_in', 'Last_Login_Date']) || '',
+      Financing_Simulator_On: findBooleanValue(row, ['Financing Simulator ON']),
+      Simulator_Color: findValue(row, ['Simulator Color']) || '',
+      Last_Plan: findValue(row, ['Ultimo Plano']) || '',
+      Plan_Price: findNumericValue(row, ['Preço']) || 0,
+      Plan_Expiration_Date: findValue(row, ['Data Expiração']) || '',
+      Plan_Active: findBooleanValue(row, ['Plano ON']),
+      Plan_Auto_Renewal: findBooleanValue(row, ['Renovação do plano']),
+      Current_Bumps: findNumericValue(row, ['Bumps_atuais']) || 0,
+      Total_Bumps: findNumericValue(row, ['Bumps_totais']) || 0,
+
+      // New fields
+      Commercial_Name: findValue(row, ['Nome Comercial', 'Commercial_Name']) || '',
+      Company_Postal_Code: findValue(row, ['STAND_POSTAL_CODE', 'Company_Postal_Code']) || '',
+      District: findValue(row, ['Distrito', 'District']) || '',
+      Company_City: findValue(row, ['Cidade', 'Company_City']) || '',
+      Company_Address: findValue(row, ['Morada', 'Company_Address']) || '',
+      AM_Old: findValue(row, ['AM_OLD', 'AM Old']) || '',
+      AM_Current: findValue(row, ['AM', 'AM_Current']) || '',
+      Stock_STV: findNumericValue(row, ['Stock STV', 'Stock_STV']) || 0,
+      Company_API_Info: findValue(row, ['API', 'Company_API_Info']) || '',
+      Company_Stock: findNumericValue(row, ['Stock na empresa', 'Company_Stock']) || 0,
+      Logo_URL: findValue(row, ['Logotipo', 'Logo_URL']) || '',
+      Classification: findValue(row, ['Classificação', 'Classification']) || '',
+      Imported_Percentage: findNumericValue(row, ['Percentagem de Importados', 'Imported_Percentage']) || 0,
+      Vehicle_Source: findValue(row, ['Onde compra as viaturas', 'Vehicle_Source']) || '',
+      Competition: findValue(row, ['Concorrencia', 'Competition']) || '',
+      Social_Media_Investment: findNumericValue(row, ['Investimento redes sociais', 'Social_Media_Investment']) || 0,
+      Portal_Investment: findNumericValue(row, ['Investimento em portais', 'Portal_Investment']) || 0,
+      B2B_Market: findBooleanValue(row, ['Mercado b2b', 'B2B_Market']),
+      Uses_CRM: findBooleanValue(row, ['Utiliza CRM', 'Uses_CRM']),
+      CRM_Software: findValue(row, ['Qual o CRM', 'CRM_Software']) || '',
+      Recommended_Plan: findValue(row, ['Plano Indicado', 'Recommended_Plan']) || '',
+      Credit_Mediator: findBooleanValue(row, ['Mediador de credito', 'Credit_Mediator']),
+      Bank_Of_Portugal_Link: findValue(row, ['Link do Banco de Portugal', 'Bank_Of_Portugal_Link']) || '',
+      Financing_Agreements: findValue(row, ['Financeiras com acordo', 'Financing_Agreements']) || '',
+      Last_Visit_Date: findValue(row, ['Data ultima visita', 'Last_Visit_Date']) || '',
+      Company_Group: findValue(row, ['Grupo', 'Company_Group']) || '',
+      Represented_Brands: findValue(row, ['Marcas representadas', 'Represented_Brands']) || '',
+      Company_Type: findValue(row, ['Tipo de empresa', 'Company_Type']) || '',
+      Wants_CT: findBooleanValue(row, ['Quer CT', 'Wants_CT']),
+      Wants_CRB_Partner: findBooleanValue(row, ['Quer ser parceiro Credibom', 'Wants_CRB_Partner']),
+      Autobiz_Info: findValue(row, ['Autobiz', 'Autobiz_Info']) || '',
+      stands: [], // Not relevant for this specific update
+    };
+  }).filter(company => company.Company_id); // Filter out rows without a Company_ID
+
+  return companiesWithAdditionalInfo;
 };

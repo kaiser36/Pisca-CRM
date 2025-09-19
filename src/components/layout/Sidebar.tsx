@@ -4,7 +4,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Home, Building, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, Building, Settings, ChevronLeft, ChevronRight, Info } from 'lucide-react'; // Import Info icon
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -50,7 +50,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             {!isCollapsed && "Empresas"}
           </Button>
         </Link>
-        <Link to="/settings"> {/* Exemplo de rota futura */}
+        <Link to="/maisinfo"> {/* New link for Mais Info */}
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              isCollapsed ? "px-2" : "px-4"
+            )}
+          >
+            <Info className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
+            {!isCollapsed && "Mais Info"}
+          </Button>
+        </Link>
+        <Link to="/settings">
           <Button
             variant="ghost"
             className={cn(

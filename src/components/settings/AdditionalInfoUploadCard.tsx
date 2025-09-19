@@ -8,8 +8,8 @@ import { Upload, Loader2 } from 'lucide-react';
 import { useCrmData } from '@/context/CrmDataContext';
 import { showError } from '@/utils/toast';
 
-const ExcelUploadCard: React.FC = () => {
-  const { updateCrmData } = useCrmData();
+const AdditionalInfoUploadCard: React.FC = () => {
+  const { updateAdditionalCompanyData } = useCrmData();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -29,11 +29,11 @@ const ExcelUploadCard: React.FC = () => {
 
     setIsUploading(true);
     try {
-      await updateCrmData(selectedFile);
+      await updateAdditionalCompanyData(selectedFile);
       setSelectedFile(null);
     } catch (error) {
       // Error handling is already done in CrmDataContext, just log here if needed
-      console.error("Erro no upload do ficheiro Excel principal:", error);
+      console.error("Erro no upload de informações adicionais:", error);
     } finally {
       setIsUploading(false);
     }
@@ -42,8 +42,8 @@ const ExcelUploadCard: React.FC = () => {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Carregar Dados CRM</CardTitle>
-        <CardDescription>Atualize as informações das empresas e stands carregando um novo ficheiro Excel.</CardDescription>
+        <CardTitle>Carregar Informações Adicionais</CardTitle>
+        <CardDescription>Atualize campos adicionais das empresas carregando um novo ficheiro Excel.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <Input type="file" accept=".xlsx, .xls" onChange={handleFileChange} />
@@ -61,11 +61,11 @@ const ExcelUploadCard: React.FC = () => {
           )}
         </Button>
         <p className="text-sm text-muted-foreground">
-          Certifique-se de que o ficheiro Excel tem as colunas necessárias para empresas e stands.
+          O ficheiro Excel deve conter a coluna "Company_ID" para identificar as empresas e as colunas com as novas informações.
         </p>
       </CardContent>
     </Card>
   );
 };
 
-export default ExcelUploadCard;
+export default AdditionalInfoUploadCard;
