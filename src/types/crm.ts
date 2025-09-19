@@ -45,39 +45,5 @@ export interface Company {
   Plan_Auto_Renewal: boolean; // Indicação se a renovação automática do plano está ativa ou desativada
   Current_Bumps: number; // Quantos Bumps a empresa ainda tem para gastar até ao fim do plano
   Total_Bumps: number; // Quantos Bumps totais a empresa tem
-  
-  // New fields for additional company information
-  Commercial_Name?: string;
-  Company_Postal_Code?: string;
-  District?: string;
-  Company_City?: string;
-  Company_Address?: string;
-  AM_Old?: string;
-  AM_Current?: string;
-  Stock_STV?: number;
-  Company_API_Info?: string;
-  Company_Stock?: number;
-  Logo_URL?: string;
-  Classification?: string;
-  Imported_Percentage?: number;
-  Vehicle_Source?: string;
-  Competition?: string;
-  Social_Media_Investment?: number;
-  Portal_Investment?: number;
-  B2B_Market?: boolean;
-  Uses_CRM?: boolean;
-  CRM_Software?: string;
-  Recommended_Plan?: string;
-  Credit_Mediator?: boolean;
-  Bank_Of_Portugal_Link?: string;
-  Financing_Agreements?: string;
-  Last_Visit_Date?: string;
-  Company_Group?: string;
-  Represented_Brands?: string;
-  Company_Type?: string;
-  Wants_CT?: boolean;
-  Wants_CRB_Partner?: boolean;
-  Autobiz_Info?: string;
-
   stands: Stand[];
 }

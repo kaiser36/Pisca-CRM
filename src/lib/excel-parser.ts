@@ -31,27 +31,25 @@ const findValue = (row: any, possibleKeys: string[]): string | undefined => {
 // Helper to find a numeric value in a row, trying common variations
 const findNumericValue = (row: any, possibleKeys: string[]): number => {
   const value = findValue(row, possibleKeys);
-  return value ? parseFloat(value) : 0; // Use parseFloat for numeric values, including decimals
+  return value ? parseInt(value, 10) : 0; // Default to 0 if not found or not a valid number
 };
 
 // Helper to find a boolean value (1 or 0/empty)
 const findBooleanValue = (row: any, possibleKeys: string[]): boolean => {
   const value = findValue(row, possibleKeys);
-  return value === '1' || value?.toLowerCase() === 'verdadeiro' || value?.toLowerCase() === 'true'; // Returns true if value is '1', 'verdadeiro', or 'true', false otherwise
+  return value === '1' || value?.toLowerCase() === 'verdadeiro'; // Returns true if value is '1' or 'verdadeiro', false otherwise
 };
 
-interface ParsedCrmData {
-  companies: Company[];
-  stands: Stand[];
-}
-
-export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<ParsedCrmData> => {
+// Modified to accept ArrayBuffer or a file path
+export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Company[]> => {
   let arrayBuffer: ArrayBuffer;
 
   if (typeof source === 'string') {
+    // If source is a string, assume it's a file path and fetch it
     const response = await fetch(source);
     arrayBuffer = await response.arrayBuffer();
   } else {
+    // If source is an ArrayBuffer, use it directly
     arrayBuffer = source;
   }
 
@@ -61,68 +59,34 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Pa
   const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
   const companiesMap = new Map<string, Company>();
-  const allStands: Stand[] = [];
 
   json.forEach((row: any) => {
     const companyId = findValue(row, ['Company_id', 'Company ID', 'CompanyID']) || '';
     const companyName = findValue(row, ['Company']) || '';
     const companyNIF = findValue(row, ['NIF']) || '';
-    const companyPersonEmail = findValue(row, ['Company Person Email', 'CompanyPersonEmail', 'Email da empresa']) || '';
-    const companyPerson = findValue(row, ['Company Person', 'CompanyPerson', 'Company_Contact_Person']) || '';
-    const companyWebsite = findValue(row, ['Website', 'Site']) || '';
+    const companyPersonEmail = findValue(row, ['Company Person Email', 'CompanyPersonEmail']) || '';
+    const companyPerson = findValue(row, ['Company Person', 'CompanyPerson']) || '';
+    const companyWebsite = findValue(row, ['Website']) || '';
     const companyPlafond = findNumericValue(row, ['Plafond (€)', 'Plafond']) || 0;
-    const companySupervisor = findValue(row, ['Supervisor', 'AM']) || '';
-    const isCRBPartner = findBooleanValue(row, ['Match Parceiro CRB', 'MatchParceiroCRB', 'Flag CRB', 'Quer ser parceiro Credibom']);
-    const isAPDCA_Partner = findBooleanValue(row, ['Flag APDCA', 'FlagAPDCA']);
-    const creationDate = findValue(row, ['DT_Criação', 'DTCriação', 'Creation_Date']) || '';
-    const lastLoginDate = findValue(row, ['DT_Log_in', 'DTLogin', 'DT Log in', 'Last_Login_Date']) || '';
-    const financingSimulatorOn = findBooleanValue(row, ['Financing Simulator ON', 'FinancingSimulatorON']);
-    const simulatorColor = findValue(row, ['Simulator Color', 'SimulatorColor']) || '';
-    const lastPlan = findValue(row, ['Ultimo Plano', 'UltimoPlano', 'Last_Plan']) || '';
-    const planPrice = findNumericValue(row, ['Preço', 'Preco', 'Plan_Price']) || 0;
-    const planExpirationDate = findValue(row, ['Data Expiração', 'DataExpiracao', 'Plan_Expiration_Date']) || '';
-    const planActive = findBooleanValue(row, ['Plano ON', 'PlanoON']);
-    const planAutoRenewal = findBooleanValue(row, ['Renovação do plano', 'RenovacaoDoPlano']);
-    const currentBumps = findNumericValue(row, ['Bumps_atuais', 'Bumps Atuais']) || 0;
-    const totalBumps = findNumericValue(row, ['Bumps_totais', 'Bumps Totais']) || 0;
-
-    // New fields
-    const commercialName = findValue(row, ['Nome Comercial', 'Commercial_Name']) || '';
-    const companyPostalCode = findValue(row, ['STAND_POSTAL_CODE', 'Company_Postal_Code']) || '';
-    const district = findValue(row, ['Distrito', 'District']) || '';
-    const companyCity = findValue(row, ['Cidade', 'Company_City']) || '';
-    const companyAddress = findValue(row, ['Morada', 'Company_Address']) || '';
-    const amOld = findValue(row, ['AM_OLD', 'AM Old']) || '';
-    const amCurrent = findValue(row, ['AM', 'AM_Current']) || '';
-    const stockStv = findNumericValue(row, ['Stock STV', 'Stock_STV']) || 0;
-    const companyApiInfo = findValue(row, ['API', 'Company_API_Info']) || '';
-    const companyStock = findNumericValue(row, ['Stock na empresa', 'Company_Stock']) || 0;
-    const logoUrl = findValue(row, ['Logotipo', 'Logo_URL']) || '';
-    const classification = findValue(row, ['Classificação', 'Classification']) || '';
-    const importedPercentage = findNumericValue(row, ['Percentagem de Importados', 'Imported_Percentage']) || 0;
-    const vehicleSource = findValue(row, ['Onde compra as viaturas', 'Vehicle_Source']) || '';
-    const competition = findValue(row, ['Concorrencia', 'Competition']) || '';
-    const socialMediaInvestment = findNumericValue(row, ['Investimento redes sociais', 'Social_Media_Investment']) || 0;
-    const portalInvestment = findNumericValue(row, ['Investimento em portais', 'Portal_Investment']) || 0;
-    const b2bMarket = findBooleanValue(row, ['Mercado b2b', 'B2B_Market']);
-    const usesCrm = findBooleanValue(row, ['Utiliza CRM', 'Uses_CRM']);
-    const crmSoftware = findValue(row, ['Qual o CRM', 'CRM_Software']) || '';
-    const recommendedPlan = findValue(row, ['Plano Indicado', 'Recommended_Plan']) || '';
-    const creditMediator = findBooleanValue(row, ['Mediador de credito', 'Credit_Mediator']);
-    const bankOfPortugalLink = findValue(row, ['Link do Banco de Portugal', 'Bank_Of_Portugal_Link']) || '';
-    const financingAgreements = findValue(row, ['Financeiras com acordo', 'Financing_Agreements']) || '';
-    const lastVisitDate = findValue(row, ['Data ultima visita', 'Last_Visit_Date']) || '';
-    const companyGroup = findValue(row, ['Grupo', 'Company_Group']) || '';
-    const representedBrands = findValue(row, ['Marcas representadas', 'Represented_Brands']) || '';
-    const companyType = findValue(row, ['Tipo de empresa', 'Company_Type']) || '';
-    const wantsCt = findBooleanValue(row, ['Quer CT', 'Wants_CT']);
-    const wantsCrbPartner = findBooleanValue(row, ['Quer ser parceiro Credibom', 'Wants_CRB_Partner']);
-    const autobizInfo = findValue(row, ['Autobiz', 'Autobiz_Info']) || '';
+    const companySupervisor = findValue(row, ['Supervisor']) || '';
+    const isCRBPartner = findBooleanValue(row, ['Match Parceiro CRB', 'MatchParceiroCRB', 'Flag CRB']);
+    const isAPDCA_Partner = findBooleanValue(row, ['Flag APDCA', 'FlagAPDCA']); // Mapeado para 'Flag APDCA'
+    const creationDate = findValue(row, ['DT_Criação', 'DTCriação']) || ''; // Mapeado para 'DT_Criação'
+    const lastLoginDate = findValue(row, ['DT_Log_in', 'DTLogin', 'DT Log in']) || ''; // Mapeado para 'DT_Log_in'
+    const financingSimulatorOn = findBooleanValue(row, ['Financing Simulator ON', 'FinancingSimulatorON']); // Mapeado para 'Financing Simulator ON'
+    const simulatorColor = findValue(row, ['Simulator Color', 'SimulatorColor']) || ''; // Mapeado para 'Simulator Color'
+    const lastPlan = findValue(row, ['Ultimo Plano', 'UltimoPlano']) || ''; // Mapeado para 'Ultimo Plano'
+    const planPrice = findNumericValue(row, ['Preço', 'Preco']) || 0; // Mapeado para 'Preço'
+    const planExpirationDate = findValue(row, ['Data Expiração', 'DataExpiracao']) || ''; // Mapeado para 'Data Expiração'
+    const planActive = findBooleanValue(row, ['Plano ON', 'PlanoON']); // Mapeado para 'Plano ON'
+    const planAutoRenewal = findBooleanValue(row, ['Renovação do plano', 'RenovacaoDoPlano']); // Mapeado para 'Renovação do plano'
+    const currentBumps = findNumericValue(row, ['Bumps_atuais', 'Bumps Atuais']) || 0; // Mapeado para 'Bumps_atuais'
+    const totalBumps = findNumericValue(row, ['Bumps_totais', 'Bumps Totais']) || 0; // Mapeado para 'Bumps_totais'
 
 
     const stand: Stand = {
       Stand_ID: findValue(row, ['Stand_ID', 'Stand ID', 'StandID']) || '',
-      Company_id: companyId, // Excel Company_id
+      Company_id: companyId,
       Company_Name: companyName,
       NIF: companyNIF,
       Address: findValue(row, ['Stand Address', 'StandAddress', 'Address']) || '',
@@ -146,9 +110,9 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Pa
     };
 
     // Only process if Company_id is not empty
-    if (companyId) {
-      if (!companiesMap.has(companyId)) {
-        companiesMap.set(companyId, {
+    if (stand.Company_id) {
+      if (!companiesMap.has(stand.Company_id)) {
+        companiesMap.set(stand.Company_id, {
           Company_id: companyId,
           Company_Name: companyName,
           NIF: companyNIF,
@@ -170,121 +134,12 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Pa
           Plan_Auto_Renewal: planAutoRenewal,
           Current_Bumps: currentBumps,
           Total_Bumps: totalBumps,
-          
-          // New fields
-          Commercial_Name: commercialName,
-          Company_Postal_Code: companyPostalCode,
-          District: district,
-          Company_City: companyCity,
-          Company_Address: companyAddress,
-          AM_Old: amOld,
-          AM_Current: amCurrent,
-          Stock_STV: stockStv,
-          Company_API_Info: companyApiInfo,
-          Company_Stock: companyStock,
-          Logo_URL: logoUrl,
-          Classification: classification,
-          Imported_Percentage: importedPercentage,
-          Vehicle_Source: vehicleSource,
-          Competition: competition,
-          Social_Media_Investment: socialMediaInvestment,
-          Portal_Investment: portalInvestment,
-          B2B_Market: b2bMarket,
-          Uses_CRM: usesCrm,
-          CRM_Software: crmSoftware,
-          Recommended_Plan: recommendedPlan,
-          Credit_Mediator: creditMediator,
-          Bank_Of_Portugal_Link: bankOfPortugalLink,
-          Financing_Agreements: financingAgreements,
-          Last_Visit_Date: lastVisitDate,
-          Company_Group: companyGroup,
-          Represented_Brands: representedBrands,
-          Company_Type: companyType,
-          Wants_CT: wantsCt,
-          Wants_CRB_Partner: wantsCrbPartner,
-          Autobiz_Info: autobizInfo,
-
-          stands: [], // Stands will be handled separately
+          stands: [],
         });
       }
-      allStands.push(stand);
+      companiesMap.get(stand.Company_id)?.stands.push(stand);
     }
   });
 
-  return {
-    companies: Array.from(companiesMap.values()),
-    stands: allStands,
-  };
-};
-
-// New parser for additional company info (can be the same structure as main company info)
-export const parseAdditionalCompanyInfoExcel = async (source: ArrayBuffer): Promise<Company[]> => {
-  const workbook = XLSX.read(source, { type: 'array' });
-  const sheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[sheetName];
-  const json: any[] = XLSX.utils.sheet_to_json(worksheet);
-
-  const companiesWithAdditionalInfo: Company[] = json.map((row: any) => {
-    const companyId = findValue(row, ['Company_ID', 'Company ID', 'CompanyID']) || '';
-
-    return {
-      Company_id: companyId,
-      Company_Name: findValue(row, ['Company']) || '', // Placeholder, not used for update
-      NIF: findValue(row, ['NIF']) || '', // Placeholder, not used for update
-      Company_Email: findValue(row, ['Email da empresa', 'Company Person Email']) || '',
-      Company_Contact_Person: findValue(row, ['Company Person', 'Company_Contact_Person']) || '',
-      Website: findValue(row, ['Website', 'Site']) || '',
-      Plafond: findNumericValue(row, ['Plafond (€)', 'Plafond']) || 0,
-      Supervisor: findValue(row, ['Supervisor', 'AM']) || '',
-      Is_CRB_Partner: findBooleanValue(row, ['Match Parceiro CRB', 'Flag CRB', 'Quer ser parceiro Credibom']),
-      Is_APDCA_Partner: findBooleanValue(row, ['Flag APDCA']),
-      Creation_Date: findValue(row, ['DT_Criação', 'Creation_Date']) || '',
-      Last_Login_Date: findValue(row, ['DT_Log_in', 'Last_Login_Date']) || '',
-      Financing_Simulator_On: findBooleanValue(row, ['Financing Simulator ON']),
-      Simulator_Color: findValue(row, ['Simulator Color']) || '',
-      Last_Plan: findValue(row, ['Ultimo Plano']) || '',
-      Plan_Price: findNumericValue(row, ['Preço']) || 0,
-      Plan_Expiration_Date: findValue(row, ['Data Expiração']) || '',
-      Plan_Active: findBooleanValue(row, ['Plano ON']),
-      Plan_Auto_Renewal: findBooleanValue(row, ['Renovação do plano']),
-      Current_Bumps: findNumericValue(row, ['Bumps_atuais']) || 0,
-      Total_Bumps: findNumericValue(row, ['Bumps_totais']) || 0,
-
-      // New fields
-      Commercial_Name: findValue(row, ['Nome Comercial', 'Commercial_Name']) || '',
-      Company_Postal_Code: findValue(row, ['STAND_POSTAL_CODE', 'Company_Postal_Code']) || '',
-      District: findValue(row, ['Distrito', 'District']) || '',
-      Company_City: findValue(row, ['Cidade', 'Company_City']) || '',
-      Company_Address: findValue(row, ['Morada', 'Company_Address']) || '',
-      AM_Old: findValue(row, ['AM_OLD', 'AM Old']) || '',
-      AM_Current: findValue(row, ['AM', 'AM_Current']) || '',
-      Stock_STV: findNumericValue(row, ['Stock STV', 'Stock_STV']) || 0,
-      Company_API_Info: findValue(row, ['API', 'Company_API_Info']) || '',
-      Company_Stock: findNumericValue(row, ['Stock na empresa', 'Company_Stock']) || 0,
-      Logo_URL: findValue(row, ['Logotipo', 'Logo_URL']) || '',
-      Classification: findValue(row, ['Classificação', 'Classification']) || '',
-      Imported_Percentage: findNumericValue(row, ['Percentagem de Importados', 'Imported_Percentage']) || 0,
-      Vehicle_Source: findValue(row, ['Onde compra as viaturas', 'Vehicle_Source']) || '',
-      Competition: findValue(row, ['Concorrencia', 'Competition']) || '',
-      Social_Media_Investment: findNumericValue(row, ['Investimento redes sociais', 'Social_Media_Investment']) || 0,
-      Portal_Investment: findNumericValue(row, ['Investimento em portais', 'Portal_Investment']) || 0,
-      B2B_Market: findBooleanValue(row, ['Mercado b2b', 'B2B_Market']),
-      Uses_CRM: findBooleanValue(row, ['Utiliza CRM', 'Uses_CRM']),
-      CRM_Software: findValue(row, ['Qual o CRM', 'CRM_Software']) || '',
-      Recommended_Plan: findValue(row, ['Plano Indicado', 'Recommended_Plan']) || '',
-      Credit_Mediator: findBooleanValue(row, ['Mediador de credito', 'Credit_Mediator']),
-      Bank_Of_Portugal_Link: findValue(row, ['Link do Banco de Portugal', 'Bank_Of_Portugal_Link']) || '',
-      Financing_Agreements: findValue(row, ['Financeiras com acordo', 'Financing_Agreements']) || '',
-      Last_Visit_Date: findValue(row, ['Data ultima visita', 'Last_Visit_Date']) || '',
-      Company_Group: findValue(row, ['Grupo', 'Company_Group']) || '',
-      Represented_Brands: findValue(row, ['Marcas representadas', 'Represented_Brands']) || '',
-      Company_Type: findValue(row, ['Tipo de empresa', 'Company_Type']) || '',
-      Wants_CT: findBooleanValue(row, ['Quer CT', 'Wants_CT']),
-      Wants_CRB_Partner: findBooleanValue(row, ['Quer ser parceiro Credibom', 'Wants_CRB_Partner']),
-      Autobiz_Info: findValue(row, ['Autobiz', 'Autobiz_Info']) || '',
-      stands: [], // Not relevant for this specific update
-    };
-  }).filter(company => company.Company_id); // Filter out rows without a Company_ID
-
-  return companiesWithAdditionalInfo;
+  return Array.from(companiesMap.values());
 };
