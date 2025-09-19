@@ -24,7 +24,8 @@ export interface Stand {
 }
 
 export interface Company {
-  Company_id: string;
+  id?: string; // Supabase UUID for the company
+  Company_id: string; // ID da empresa do Excel (chave)
   Company_Name: string; // Nome fiscal da empresa
   NIF: string; // NIF da empresa
   Company_Email: string; // Email da empresa (Company Person Email)
@@ -47,3 +48,8 @@ export interface Company {
   Total_Bumps: number; // Quantos Bumps totais a empresa tem
   stands: Stand[];
 }
+
+// Type for editable company data from the new Excel file
+export type EditableCompanyData = Omit<Company, 'id' | 'stands' | 'Company_id'> & {
+  Company_id: string; // Keep Company_id as the lookup key
+};

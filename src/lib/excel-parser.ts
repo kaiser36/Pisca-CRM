@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { Company, Stand } from '@/types/crm';
+import { Company, Stand, EditableCompanyData } from '@/types/crm';
 
 // Helper to find a key in a row, trying common variations
 const findValue = (row: any, possibleKeys: string[]): string | undefined => {
@@ -31,13 +31,13 @@ const findValue = (row: any, possibleKeys: string[]): string | undefined => {
 // Helper to find a numeric value in a row, trying common variations
 const findNumericValue = (row: any, possibleKeys: string[]): number => {
   const value = findValue(row, possibleKeys);
-  return value ? parseInt(value, 10) : 0; // Default to 0 if not found or not a valid number
+  return value ? parseFloat(value) : 0; // Use parseFloat for numbers that might have decimals (like Plafond, Plan_Price)
 };
 
 // Helper to find a boolean value (1 or 0/empty)
 const findBooleanValue = (row: any, possibleKeys: string[]): boolean => {
   const value = findValue(row, possibleKeys);
-  return value === '1' || value?.toLowerCase() === 'verdadeiro'; // Returns true if value is '1' or 'verdadeiro', false otherwise
+  return value === '1' || value?.toLowerCase() === 'verdadeiro' || value?.toLowerCase() === 'true';
 };
 
 // Modified to accept ArrayBuffer or a file path
@@ -67,21 +67,21 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
     const companyPersonEmail = findValue(row, ['Company Person Email', 'CompanyPersonEmail']) || '';
     const companyPerson = findValue(row, ['Company Person', 'CompanyPerson']) || '';
     const companyWebsite = findValue(row, ['Website']) || '';
-    const companyPlafond = findNumericValue(row, ['Plafond (€)', 'Plafond']) || 0;
+    const companyPlafond = findNumericValue(row, ['Plafond (€)', 'Plafond']);
     const companySupervisor = findValue(row, ['Supervisor']) || '';
     const isCRBPartner = findBooleanValue(row, ['Match Parceiro CRB', 'MatchParceiroCRB', 'Flag CRB']);
-    const isAPDCA_Partner = findBooleanValue(row, ['Flag APDCA', 'FlagAPDCA']); // Mapeado para 'Flag APDCA'
-    const creationDate = findValue(row, ['DT_Criação', 'DTCriação']) || ''; // Mapeado para 'DT_Criação'
-    const lastLoginDate = findValue(row, ['DT_Log_in', 'DTLogin', 'DT Log in']) || ''; // Mapeado para 'DT_Log_in'
-    const financingSimulatorOn = findBooleanValue(row, ['Financing Simulator ON', 'FinancingSimulatorON']); // Mapeado para 'Financing Simulator ON'
-    const simulatorColor = findValue(row, ['Simulator Color', 'SimulatorColor']) || ''; // Mapeado para 'Simulator Color'
-    const lastPlan = findValue(row, ['Ultimo Plano', 'UltimoPlano']) || ''; // Mapeado para 'Ultimo Plano'
-    const planPrice = findNumericValue(row, ['Preço', 'Preco']) || 0; // Mapeado para 'Preço'
-    const planExpirationDate = findValue(row, ['Data Expiração', 'DataExpiracao']) || ''; // Mapeado para 'Data Expiração'
-    const planActive = findBooleanValue(row, ['Plano ON', 'PlanoON']); // Mapeado para 'Plano ON'
-    const planAutoRenewal = findBooleanValue(row, ['Renovação do plano', 'RenovacaoDoPlano']); // Mapeado para 'Renovação do plano'
-    const currentBumps = findNumericValue(row, ['Bumps_atuais', 'Bumps Atuais']) || 0; // Mapeado para 'Bumps_atuais'
-    const totalBumps = findNumericValue(row, ['Bumps_totais', 'Bumps Totais']) || 0; // Mapeado para 'Bumps_totais'
+    const isAPDCA_Partner = findBooleanValue(row, ['Flag APDCA', 'FlagAPDCA']);
+    const creationDate = findValue(row, ['DT_Criação', 'DTCriação']) || '';
+    const lastLoginDate = findValue(row, ['DT_Log_in', 'DTLogin', 'DT Log in']) || '';
+    const financingSimulatorOn = findBooleanValue(row, ['Financing Simulator ON', 'FinancingSimulatorON']);
+    const simulatorColor = findValue(row, ['Simulator Color', 'SimulatorColor']) || '';
+    const lastPlan = findValue(row, ['Ultimo Plano', 'UltimoPlano']) || '';
+    const planPrice = findNumericValue(row, ['Preço', 'Preco']);
+    const planExpirationDate = findValue(row, ['Data Expiração', 'DataExpiracao']) || '';
+    const planActive = findBooleanValue(row, ['Plano ON', 'PlanoON']);
+    const planAutoRenewal = findBooleanValue(row, ['Renovação do plano', 'RenovacaoDoPlano']);
+    const currentBumps = findNumericValue(row, ['Bumps_atuais', 'Bumps Atuais']);
+    const totalBumps = findNumericValue(row, ['Bumps_totais', 'Bumps Totais']);
 
 
     const stand: Stand = {
@@ -142,4 +142,35 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
   });
 
   return Array.from(companiesMap.values());
+};
+
+export const parseEditableCompanyExcel = async (source: ArrayBuffer): Promise<EditableCompanyData[]> => {
+  const workbook = XLSX.read(source, { type: 'array' });
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+  const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+  return json.map((row: any) => ({
+    Company_id: findValue(row, ['Company_id', 'Company ID', 'CompanyID']) || '',
+    Company_Name: findValue(row, ['Company']) || '',
+    NIF: findValue(row, ['NIF']) || '',
+    Company_Email: findValue(row, ['Company Person Email', 'CompanyPersonEmail']) || '',
+    Company_Contact_Person: findValue(row, ['Company Person', 'CompanyPerson']) || '',
+    Website: findValue(row, ['Website']) || '',
+    Plafond: findNumericValue(row, ['Plafond (€)', 'Plafond']),
+    Supervisor: findValue(row, ['Supervisor']) || '',
+    Is_CRB_Partner: findBooleanValue(row, ['Match Parceiro CRB', 'MatchParceiroCRB', 'Flag CRB']),
+    Is_APDCA_Partner: findBooleanValue(row, ['Flag APDCA', 'FlagAPDCA']),
+    Creation_Date: findValue(row, ['DT_Criação', 'DTCriação']) || '',
+    Last_Login_Date: findValue(row, ['DT_Log_in', 'DTLogin', 'DT Log in']) || '',
+    Financing_Simulator_On: findBooleanValue(row, ['Financing Simulator ON', 'FinancingSimulatorON']),
+    Simulator_Color: findValue(row, ['Simulator Color', 'SimulatorColor']) || '',
+    Last_Plan: findValue(row, ['Ultimo Plano', 'UltimoPlano']) || '',
+    Plan_Price: findNumericValue(row, ['Preço', 'Preco']),
+    Plan_Expiration_Date: findValue(row, ['Data Expiração', 'DataExpiracao']) || '',
+    Plan_Active: findBooleanValue(row, ['Plano ON', 'PlanoON']),
+    Plan_Auto_Renewal: findBooleanValue(row, ['Renovação do plano', 'RenovacaoDoPlano']),
+    Current_Bumps: findNumericValue(row, ['Bumps_atuais', 'Bumps Atuais']),
+    Total_Bumps: findNumericValue(row, ['Bumps_totais', 'Bumps Totais']),
+  })).filter(data => data.Company_id !== ''); // Filter out entries without a Company_id
 };

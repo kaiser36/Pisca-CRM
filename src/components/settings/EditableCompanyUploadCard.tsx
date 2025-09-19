@@ -5,11 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Upload, Loader2 } from 'lucide-react';
+import { parseEditableCompanyExcel } from '@/lib/excel-parser';
 import { useCrmData } from '@/context/CrmDataContext';
-import { showError } from '@/utils/toast';
+import { showError, showSuccess } from '@/utils/toast';
 
-const ExcelUploadCard: React.FC = () => {
-  const { uploadInitialCrmData } = useCrmData();
+const EditableCompanyUploadCard: React.FC = () => {
+  const { updateCompaniesFromExcel } = useCrmData();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -29,11 +30,14 @@ const ExcelUploadCard: React.FC = () => {
 
     setIsUploading(true);
     try {
-      await uploadInitialCrmData(selectedFile);
+      const arrayBuffer = await selectedFile.arrayBuffer();
+      const editableData = await parseEditableCompanyExcel(arrayBuffer);
+      await updateCompaniesFromExcel(editableData);
       setSelectedFile(null);
+      showSuccess("Campos editáveis das empresas atualizados com sucesso!");
     } catch (error) {
-      console.error("Erro ao carregar ou analisar o ficheiro Excel:", error);
-      showError("Falha ao carregar ou analisar o ficheiro Excel. Verifique o formato.");
+      console.error("Erro ao carregar ou analisar o ficheiro Excel de campos editáveis:", error);
+      showError("Falha ao carregar ou analisar o ficheiro Excel. Verifique o formato e se o 'Company_ID' existe.");
     } finally {
       setIsUploading(false);
     }
@@ -42,9 +46,10 @@ const ExcelUploadCard: React.FC = () => {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Carregar Dados CRM Iniciais</CardTitle>
+        <CardTitle>Campos Editáveis das Empresas</CardTitle>
         <CardDescription>
-          Carregue o ficheiro Excel principal para popular ou substituir todos os dados do CRM.
+          Atualize campos específicos das empresas existentes carregando um ficheiro Excel.
+          O ficheiro deve conter a coluna 'Company_ID' para identificação.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -58,16 +63,16 @@ const ExcelUploadCard: React.FC = () => {
           ) : (
             <>
               <Upload className="mr-2 h-4 w-4" />
-              Carregar Ficheiro Principal
+              Carregar Ficheiro de Edição
             </>
           )}
         </Button>
         <p className="text-sm text-muted-foreground">
-          Este carregamento irá substituir todos os dados de empresas e stands existentes para o seu utilizador.
+          Apenas as colunas presentes no ficheiro serão atualizadas para as empresas correspondentes.
         </p>
       </CardContent>
     </Card>
   );
 };
 
-export default ExcelUploadCard;
+export default EditableCompanyUploadCard;
