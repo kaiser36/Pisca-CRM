@@ -1,7 +1,8 @@
 import React from 'react';
 import { Stand } from '@/types/crm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Phone, Mail, User, Building } from 'lucide-react';
+import { MapPin, Phone, Mail, User, Building, Megaphone, Code, Upload, Archive, Save, TrendingUp, Tag } from 'lucide-react';
+import { Separator } from '@/components/ui/separator'; // Importação adicionada
 
 interface StandCardProps {
   stand: Stand;
@@ -33,6 +34,37 @@ const StandCard: React.FC<StandCardProps> = ({ stand }) => {
         <div className="flex items-center">
           <User className="mr-2 h-4 w-4 text-muted-foreground" />
           <span>{stand.Contact_Person}</span>
+        </div>
+        <div className="flex items-center">
+          <Tag className="mr-2 h-4 w-4 text-muted-foreground" />
+          <span>Tipo: {stand.Tipo}</span>
+        </div>
+        <Separator className="my-2" />
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex items-center">
+            <Megaphone className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span>Anúncios: {stand.Anuncios}</span>
+          </div>
+          <div className="flex items-center">
+            <Code className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span>API: {stand.API}</span>
+          </div>
+          <div className="flex items-center">
+            <Upload className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span>Publicados: {stand.Publicados}</span>
+          </div>
+          <div className="flex items-center">
+            <Archive className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span>Arquivados: {stand.Arquivados}</span>
+          </div>
+          <div className="flex items-center">
+            <Save className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span>Guardados: {stand.Guardados}</span>
+          </div>
+          <div className="flex items-center">
+            <TrendingUp className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span>Δ Mês Passado: {stand.Delta_Publicados_Last_Day_Month}</span>
+          </div>
         </div>
       </CardContent>
     </Card>

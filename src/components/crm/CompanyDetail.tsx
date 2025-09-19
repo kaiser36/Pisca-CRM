@@ -4,7 +4,7 @@ import StandCard from './StandCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, User, Building, Landmark } from 'lucide-react'; // Added Landmark icon for NIF
+import { Mail, User, Building, Landmark, Globe } from 'lucide-react'; // Added Globe icon for Website
 
 interface CompanyDetailProps {
   company: Company | null;
@@ -40,6 +40,14 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company }) => {
               <User className="mr-2 h-4 w-4 text-muted-foreground" />
               <span>Pessoa de Contacto: {company.Company_Contact_Person}</span>
             </div>
+            {company.Website && (
+              <div className="flex items-center text-sm">
+                <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
+                <a href={company.Website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                  {company.Website}
+                </a>
+              </div>
+            )}
           </div>
           <Separator />
           <h3 className="text-lg font-semibold mb-4">Pontos de Venda ({company.stands.length})</h3>

@@ -28,6 +28,12 @@ const findValue = (row: any, possibleKeys: string[]): string | undefined => {
   return undefined; // If no key found
 };
 
+// Helper to find a numeric value in a row, trying common variations
+const findNumericValue = (row: any, possibleKeys: string[]): number => {
+  const value = findValue(row, possibleKeys);
+  return value ? parseInt(value, 10) : 0; // Default to 0 if not found or not a valid number
+};
+
 export const parseStandsExcel = async (filePath: string): Promise<Company[]> => {
   const response = await fetch(filePath);
   const arrayBuffer = await response.arrayBuffer();
@@ -40,22 +46,30 @@ export const parseStandsExcel = async (filePath: string): Promise<Company[]> => 
 
   json.forEach((row: any) => {
     const companyId = findValue(row, ['Company_id', 'Company ID', 'CompanyID']) || '';
-    const companyName = findValue(row, ['Company']) || ''; // Mapeado para 'Company'
-    const companyNIF = findValue(row, ['NIF']) || ''; // Mapeado para 'NIF'
-    const companyPersonEmail = findValue(row, ['Company Person Email', 'CompanyPersonEmail']) || ''; // Mapeado para 'Company Person Email'
-    const companyPerson = findValue(row, ['Company Person', 'CompanyPerson']) || ''; // Mapeado para 'Company Person'
+    const companyName = findValue(row, ['Company']) || '';
+    const companyNIF = findValue(row, ['NIF']) || '';
+    const companyPersonEmail = findValue(row, ['Company Person Email', 'CompanyPersonEmail']) || '';
+    const companyPerson = findValue(row, ['Company Person', 'CompanyPerson']) || '';
+    const companyWebsite = findValue(row, ['Website']) || ''; // Mapeado para 'Website'
 
     const stand: Stand = {
       Stand_ID: findValue(row, ['Stand_ID', 'Stand ID', 'StandID']) || '',
       Company_id: companyId,
       Company_Name: companyName,
       NIF: companyNIF,
-      Address: findValue(row, ['Stand Address', 'StandAddress']) || '', // Mapeado para 'Stand Address'
-      City: findValue(row, ['Stand City', 'StandCity']) || '', // Mapeado para 'Stand City'
-      Postal_Code: findValue(row, ['Stand Postal Code', 'StandPostalCode']) || '', // Mapeado para 'Stand Postal Code'
-      Phone: findValue(row, ['Stand_Phone', 'Stand Phone', 'StandPhone']) || '', // Mapeado para 'Stand_Phone'
-      Email: findValue(row, ['Stand Email', 'StandEmail']) || '', // Mapeado para 'Stand Email'
-      Contact_Person: findValue(row, ['Contact_Person', 'Contact Person', 'ContactPerson']) || '', // Mantido para contacto do stand
+      Address: findValue(row, ['Stand Address', 'StandAddress', 'Address']) || '',
+      City: findValue(row, ['Stand City', 'StandCity', 'City']) || '',
+      Postal_Code: findValue(row, ['Stand Postal Code', 'StandPostalCode', 'Postal Code']) || '',
+      Phone: findValue(row, ['Stand_Phone', 'Stand Phone', 'StandPhone', 'Phone']) || '',
+      Email: findValue(row, ['Stand Email', 'StandEmail', 'Email']) || '',
+      Contact_Person: findValue(row, ['Contact_Person', 'Contact Person', 'ContactPerson']) || '',
+      Anuncios: findNumericValue(row, ['Anúncios', 'Anuncios']),
+      API: findNumericValue(row, ['API']),
+      Publicados: findNumericValue(row, ['Publicados']),
+      Arquivados: findNumericValue(row, ['Arquivados']),
+      Guardados: findNumericValue(row, ['Guardados']),
+      Tipo: findValue(row, ['Tipo']) || '',
+      Delta_Publicados_Last_Day_Month: findNumericValue(row, ['Δ Publicados_Last_Day_Month(-1)', 'Delta Publicados Last Day Month(-1)', 'Delta_Publicados_Last_Day_Month']),
     };
 
     // Only process if Company_id is not empty
@@ -67,6 +81,7 @@ export const parseStandsExcel = async (filePath: string): Promise<Company[]> => 
           NIF: companyNIF,
           Company_Email: companyPersonEmail,
           Company_Contact_Person: companyPerson,
+          Website: companyWebsite,
           stands: [],
         });
       }
