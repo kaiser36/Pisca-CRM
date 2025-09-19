@@ -46,37 +46,4 @@ export interface Company {
   Current_Bumps: number; // Quantos Bumps a empresa ainda tem para gastar até ao fim do plano
   Total_Bumps: number; // Quantos Bumps totais a empresa tem
   stands: Stand[];
-
-  // New fields from the second Excel file
-  Commercial_Name?: string; // Nome Comercial
-  Company_Postal_Code?: string; // STAND_POSTAL_CODE (for company)
-  District?: string; // Distrito
-  Company_City?: string; // Cidade
-  Company_Address?: string; // Morada
-  AM_OLD?: string; // AM_OLD
-  AM_Current?: string; // AM
-  Stock_STV?: number; // Stock STV
-  Company_API_Info?: string; // API (company level)
-  Company_Stock?: number; // Stock na empresa
-  Logo_URL?: string; // Logotipo
-  Classification?: string; // Classificação
-  Imported_Percentage?: number; // Percentagem de Importados
-  Vehicle_Source?: string; // Onde compra as viaturas
-  Competition?: string; // Concorrencia
-  Social_Media_Investment?: number; // Investimento redes sociais
-  Portal_Investment?: number; // Investimento em portais
-  B2B_Market?: boolean; // Mercado b2b
-  Uses_CRM?: boolean; // Utiliza CRM
-  CRM_Software?: string; // Qual o CRM
-  Recommended_Plan?: string; // Plano Indicado
-  Credit_Mediator?: boolean; // Mediador de credito
-  Bank_of_Portugal_Link?: string; // Link do Banco de Portugal
-  Financing_Agreements?: string; // Financeiras com acordo
-  Last_Visit_Date?: string; // Data ultima visita
-  Company_Group?: string; // Grupo
-  Represented_Brands?: string; // Marcas representadas
-  Company_Type?: string; // Tipo de empresa
-  Wants_CT?: boolean; // Quer CT
-  Wants_CRB_Partner?: boolean; // Quer ser parceiro Credibom
-  Autobiz_Info?: string; // Autobiz
 }

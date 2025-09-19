@@ -31,22 +31,13 @@ const findValue = (row: any, possibleKeys: string[]): string | undefined => {
 // Helper to find a numeric value in a row, trying common variations
 const findNumericValue = (row: any, possibleKeys: string[]): number => {
   const value = findValue(row, possibleKeys);
-  return value ? parseFloat(value) : 0; // Use parseFloat for numbers, including percentages/currency
+  return value ? parseInt(value, 10) : 0; // Default to 0 if not found or not a valid number
 };
 
-// Helper to find an integer value in a row
-const findIntegerValue = (row: any, possibleKeys: string[]): number => {
-  const value = findValue(row, possibleKeys);
-  return value ? parseInt(value, 10) : 0;
-};
-
-// Helper to find a boolean value (1 or 0/empty, or "sim"/"não")
+// Helper to find a boolean value (1 or 0/empty)
 const findBooleanValue = (row: any, possibleKeys: string[]): boolean => {
   const value = findValue(row, possibleKeys);
-  if (value === '1' || value?.toLowerCase() === 'verdadeiro' || value?.toLowerCase() === 'sim') {
-    return true;
-  }
-  return false; // Returns true if value is '1', 'verdadeiro', or 'sim', false otherwise
+  return value === '1' || value?.toLowerCase() === 'verdadeiro'; // Returns true if value is '1' or 'verdadeiro', false otherwise
 };
 
 // Modified to accept ArrayBuffer or a file path
@@ -79,18 +70,18 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
     const companyPlafond = findNumericValue(row, ['Plafond (€)', 'Plafond']) || 0;
     const companySupervisor = findValue(row, ['Supervisor']) || '';
     const isCRBPartner = findBooleanValue(row, ['Match Parceiro CRB', 'MatchParceiroCRB', 'Flag CRB']);
-    const isAPDCA_Partner = findBooleanValue(row, ['Flag APDCA', 'FlagAPDCA']);
-    const creationDate = findValue(row, ['DT_Criação', 'DTCriação']) || '';
-    const lastLoginDate = findValue(row, ['DT_Log_in', 'DTLogin', 'DT Log in']) || '';
-    const financingSimulatorOn = findBooleanValue(row, ['Financing Simulator ON', 'FinancingSimulatorON']);
-    const simulatorColor = findValue(row, ['Simulator Color', 'SimulatorColor']) || '';
-    const lastPlan = findValue(row, ['Ultimo Plano', 'UltimoPlano']) || '';
-    const planPrice = findNumericValue(row, ['Preço', 'Preco']) || 0;
-    const planExpirationDate = findValue(row, ['Data Expiração', 'DataExpiracao']) || '';
-    const planActive = findBooleanValue(row, ['Plano ON', 'PlanoON']);
-    const planAutoRenewal = findBooleanValue(row, ['Renovação do plano', 'RenovacaoDoPlano']);
-    const currentBumps = findIntegerValue(row, ['Bumps_atuais', 'Bumps Atuais']) || 0;
-    const totalBumps = findIntegerValue(row, ['Bumps_totais', 'Bumps Totais']) || 0;
+    const isAPDCA_Partner = findBooleanValue(row, ['Flag APDCA', 'FlagAPDCA']); // Mapeado para 'Flag APDCA'
+    const creationDate = findValue(row, ['DT_Criação', 'DTCriação']) || ''; // Mapeado para 'DT_Criação'
+    const lastLoginDate = findValue(row, ['DT_Log_in', 'DTLogin', 'DT Log in']) || ''; // Mapeado para 'DT_Log_in'
+    const financingSimulatorOn = findBooleanValue(row, ['Financing Simulator ON', 'FinancingSimulatorON']); // Mapeado para 'Financing Simulator ON'
+    const simulatorColor = findValue(row, ['Simulator Color', 'SimulatorColor']) || ''; // Mapeado para 'Simulator Color'
+    const lastPlan = findValue(row, ['Ultimo Plano', 'UltimoPlano']) || ''; // Mapeado para 'Ultimo Plano'
+    const planPrice = findNumericValue(row, ['Preço', 'Preco']) || 0; // Mapeado para 'Preço'
+    const planExpirationDate = findValue(row, ['Data Expiração', 'DataExpiracao']) || ''; // Mapeado para 'Data Expiração'
+    const planActive = findBooleanValue(row, ['Plano ON', 'PlanoON']); // Mapeado para 'Plano ON'
+    const planAutoRenewal = findBooleanValue(row, ['Renovação do plano', 'RenovacaoDoPlano']); // Mapeado para 'Renovação do plano'
+    const currentBumps = findNumericValue(row, ['Bumps_atuais', 'Bumps Atuais']) || 0; // Mapeado para 'Bumps_atuais'
+    const totalBumps = findNumericValue(row, ['Bumps_totais', 'Bumps Totais']) || 0; // Mapeado para 'Bumps_totais'
 
 
     const stand: Stand = {
@@ -104,17 +95,17 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
       Phone: findValue(row, ['Stand_Phone', 'Stand Phone', 'StandPhone', 'Phone']) || '',
       Email: findValue(row, ['Stand Email', 'StandEmail', 'Email']) || '',
       Contact_Person: findValue(row, ['Contact_Person', 'Contact Person', 'ContactPerson']) || '',
-      Anuncios: findIntegerValue(row, ['Anúncios', 'Anuncios']),
-      API: findIntegerValue(row, ['API']),
-      Publicados: findIntegerValue(row, ['Publicados']),
-      Arquivados: findIntegerValue(row, ['Arquivados']),
-      Guardados: findIntegerValue(row, ['Guardados']),
+      Anuncios: findNumericValue(row, ['Anúncios', 'Anuncios']),
+      API: findNumericValue(row, ['API']),
+      Publicados: findNumericValue(row, ['Publicados']),
+      Arquivados: findNumericValue(row, ['Arquivados']),
+      Guardados: findNumericValue(row, ['Guardados']),
       Tipo: findValue(row, ['Tipo']) || '',
-      Delta_Publicados_Last_Day_Month: findIntegerValue(row, ['Δ Publicados_Last_Day_Month(-1)', 'Delta Publicados Last Day Month(-1)', 'Delta_Publicados_Last_Day_Month']),
-      Leads_Recebidas: findIntegerValue(row, ['Leads Recebidas', 'LeadsRecebidas']),
-      Leads_Pendentes: findIntegerValue(row, ['Leads Pendentes', 'LeadsPendentes']),
-      Leads_Expiradas: findIntegerValue(row, ['Leads Expiradas', 'LeadsExpiradas']),
-      Leads_Financiadas: findIntegerValue(row, ['Leads Financiadas', 'LeadsFinanciadas']),
+      Delta_Publicados_Last_Day_Month: findNumericValue(row, ['Δ Publicados_Last_Day_Month(-1)', 'Delta Publicados Last Day Month(-1)', 'Delta_Publicados_Last_Day_Month']),
+      Leads_Recebidas: findNumericValue(row, ['Leads Recebidas', 'LeadsRecebidas']),
+      Leads_Pendentes: findNumericValue(row, ['Leads Pendentes', 'LeadsPendentes']),
+      Leads_Expiradas: findNumericValue(row, ['Leads Expiradas', 'LeadsExpiradas']),
+      Leads_Financiadas: findNumericValue(row, ['Leads Financiadas', 'LeadsFinanciadas']),
       Whatsapp: findValue(row, ['Whatsapp']) || '',
     };
 
@@ -151,58 +142,4 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
   });
 
   return Array.from(companiesMap.values());
-};
-
-export const parseCompanyDetailsExcel = async (source: ArrayBuffer): Promise<Map<string, Partial<Company>>> => {
-  const workbook = XLSX.read(source, { type: 'array' });
-  const sheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[sheetName];
-  const json: any[] = XLSX.utils.sheet_to_json(worksheet);
-
-  const companyDetailsMap = new Map<string, Partial<Company>>();
-
-  json.forEach((row: any) => {
-    const companyId = findValue(row, ['Company_id', 'Company ID', 'CompanyID']) || '';
-
-    if (companyId) {
-      const details: Partial<Company> = {
-        Commercial_Name: findValue(row, ['Nome Comercial', 'NomeComercial']),
-        Company_Email: findValue(row, ['Email da empresa', 'EmailDaEmpresa']) || findValue(row, ['Company Person Email', 'CompanyPersonEmail']), // Use existing if present
-        Company_Postal_Code: findValue(row, ['STAND_POSTAL_CODE', 'Stand Postal Code', 'Company Postal Code']),
-        District: findValue(row, ['Distrito']),
-        Company_City: findValue(row, ['Cidade', 'Company City']),
-        Company_Address: findValue(row, ['Morada', 'Company Address']),
-        AM_OLD: findValue(row, ['AM_OLD', 'AM Old']),
-        AM_Current: findValue(row, ['AM', 'AM Current']),
-        Stock_STV: findIntegerValue(row, ['Stock STV', 'StockSTV']),
-        Company_API_Info: findValue(row, ['API', 'Company API']), // Renamed to avoid conflict
-        Website: findValue(row, ['Site', 'Website']), // Use existing if present
-        Company_Stock: findIntegerValue(row, ['Stock na empresa', 'StockNaEmpresa']),
-        Logo_URL: findValue(row, ['Logotipo', 'Logo']),
-        Classification: findValue(row, ['Classificação', 'Classificacao']),
-        Imported_Percentage: findNumericValue(row, ['Percentagem de Importados', 'PercentagemDeImportados']),
-        Vehicle_Source: findValue(row, ['Onde compra as viaturas', 'OndeCompraAsViaturas']),
-        Competition: findValue(row, ['Concorrencia']),
-        Social_Media_Investment: findNumericValue(row, ['Investimento redes sociais', 'InvestimentoRedesSociais']),
-        Portal_Investment: findNumericValue(row, ['Investimento em portais', 'InvestimentoEmPortais']),
-        B2B_Market: findBooleanValue(row, ['Mercado b2b', 'MercadoB2B']),
-        Uses_CRM: findBooleanValue(row, ['Utiliza CRM', 'UtilizaCRM']),
-        CRM_Software: findValue(row, ['Qual o CRM', 'QualOCRM']),
-        Recommended_Plan: findValue(row, ['Plano Indicado', 'PlanoIndicado']),
-        Credit_Mediator: findBooleanValue(row, ['Mediador de credito', 'MediadorDeCredito']),
-        Bank_of_Portugal_Link: findValue(row, ['Link do Banco de Portugal', 'LinkDoBancoDePortugal']),
-        Financing_Agreements: findValue(row, ['Financeiras com acordo', 'FinanceirasComAcordo']),
-        Last_Visit_Date: findValue(row, ['Data ultima visita', 'DataUltimaVisita']),
-        Company_Group: findValue(row, ['Grupo', 'Company Group']),
-        Represented_Brands: findValue(row, ['Marcas representadas', 'MarcasRepresentadas']),
-        Company_Type: findValue(row, ['Tipo de empresa', 'TipoDeEmpresa']),
-        Wants_CT: findBooleanValue(row, ['Quer CT', 'QuerCT']),
-        Wants_CRB_Partner: findBooleanValue(row, ['Quer ser parceiro Credibom', 'QuerSerParceiroCredibom']),
-        Autobiz_Info: findValue(row, ['Autobiz', 'Autobiz Info']),
-      };
-      companyDetailsMap.set(companyId, details);
-    }
-  });
-
-  return companyDetailsMap;
 };

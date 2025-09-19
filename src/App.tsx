@@ -8,8 +8,6 @@ import NotFound from "./pages/NotFound";
 import CRM from "./pages/CRM";
 import Settings from "./pages/Settings";
 import { CrmDataProvider } from "@/context/CrmDataContext";
-import { SessionContextProvider } from "@/components/auth/SessionContextProvider"; // Import SessionContextProvider
-import Login from "./pages/Login"; // Import Login page
 
 const queryClient = new QueryClient();
 
@@ -19,18 +17,15 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <SessionContextProvider> {/* Wrap with SessionContextProvider */}
-          <CrmDataProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/crm" element={<CRM />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/login" element={<Login />} /> {/* Add Login route */}
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </CrmDataProvider>
-        </SessionContextProvider>
+        <CrmDataProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/crm" element={<CRM />} />
+            <Route path="/settings" element={<Settings />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </CrmDataProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
