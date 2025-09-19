@@ -16,11 +16,8 @@ const CRM: React.FC = () => {
     return companies.find(company => company.Company_id === selectedCompanyId) || null;
   }, [companies, selectedCompanyId]);
 
-  React.useEffect(() => {
-    if (companies.length > 0 && !selectedCompanyId) {
-      setSelectedCompanyId(companies[0].Company_id);
-    }
-  }, [companies, selectedCompanyId]);
+  // Removido o useEffect que selecionava automaticamente a primeira empresa.
+  // Agora, a secção de detalhes estará vazia até que uma empresa seja selecionada manualmente.
 
   if (isLoading) {
     return (
