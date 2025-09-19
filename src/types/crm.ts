@@ -33,5 +33,17 @@ export interface Company {
   Plafond: number; // Plafond disponivel na conta Pisca Pisca referente a empresa
   Supervisor: string; // Dcom Credibom referente a empresa
   Is_CRB_Partner: boolean; // Se a empresa é parceiro Credibom (1 = true, 0/vazio = false)
+  Is_APDCA_Partner: boolean; // Informação se a empresa é APDCA ou não
+  Creation_Date: string; // data da criação da conta da empresa no Pisca Pisca
+  Last_Login_Date: string; // data do ultimo login na conta da empresa
+  Financing_Simulator_On: boolean; // Se a empresa tem o Simulador de Financiamento ativo
+  Simulator_Color: string; // indicação da Cor do simulador
+  Last_Plan: string; // Ultimo plano comprado da empresa
+  Plan_Price: number; // Preço desse plano comprado pela empresa
+  Plan_Expiration_Date: string; // Data que o plano vai expirar
+  Plan_Active: boolean; // Indicação se o plano está ativo ou não
+  Plan_Auto_Renewal: boolean; // Indicação se a renovação automática do plano está ativa ou desativada
+  Current_Bumps: number; // Quantos Bumps a empresa ainda tem para gastar até ao fim do plano
+  Total_Bumps: number; // Quantos Bumps totais a empresa tem
   stands: Stand[];
 }

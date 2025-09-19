@@ -37,7 +37,7 @@ const findNumericValue = (row: any, possibleKeys: string[]): number => {
 // Helper to find a boolean value (1 or 0/empty)
 const findBooleanValue = (row: any, possibleKeys: string[]): boolean => {
   const value = findValue(row, possibleKeys);
-  return value === '1'; // Returns true if value is '1', false otherwise
+  return value === '1' || value?.toLowerCase() === 'verdadeiro'; // Returns true if value is '1' or 'verdadeiro', false otherwise
 };
 
 export const parseStandsExcel = async (filePath: string): Promise<Company[]> => {
@@ -57,9 +57,22 @@ export const parseStandsExcel = async (filePath: string): Promise<Company[]> => 
     const companyPersonEmail = findValue(row, ['Company Person Email', 'CompanyPersonEmail']) || '';
     const companyPerson = findValue(row, ['Company Person', 'CompanyPerson']) || '';
     const companyWebsite = findValue(row, ['Website']) || '';
-    const companyPlafond = findNumericValue(row, ['Plafond (€)', 'Plafond']) || 0; // Mapeado para 'Plafond (€)'
-    const companySupervisor = findValue(row, ['Supervisor']) || ''; // Mapeado para 'Supervisor'
-    const isCRBPartner = findBooleanValue(row, ['Match Parceiro CRB', 'MatchParceiroCRB', 'Flag CRB']); // Mapeado para 'Match Parceiro CRB'
+    const companyPlafond = findNumericValue(row, ['Plafond (€)', 'Plafond']) || 0;
+    const companySupervisor = findValue(row, ['Supervisor']) || '';
+    const isCRBPartner = findBooleanValue(row, ['Match Parceiro CRB', 'MatchParceiroCRB', 'Flag CRB']);
+    const isAPDCA_Partner = findBooleanValue(row, ['Flag APDCA', 'FlagAPDCA']); // Mapeado para 'Flag APDCA'
+    const creationDate = findValue(row, ['DT_Criação', 'DTCriação']) || ''; // Mapeado para 'DT_Criação'
+    const lastLoginDate = findValue(row, ['DT_Log_in', 'DTLogin', 'DT Log in']) || ''; // Mapeado para 'DT_Log_in'
+    const financingSimulatorOn = findBooleanValue(row, ['Financing Simulator ON', 'FinancingSimulatorON']); // Mapeado para 'Financing Simulator ON'
+    const simulatorColor = findValue(row, ['Simulator Color', 'SimulatorColor']) || ''; // Mapeado para 'Simulator Color'
+    const lastPlan = findValue(row, ['Ultimo Plano', 'UltimoPlano']) || ''; // Mapeado para 'Ultimo Plano'
+    const planPrice = findNumericValue(row, ['Preço', 'Preco']) || 0; // Mapeado para 'Preço'
+    const planExpirationDate = findValue(row, ['Data Expiração', 'DataExpiracao']) || ''; // Mapeado para 'Data Expiração'
+    const planActive = findBooleanValue(row, ['Plano ON', 'PlanoON']); // Mapeado para 'Plano ON'
+    const planAutoRenewal = findBooleanValue(row, ['Renovação do plano', 'RenovacaoDoPlano']); // Mapeado para 'Renovação do plano'
+    const currentBumps = findNumericValue(row, ['Bumps_atuais', 'Bumps Atuais']) || 0; // Mapeado para 'Bumps_atuais'
+    const totalBumps = findNumericValue(row, ['Bumps_totais', 'Bumps Totais']) || 0; // Mapeado para 'Bumps_totais'
+
 
     const stand: Stand = {
       Stand_ID: findValue(row, ['Stand_ID', 'Stand ID', 'StandID']) || '',
@@ -99,6 +112,18 @@ export const parseStandsExcel = async (filePath: string): Promise<Company[]> => 
           Plafond: companyPlafond,
           Supervisor: companySupervisor,
           Is_CRB_Partner: isCRBPartner,
+          Is_APDCA_Partner: isAPDCA_Partner,
+          Creation_Date: creationDate,
+          Last_Login_Date: lastLoginDate,
+          Financing_Simulator_On: financingSimulatorOn,
+          Simulator_Color: simulatorColor,
+          Last_Plan: lastPlan,
+          Plan_Price: planPrice,
+          Plan_Expiration_Date: planExpirationDate,
+          Plan_Active: planActive,
+          Plan_Auto_Renewal: planAutoRenewal,
+          Current_Bumps: currentBumps,
+          Total_Bumps: totalBumps,
           stands: [],
         });
       }

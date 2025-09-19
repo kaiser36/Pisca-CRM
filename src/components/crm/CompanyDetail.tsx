@@ -4,7 +4,7 @@ import StandCard from './StandCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, User, Building, Landmark, Globe, Wallet, Briefcase, CheckCircle, XCircle } from 'lucide-react'; // Added Wallet, Briefcase, CheckCircle, XCircle icons
+import { Mail, User, Building, Landmark, Globe, Wallet, Briefcase, CheckCircle, XCircle, Calendar, Clock, CreditCard, DollarSign, Package, Repeat, TrendingUp, Car } from 'lucide-react'; // Added new icons
 
 interface CompanyDetailProps {
   company: Company | null;
@@ -63,6 +63,72 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company }) => {
                 <XCircle className="mr-2 h-4 w-4 text-red-500" />
               )}
               <span>Parceiro Credibom: {company.Is_CRB_Partner ? 'Sim' : 'Não'}</span>
+            </div>
+            <div className="flex items-center text-sm">
+              {company.Is_APDCA_Partner ? (
+                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+              ) : (
+                <XCircle className="mr-2 h-4 w-4 text-red-500" />
+              )}
+              <span>APDCA: {company.Is_APDCA_Partner ? 'Verdadeiro' : 'Falso'}</span>
+            </div>
+            <div className="flex items-center text-sm">
+              <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>Criação da Conta: {company.Creation_Date}</span>
+            </div>
+            <div className="flex items-center text-sm">
+              <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>Último Login: {company.Last_Login_Date}</span>
+            </div>
+            <div className="flex items-center text-sm">
+              {company.Financing_Simulator_On ? (
+                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+              ) : (
+                <XCircle className="mr-2 h-4 w-4 text-red-500" />
+              )}
+              <span>Simulador Financiamento: {company.Financing_Simulator_On ? 'Ativo' : 'Desativado'}</span>
+            </div>
+            {company.Simulator_Color && (
+              <div className="flex items-center text-sm">
+                <Car className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Cor do Simulador: {company.Simulator_Color}</span>
+              </div>
+            )}
+            <div className="flex items-center text-sm">
+              <Package className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>Último Plano: {company.Last_Plan}</span>
+            </div>
+            <div className="flex items-center text-sm">
+              <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>Preço do Plano: {company.Plan_Price.toFixed(2)} €</span>
+            </div>
+            <div className="flex items-center text-sm">
+              <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>Expiração do Plano: {company.Plan_Expiration_Date}</span>
+            </div>
+            <div className="flex items-center text-sm">
+              {company.Plan_Active ? (
+                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+              ) : (
+                <XCircle className="mr-2 h-4 w-4 text-red-500" />
+              )}
+              <span>Plano Ativo: {company.Plan_Active ? 'Sim' : 'Não'}</span>
+            </div>
+            <div className="flex items-center text-sm">
+              {company.Plan_Auto_Renewal ? (
+                <Repeat className="mr-2 h-4 w-4 text-green-500" />
+              ) : (
+                <XCircle className="mr-2 h-4 w-4 text-red-500" />
+              )}
+              <span>Renovação Automática: {company.Plan_Auto_Renewal ? 'Ativa' : 'Desativada'}</span>
+            </div>
+            <div className="flex items-center text-sm">
+              <TrendingUp className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>Bumps Atuais: {company.Current_Bumps}</span>
+            </div>
+            <div className="flex items-center text-sm">
+              <TrendingUp className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>Bumps Totais: {company.Total_Bumps}</span>
             </div>
           </div>
           <Separator />
