@@ -42,6 +42,9 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --header-height: 64px; /* Assuming header height is 64px (p-4 + default padding/height) */
+    --footer-height: 64px; /* Assuming footer height is 64px (p-4 + default padding/height) */
   }
 
   .dark {

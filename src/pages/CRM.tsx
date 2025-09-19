@@ -2,19 +2,21 @@ import React from 'react';
 import { useCrmData } from '@/hooks/use-crm-data';
 import CompanyList from '@/components/crm/CompanyList';
 import CompanyDetail from '@/components/crm/CompanyDetail';
-import CompanyFilter from '@/components/crm/CompanyFilter'; // Import the new CompanyFilter component
+import CompanyFilter from '@/components/crm/CompanyFilter';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Terminal, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
 
 const CRM: React.FC = () => {
   const { companies, isLoading, error } = useCrmData();
   const [selectedCompanyId, setSelectedCompanyId] = React.useState<string | null>(null);
   const [isCompanyListCollapsed, setIsCompanyListCollapsed] = React.useState(false);
-  const [searchTerm, setSearchTerm] = React.useState(''); // New state for search term
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const isMobile = useIsMobile(); // Use the mobile hook
 
   const filteredCompanies = React.useMemo(() => {
     if (!searchTerm) {
@@ -35,10 +37,14 @@ const CRM: React.FC = () => {
     setIsCompanyListCollapsed(!isCompanyListCollapsed);
   };
 
+  const handleBackToCompanyList = () => {
+    setSelectedCompanyId(null);
+  };
+
   if (isLoading) {
     return (
       <Layout>
-        <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-48px)]">
+        <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[calc(100vh-var(--header-height)-var(--footer-height))]">
           <div className="md:col-span-1 flex flex-col space-y-4">
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-20 w-full" />
@@ -57,7 +63,7 @@ const CRM: React.FC = () => {
   if (error) {
     return (
       <Layout>
-        <div className="container mx-auto p-6">
+        <div className="container mx-auto p-6 min-h-[calc(100vh-var(--header-height)-var(--footer-height))]">
           <Alert variant="destructive">
             <Terminal className="h-4 w-4" />
             <AlertTitle>Erro</AlertTitle>
@@ -71,39 +77,67 @@ const CRM: React.FC = () => {
   return (
     <Layout>
       <div className="h-full flex flex-col">
-        <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Company List Section */}
-          <div className={cn(
-            "flex flex-col h-full transition-all duration-300 ease-in-out",
-            isCompanyListCollapsed ? "w-0 overflow-hidden md:w-auto md:col-span-0" : "md:col-span-1"
-          )}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Empresas ({filteredCompanies.length})</h2> {/* Update count to filteredCompanies.length */}
-              <Button variant="ghost" size="icon" onClick={toggleCompanyList} className="ml-2">
-                {isCompanyListCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-              </Button>
+        {isMobile ? (
+          // Mobile View
+          selectedCompanyId ? (
+            // Show Company Detail on mobile
+            <div className="flex flex-col h-full">
+              <div className="flex items-center mb-4">
+                <Button variant="ghost" size="icon" onClick={handleBackToCompanyList} className="mr-2">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <h2 className="text-xl font-semibold">Detalhes da Empresa</h2>
+              </div>
+              <CompanyDetail company={selectedCompany} onBack={handleBackToCompanyList} />
             </div>
-            {!isCompanyListCollapsed && (
-              <>
-                <CompanyFilter searchTerm={searchTerm} onSearchChange={setSearchTerm} /> {/* Add the filter component */}
-                <CompanyList
-                  companies={filteredCompanies} // Pass filtered companies
-                  onSelectCompany={setSelectedCompanyId}
-                  selectedCompanyId={selectedCompanyId}
-                />
-              </>
-            )}
-          </div>
+          ) : (
+            // Show Company List on mobile
+            <div className="flex flex-col h-full">
+              <h2 className="text-xl font-semibold mb-4">Empresas ({filteredCompanies.length})</h2>
+              <CompanyFilter searchTerm={searchTerm} onSearchChange={setSearchTerm} />
+              <CompanyList
+                companies={filteredCompanies}
+                onSelectCompany={setSelectedCompanyId}
+                selectedCompanyId={selectedCompanyId}
+              />
+            </div>
+          )
+        ) : (
+          // Desktop View
+          <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Company List Section */}
+            <div className={cn(
+              "flex flex-col h-full transition-all duration-300 ease-in-out",
+              isCompanyListCollapsed ? "w-0 overflow-hidden md:w-auto md:col-span-0" : "md:col-span-1"
+            )}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">Empresas ({filteredCompanies.length})</h2>
+                <Button variant="ghost" size="icon" onClick={toggleCompanyList} className="ml-2">
+                  {isCompanyListCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+                </Button>
+              </div>
+              {!isCompanyListCollapsed && (
+                <>
+                  <CompanyFilter searchTerm={searchTerm} onSearchChange={setSearchTerm} />
+                  <CompanyList
+                    companies={filteredCompanies}
+                    onSelectCompany={setSelectedCompanyId}
+                    selectedCompanyId={selectedCompanyId}
+                  />
+                </>
+              )}
+            </div>
 
-          {/* Company Detail Section */}
-          <div className={cn(
-            "flex flex-col h-full",
-            isCompanyListCollapsed ? "md:col-span-3" : "md:col-span-2"
-          )}>
-            <h2 className="text-xl font-semibold mb-4">Detalhes da Empresa</h2>
-            <CompanyDetail company={selectedCompany} />
+            {/* Company Detail Section */}
+            <div className={cn(
+              "flex flex-col h-full",
+              isCompanyListCollapsed ? "md:col-span-3" : "md:col-span-2"
+            )}>
+              <h2 className="text-xl font-semibold mb-4">Detalhes da Empresa</h2>
+              <CompanyDetail company={selectedCompany} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </Layout>
   );

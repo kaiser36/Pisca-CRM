@@ -4,13 +4,15 @@ import StandCard from './StandCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, User, Building, Landmark, Globe, Wallet, Briefcase, CheckCircle, XCircle, Calendar, Clock, CreditCard, DollarSign, Package, Repeat, TrendingUp, Car } from 'lucide-react'; // Added new icons
+import { Mail, User, Building, Landmark, Globe, Wallet, Briefcase, CheckCircle, XCircle, Calendar, Clock, CreditCard, DollarSign, Package, Repeat, TrendingUp, Car, ArrowLeft } from 'lucide-react'; // Added new icons and ArrowLeft
+import { Button } from '@/components/ui/button'; // Import Button
 
 interface CompanyDetailProps {
   company: Company | null;
+  onBack?: () => void; // New optional prop for back button
 }
 
-const CompanyDetail: React.FC<CompanyDetailProps> = ({ company }) => {
+const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
   if (!company) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -23,7 +25,14 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company }) => {
     <ScrollArea className="h-full w-full pr-4">
       <Card className="w-full">
         <CardHeader>
-          <CardTitle className="text-2xl">{company.Company_Name}</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl">{company.Company_Name}</CardTitle>
+            {onBack && (
+              <Button variant="ghost" size="icon" onClick={onBack} className="lg:hidden">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
           <CardDescription>ID da Empresa: {company.Company_id}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
