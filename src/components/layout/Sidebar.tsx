@@ -50,8 +50,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             {!isCollapsed && "Empresas"}
           </Button>
         </Link>
-        <Link to="/maisinfo">
-          <Button
+        {/* <Link to="/maisinfo"> */} {/* Removed as per user request */}
+          {/* <Button
             variant="ghost"
             className={cn(
               "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -61,8 +61,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             <Info className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
             {!isCollapsed && "Mais Info"}
           </Button>
-        </Link>
-        <Link to="/informacao"> {/* New link for Informação */}
+        </Link> */}
+        <Link to="/informacao">
           <Button
             variant="ghost"
             className={cn(
