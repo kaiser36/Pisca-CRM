@@ -6,6 +6,7 @@ import { parseStandsExcel, parseCompanyDetailsExcel } from '@/lib/excel-parser';
 import { showSuccess, showError } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
 import { useSession } from '@/components/auth/SessionContextProvider'; // Import useSession
+import { Loader2 } from 'lucide-react'; // Import Loader2 icon
 
 interface CrmContextType {
   companies: Company[];
