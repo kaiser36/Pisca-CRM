@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCrmData } from '@/hooks/use-crm-data';
+import { useCrmData } from '@/context/CrmDataContext';
 import CompanyList from '@/components/crm/CompanyList';
 import CompanyDetail from '@/components/crm/CompanyDetail';
 import CompanyFilter from '@/components/crm/CompanyFilter';
@@ -9,14 +9,14 @@ import { Terminal, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const CRM: React.FC = () => {
   const { companies, isLoading, error } = useCrmData();
   const [selectedCompanyId, setSelectedCompanyId] = React.useState<string | null>(null);
   const [isCompanyListCollapsed, setIsCompanyListCollapsed] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
-  const isMobile = useIsMobile(); // Use the mobile hook
+  const isMobile = useIsMobile();
 
   const filteredCompanies = React.useMemo(() => {
     if (!searchTerm) {

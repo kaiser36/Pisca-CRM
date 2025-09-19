@@ -40,9 +40,19 @@ const findBooleanValue = (row: any, possibleKeys: string[]): boolean => {
   return value === '1' || value?.toLowerCase() === 'verdadeiro'; // Returns true if value is '1' or 'verdadeiro', false otherwise
 };
 
-export const parseStandsExcel = async (filePath: string): Promise<Company[]> => {
-  const response = await fetch(filePath);
-  const arrayBuffer = await response.arrayBuffer();
+// Modified to accept ArrayBuffer or a file path
+export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Company[]> => {
+  let arrayBuffer: ArrayBuffer;
+
+  if (typeof source === 'string') {
+    // If source is a string, assume it's a file path and fetch it
+    const response = await fetch(source);
+    arrayBuffer = await response.arrayBuffer();
+  } else {
+    // If source is an ArrayBuffer, use it directly
+    arrayBuffer = source;
+  }
+
   const workbook = XLSX.read(arrayBuffer, { type: 'array' });
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
