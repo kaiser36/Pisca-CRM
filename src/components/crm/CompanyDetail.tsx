@@ -4,7 +4,7 @@ import StandCard from './StandCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, User, Building, Landmark, Globe } from 'lucide-react'; // Added Globe icon for Website
+import { Mail, User, Building, Landmark, Globe, Wallet, Briefcase, CheckCircle, XCircle } from 'lucide-react'; // Added Wallet, Briefcase, CheckCircle, XCircle icons
 
 interface CompanyDetailProps {
   company: Company | null;
@@ -48,6 +48,22 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company }) => {
                 </a>
               </div>
             )}
+            <div className="flex items-center text-sm">
+              <Wallet className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>Plafond: {company.Plafond.toFixed(2)} €</span>
+            </div>
+            <div className="flex items-center text-sm">
+              <Briefcase className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>Supervisor: {company.Supervisor}</span>
+            </div>
+            <div className="flex items-center text-sm">
+              {company.Is_CRB_Partner ? (
+                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+              ) : (
+                <XCircle className="mr-2 h-4 w-4 text-red-500" />
+              )}
+              <span>Parceiro Credibom: {company.Is_CRB_Partner ? 'Sim' : 'Não'}</span>
+            </div>
           </div>
           <Separator />
           <h3 className="text-lg font-semibold mb-4">Pontos de Venda ({company.stands.length})</h3>

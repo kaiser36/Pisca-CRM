@@ -34,6 +34,12 @@ const findNumericValue = (row: any, possibleKeys: string[]): number => {
   return value ? parseInt(value, 10) : 0; // Default to 0 if not found or not a valid number
 };
 
+// Helper to find a boolean value (1 or 0/empty)
+const findBooleanValue = (row: any, possibleKeys: string[]): boolean => {
+  const value = findValue(row, possibleKeys);
+  return value === '1'; // Returns true if value is '1', false otherwise
+};
+
 export const parseStandsExcel = async (filePath: string): Promise<Company[]> => {
   const response = await fetch(filePath);
   const arrayBuffer = await response.arrayBuffer();
@@ -50,7 +56,10 @@ export const parseStandsExcel = async (filePath: string): Promise<Company[]> => 
     const companyNIF = findValue(row, ['NIF']) || '';
     const companyPersonEmail = findValue(row, ['Company Person Email', 'CompanyPersonEmail']) || '';
     const companyPerson = findValue(row, ['Company Person', 'CompanyPerson']) || '';
-    const companyWebsite = findValue(row, ['Website']) || ''; // Mapeado para 'Website'
+    const companyWebsite = findValue(row, ['Website']) || '';
+    const companyPlafond = findNumericValue(row, ['Plafond (€)', 'Plafond']) || 0; // Mapeado para 'Plafond (€)'
+    const companySupervisor = findValue(row, ['Supervisor']) || ''; // Mapeado para 'Supervisor'
+    const isCRBPartner = findBooleanValue(row, ['Match Parceiro CRB', 'MatchParceiroCRB', 'Flag CRB']); // Mapeado para 'Match Parceiro CRB'
 
     const stand: Stand = {
       Stand_ID: findValue(row, ['Stand_ID', 'Stand ID', 'StandID']) || '',
@@ -70,6 +79,11 @@ export const parseStandsExcel = async (filePath: string): Promise<Company[]> => 
       Guardados: findNumericValue(row, ['Guardados']),
       Tipo: findValue(row, ['Tipo']) || '',
       Delta_Publicados_Last_Day_Month: findNumericValue(row, ['Δ Publicados_Last_Day_Month(-1)', 'Delta Publicados Last Day Month(-1)', 'Delta_Publicados_Last_Day_Month']),
+      Leads_Recebidas: findNumericValue(row, ['Leads Recebidas', 'LeadsRecebidas']),
+      Leads_Pendentes: findNumericValue(row, ['Leads Pendentes', 'LeadsPendentes']),
+      Leads_Expiradas: findNumericValue(row, ['Leads Expiradas', 'LeadsExpiradas']),
+      Leads_Financiadas: findNumericValue(row, ['Leads Financiadas', 'LeadsFinanciadas']),
+      Whatsapp: findValue(row, ['Whatsapp']) || '',
     };
 
     // Only process if Company_id is not empty
@@ -82,6 +96,9 @@ export const parseStandsExcel = async (filePath: string): Promise<Company[]> => 
           Company_Email: companyPersonEmail,
           Company_Contact_Person: companyPerson,
           Website: companyWebsite,
+          Plafond: companyPlafond,
+          Supervisor: companySupervisor,
+          Is_CRB_Partner: isCRBPartner,
           stands: [],
         });
       }
