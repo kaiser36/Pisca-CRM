@@ -4,7 +4,7 @@ import StandCard from './StandCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, User, Building, Landmark, Globe, Wallet, Briefcase, CheckCircle, XCircle, Calendar, Clock, CreditCard, DollarSign, Package, Repeat, TrendingUp, Car, ArrowLeft } from 'lucide-react'; // Added new icons and ArrowLeft
+import { Mail, User, Building, Landmark, Globe, Wallet, Briefcase, CheckCircle, XCircle, Calendar, Clock, CreditCard, DollarSign, Package, Repeat, TrendingUp, Car, ArrowLeft, Tag, Percent, Factory, Users, Link, Banknote, MapPin, Phone, MessageSquareText, BarChart, ShieldCheck, Lightbulb, Handshake, ClipboardList, Code, Image, Star, ShoppingCart, UserCheck, Building2, CarFront, Megaphone, BookOpen, Scale, FileText, CalendarCheck, Group, Award, FactoryIcon } from 'lucide-react'; // Added new icons and ArrowLeft
 import { Button } from '@/components/ui/button'; // Import Button
 
 interface CompanyDetailProps {
@@ -37,6 +37,12 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {company.Commercial_Name && (
+              <div className="flex items-center text-sm">
+                <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Nome Comercial: {company.Commercial_Name}</span>
+              </div>
+            )}
             <div className="flex items-center text-sm">
               <Landmark className="mr-2 h-4 w-4 text-muted-foreground" />
               <span>NIF: {company.NIF}</span>
@@ -57,6 +63,30 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
                 </a>
               </div>
             )}
+            {company.Company_Address && (
+              <div className="flex items-center text-sm">
+                <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Morada: {company.Company_Address}</span>
+              </div>
+            )}
+            {company.Company_City && (
+              <div className="flex items-center text-sm">
+                <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Cidade: {company.Company_City}</span>
+              </div>
+            )}
+            {company.Company_Postal_Code && (
+              <div className="flex items-center text-sm">
+                <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Código Postal: {company.Company_Postal_Code}</span>
+              </div>
+            )}
+            {company.District && (
+              <div className="flex items-center text-sm">
+                <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Distrito: {company.District}</span>
+              </div>
+            )}
             <div className="flex items-center text-sm">
               <Wallet className="mr-2 h-4 w-4 text-muted-foreground" />
               <span>Plafond: {company.Plafond.toFixed(2)} €</span>
@@ -65,6 +95,18 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
               <Briefcase className="mr-2 h-4 w-4 text-muted-foreground" />
               <span>Supervisor: {company.Supervisor}</span>
             </div>
+            {company.AM_OLD && (
+              <div className="flex items-center text-sm">
+                <User className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>AM Antigo: {company.AM_OLD}</span>
+              </div>
+            )}
+            {company.AM_Current && (
+              <div className="flex items-center text-sm">
+                <UserCheck className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>AM Atual: {company.AM_Current}</span>
+              </div>
+            )}
             <div className="flex items-center text-sm">
               {company.Is_CRB_Partner ? (
                 <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
@@ -73,6 +115,16 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
               )}
               <span>Parceiro Credibom: {company.Is_CRB_Partner ? 'Sim' : 'Não'}</span>
             </div>
+            {company.Wants_CRB_Partner !== undefined && (
+              <div className="flex items-center text-sm">
+                {company.Wants_CRB_Partner ? (
+                  <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                ) : (
+                  <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                )}
+                <span>Quer ser Parceiro Credibom: {company.Wants_CRB_Partner ? 'Sim' : 'Não'}</span>
+              </div>
+            )}
             <div className="flex items-center text-sm">
               {company.Is_APDCA_Partner ? (
                 <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
@@ -89,6 +141,12 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
               <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
               <span>Último Login: {company.Last_Login_Date}</span>
             </div>
+            {company.Last_Visit_Date && (
+              <div className="flex items-center text-sm">
+                <CalendarCheck className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Data Última Visita: {company.Last_Visit_Date}</span>
+              </div>
+            )}
             <div className="flex items-center text-sm">
               {company.Financing_Simulator_On ? (
                 <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
@@ -128,7 +186,7 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
                 <Repeat className="mr-2 h-4 w-4 text-green-500" />
               ) : (
                 <XCircle className="mr-2 h-4 w-4 text-red-500" />
-              )}
+                )}
               <span>Renovação Automática: {company.Plan_Auto_Renewal ? 'Ativa' : 'Desativada'}</span>
             </div>
             <div className="flex items-center text-sm">
@@ -139,6 +197,154 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
               <TrendingUp className="mr-2 h-4 w-4 text-muted-foreground" />
               <span>Bumps Totais: {company.Total_Bumps}</span>
             </div>
+            {company.Stock_STV !== undefined && (
+              <div className="flex items-center text-sm">
+                <CarFront className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Stock STV: {company.Stock_STV}</span>
+              </div>
+            )}
+            {company.Company_API_Info && (
+              <div className="flex items-center text-sm">
+                <Code className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Info API Empresa: {company.Company_API_Info}</span>
+              </div>
+            )}
+            {company.Company_Stock !== undefined && (
+              <div className="flex items-center text-sm">
+                <ShoppingCart className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Stock na Empresa: {company.Company_Stock}</span>
+              </div>
+            )}
+            {company.Logo_URL && (
+              <div className="flex items-center text-sm">
+                <Image className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Logotipo: <a href={company.Logo_URL} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Ver Logotipo</a></span>
+              </div>
+            )}
+            {company.Classification && (
+              <div className="flex items-center text-sm">
+                <Star className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Classificação: {company.Classification}</span>
+              </div>
+            )}
+            {company.Imported_Percentage !== undefined && (
+              <div className="flex items-center text-sm">
+                <Percent className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Percentagem de Importados: {company.Imported_Percentage}%</span>
+              </div>
+            )}
+            {company.Vehicle_Source && (
+              <div className="flex items-center text-sm">
+                <Factory className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Onde Compra as Viaturas: {company.Vehicle_Source}</span>
+              </div>
+            )}
+            {company.Competition && (
+              <div className="flex items-center text-sm">
+                <Users className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Concorrência: {company.Competition}</span>
+              </div>
+            )}
+            {company.Social_Media_Investment !== undefined && (
+              <div className="flex items-center text-sm">
+                <Megaphone className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Investimento Redes Sociais: {company.Social_Media_Investment.toFixed(2)} €</span>
+              </div>
+            )}
+            {company.Portal_Investment !== undefined && (
+              <div className="flex items-center text-sm">
+                <BarChart className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Investimento em Portais: {company.Portal_Investment.toFixed(2)} €</span>
+              </div>
+            )}
+            {company.B2B_Market !== undefined && (
+              <div className="flex items-center text-sm">
+                {company.B2B_Market ? (
+                  <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                ) : (
+                  <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                )}
+                <span>Mercado B2B: {company.B2B_Market ? 'Sim' : 'Não'}</span>
+              </div>
+            )}
+            {company.Uses_CRM !== undefined && (
+              <div className="flex items-center text-sm">
+                {company.Uses_CRM ? (
+                  <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                ) : (
+                  <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                )}
+                <span>Utiliza CRM: {company.Uses_CRM ? 'Sim' : 'Não'}</span>
+              </div>
+            )}
+            {company.CRM_Software && (
+              <div className="flex items-center text-sm">
+                <Lightbulb className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Qual o CRM: {company.CRM_Software}</span>
+              </div>
+            )}
+            {company.Recommended_Plan && (
+              <div className="flex items-center text-sm">
+                <BookOpen className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Plano Indicado: {company.Recommended_Plan}</span>
+              </div>
+            )}
+            {company.Credit_Mediator !== undefined && (
+              <div className="flex items-center text-sm">
+                {company.Credit_Mediator ? (
+                  <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                ) : (
+                  <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                )}
+                <span>Mediador de Crédito: {company.Credit_Mediator ? 'Sim' : 'Não'}</span>
+              </div>
+            )}
+            {company.Bank_of_Portugal_Link && (
+              <div className="flex items-center text-sm">
+                <Link className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Link Banco de Portugal: <a href={company.Bank_of_Portugal_Link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Ver Link</a></span>
+              </div>
+            )}
+            {company.Financing_Agreements && (
+              <div className="flex items-center text-sm">
+                <Handshake className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Acordos Financeiras: {company.Financing_Agreements}</span>
+              </div>
+            )}
+            {company.Company_Group && (
+              <div className="flex items-center text-sm">
+                <Group className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Grupo: {company.Company_Group}</span>
+              </div>
+            )}
+            {company.Represented_Brands && (
+              <div className="flex items-center text-sm">
+                <Award className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Marcas Representadas: {company.Represented_Brands}</span>
+              </div>
+            )}
+            {company.Company_Type && (
+              <div className="flex items-center text-sm">
+                <FactoryIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Tipo de Empresa: {company.Company_Type}</span>
+              </div>
+            )}
+            {company.Wants_CT !== undefined && (
+              <div className="flex items-center text-sm">
+                {company.Wants_CT ? (
+                  <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                ) : (
+                  <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                )}
+                <span>Quer CT: {company.Wants_CT ? 'Sim' : 'Não'}</span>
+              </div>
+            )}
+            {company.Autobiz_Info && (
+              <div className="flex items-center text-sm">
+                <FileText className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>Autobiz: {company.Autobiz_Info}</span>
+              </div>
+            )}
           </div>
           <Separator />
           <h3 className="text-lg font-semibold mb-4">Pontos de Venda ({company.stands.length})</h3>
