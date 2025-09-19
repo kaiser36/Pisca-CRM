@@ -1,7 +1,7 @@
 import React from 'react';
 import { Stand } from '@/types/crm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Phone, Mail, User, Building } from 'lucide-react'; // Added Building icon
+import { MapPin, Phone, Mail, User, Building } from 'lucide-react';
 
 interface StandCardProps {
   stand: Stand;
@@ -16,7 +16,7 @@ const StandCard: React.FC<StandCardProps> = ({ stand }) => {
       <CardContent className="space-y-2 text-sm">
         <div className="flex items-center">
           <Building className="mr-2 h-4 w-4 text-muted-foreground" />
-          <span>{stand.Company_Name}</span> {/* Added Company Name */}
+          <span>{stand.Company_Name}</span>
         </div>
         <div className="flex items-center">
           <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />

@@ -4,6 +4,7 @@ import StandCard from './StandCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Mail, User, Building, Landmark } from 'lucide-react'; // Added Landmark icon for NIF
 
 interface CompanyDetailProps {
   company: Company | null;
@@ -25,7 +26,22 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company }) => {
           <CardTitle className="text-2xl">{company.Company_Name}</CardTitle>
           <CardDescription>ID da Empresa: {company.Company_id}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center text-sm">
+              <Landmark className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>NIF: {company.NIF}</span>
+            </div>
+            <div className="flex items-center text-sm">
+              <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>Email da Empresa: {company.Company_Email}</span>
+            </div>
+            <div className="flex items-center text-sm">
+              <User className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>Pessoa de Contacto: {company.Company_Contact_Person}</span>
+            </div>
+          </div>
+          <Separator />
           <h3 className="text-lg font-semibold mb-4">Pontos de Venda ({company.stands.length})</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {company.stands.map((stand) => (
