@@ -5,6 +5,7 @@ import { Company, Stand } from '@/types/crm';
 import { parseStandsExcel, parseCompanyDetailsExcel } from '@/lib/excel-parser';
 import { showSuccess, showError } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
+import { useSession } from '@/components/auth/SessionContextProvider'; // Import useSession
 
 interface CrmContextType {
   companies: Company[];
@@ -18,18 +19,16 @@ interface CrmContextType {
 const CrmDataContext = createContext<CrmContextType | undefined>(undefined);
 
 export const CrmDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { session, isLoading: isSessionLoading } = useSession(); // Get session from context
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Temporary user ID for RLS until authentication is implemented
-  // In a real app, this would come from supabase.auth.getSession()
-  const TEMP_USER_ID = "00000000-0000-0000-0000-000000000000"; // Replace with a real user ID from your auth.users table for testing RLS
-
-  const fetchCompaniesFromSupabase = useCallback(async () => {
+  const fetchCompaniesFromSupabase = useCallback(async (userId: string) => {
     const { data: companiesData, error: companiesError } = await supabase
       .from('companies')
       .select('*, stands(*)') // Select companies and their related stands
+      .eq('user_id', userId) // Filter by user_id for explicit RLS compliance
       .order('company_name', { ascending: true });
 
     if (companiesError) {
@@ -120,12 +119,9 @@ export const CrmDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return mappedCompanies;
   }, []);
 
-  const saveCompaniesToSupabase = useCallback(async (companiesToSave: Company[]) => {
-    // For simplicity, we'll upsert companies and then stands.
-    // In a more complex scenario, you might want to handle updates more granularly.
-
+  const saveCompaniesToSupabase = useCallback(async (companiesToSave: Company[], userId: string) => {
     const companyInserts = companiesToSave.map(company => ({
-      user_id: TEMP_USER_ID, // IMPORTANT: Replace with actual auth.uid()
+      user_id: userId, // Use actual authenticated user ID
       company_id: company.Company_id,
       company_name: company.Company_Name,
       nif: company.NIF,
@@ -234,15 +230,20 @@ export const CrmDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   const loadInitialData = useCallback(async () => {
+    if (!session?.user?.id) {
+      setIsLoading(false);
+      return; // Do not load data if no user is authenticated
+    }
+
     setIsLoading(true);
     setError(null);
     try {
-      const fetchedCompanies = await fetchCompaniesFromSupabase();
+      const fetchedCompanies = await fetchCompaniesFromSupabase(session.user.id);
       if (fetchedCompanies.length === 0) {
-        // If no data in Supabase, load from static Excel and save
+        // If no data in Supabase for this user, load from static Excel and save
         const initialExcelData = await parseStandsExcel('/Stands_Pisca.xlsx');
         if (initialExcelData.length > 0) {
-          await saveCompaniesToSupabase(initialExcelData);
+          await saveCompaniesToSupabase(initialExcelData, session.user.id);
           setCompanies(initialExcelData);
           showSuccess("Dados CRM carregados do Excel inicial e guardados no Supabase!");
         } else {
@@ -260,14 +261,19 @@ export const CrmDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } finally {
       setIsLoading(false);
     }
-  }, [fetchCompaniesFromSupabase, saveCompaniesToSupabase]);
+  }, [fetchCompaniesFromSupabase, saveCompaniesToSupabase, session?.user?.id]);
 
   const updateCrmData = useCallback(async (newCompanies: Company[]) => {
+    if (!session?.user?.id) {
+      showError("Não autenticado. Por favor, inicie sessão para atualizar os dados.");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
-      await saveCompaniesToSupabase(newCompanies);
-      const updatedCompanies = await fetchCompaniesFromSupabase(); // Re-fetch to ensure consistency
+      await saveCompaniesToSupabase(newCompanies, session.user.id);
+      const updatedCompanies = await fetchCompaniesFromSupabase(session.user.id); // Re-fetch to ensure consistency
       setCompanies(updatedCompanies);
       showSuccess("Dados CRM atualizados e guardados no Supabase com sucesso!");
     } catch (err: any) {
@@ -277,9 +283,14 @@ export const CrmDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } finally {
       setIsLoading(false);
     }
-  }, [fetchCompaniesFromSupabase, saveCompaniesToSupabase]);
+  }, [fetchCompaniesFromSupabase, saveCompaniesToSupabase, session?.user?.id]);
 
   const updateCompanyDetails = useCallback(async (detailsMap: Map<string, Partial<Company>>) => {
+    if (!session?.user?.id) {
+      showError("Não autenticado. Por favor, inicie sessão para atualizar os detalhes da empresa.");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
@@ -289,11 +300,12 @@ export const CrmDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
           .from('companies')
           .select('id')
           .eq('company_id', companyId)
+          .eq('user_id', session.user.id) // Ensure RLS is respected when fetching
           .single();
 
         if (fetchError || !existingCompany) {
-          console.warn(`Company with Company_id ${companyId} not found in DB, skipping update.`);
-          return; // Skip if company not found
+          console.warn(`Company with Company_id ${companyId} not found for user ${session.user.id}, skipping update.`);
+          return; // Skip if company not found or not owned by user
         }
 
         const { error: updateError } = await supabase
@@ -335,7 +347,7 @@ export const CrmDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             website: details.Website || undefined,
           })
           .eq('id', existingCompany.id)
-          .eq('user_id', TEMP_USER_ID); // Ensure RLS is respected
+          .eq('user_id', session.user.id); // Ensure RLS is respected when updating
 
         if (updateError) {
           console.error(`Error updating company ${companyId}:`, updateError);
@@ -344,7 +356,7 @@ export const CrmDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       });
 
       await Promise.all(updates);
-      const updatedCompanies = await fetchCompaniesFromSupabase(); // Re-fetch all data
+      const updatedCompanies = await fetchCompaniesFromSupabase(session.user.id); // Re-fetch all data
       setCompanies(updatedCompanies);
       showSuccess("Detalhes da empresa atualizados e guardados no Supabase com sucesso!");
     } catch (err: any) {
@@ -354,12 +366,23 @@ export const CrmDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } finally {
       setIsLoading(false);
     }
-  }, [fetchCompaniesFromSupabase, TEMP_USER_ID]);
+  }, [fetchCompaniesFromSupabase, session?.user?.id]);
 
 
   React.useEffect(() => {
-    loadInitialData();
-  }, [loadInitialData]);
+    if (!isSessionLoading) {
+      loadInitialData();
+    }
+  }, [loadInitialData, isSessionLoading]);
+
+  // Only render children if session is loaded and CrmData is loaded
+  if (isSessionLoading || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <CrmDataContext.Provider value={{ companies, isLoading, error, updateCrmData, updateCompanyDetails, loadInitialData }}>
