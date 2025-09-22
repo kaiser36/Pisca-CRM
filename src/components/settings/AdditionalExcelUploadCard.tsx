@@ -57,43 +57,47 @@ const AdditionalExcelUploadCard: React.FC = () => {
       const parsedData = await parseGenericExcel(selectedFile);
       
       // Map parsed data to CompanyAdditionalExcelData interface
-      const dataToUpsert: CompanyAdditionalExcelData[] = parsedData.map(row => ({
-        user_id: userId,
-        excel_company_id: String(row['excel_company_id'] || row['Company_id'] || ''), // Adjust key names as per your Excel structure
-        excel_commercial_name: row['excel_commercial_name'] || row['Commercial_Name'] || null,
-        excel_company_email: row['excel_company_email'] || row['Company_Email'] || null,
-        excel_stand_postal_code: row['excel_stand_postal_code'] || row['Company_Postal_Code'] || null,
-        excel_district: row['excel_district'] || row['District'] || null,
-        excel_city: row['excel_city'] || row['Company_City'] || null,
-        excel_address: row['excel_address'] || row['Company_Address'] || null,
-        excel_am_old: row['excel_am_old'] || row['AM_Old'] || null,
-        excel_am_current: row['excel_am_current'] || row['AM_Current'] || null,
-        excel_stock_stv: row['excel_stock_stv'] ? Number(row['excel_stock_stv']) : null,
-        excel_api_value: row['excel_api_value'] || row['Company_API_Info'] || null,
-        excel_website: row['excel_website'] || row['Website'] || null,
-        excel_company_stock: row['excel_company_stock'] ? Number(row['excel_company_stock']) : null,
-        excel_logo_url: row['excel_logo_url'] || row['Logo_URL'] || null,
-        excel_classification: row['excel_classification'] || row['Classification'] || null,
-        excel_imported_percentage: row['excel_imported_percentage'] ? Number(row['excel_imported_percentage']) : null,
-        excel_vehicle_source: row['excel_vehicle_source'] || row['Vehicle_Source'] || null,
-        excel_competition: row['excel_competition'] || row['Competition'] || null,
-        excel_social_media_investment: row['excel_social_media_investment'] ? Number(row['excel_social_media_investment']) : null,
-        excel_portal_investment: row['excel_portal_investment'] ? Number(row['excel_portal_investment']) : null,
-        excel_b2b_market: row['excel_b2b_market'] === '1' || row['B2B_Market'] === true,
-        excel_uses_crm: row['excel_uses_crm'] === '1' || row['Uses_CRM'] === true,
-        excel_crm_software: row['excel_crm_software'] || row['CRM_Software'] || null,
-        excel_recommended_plan: row['excel_recommended_plan'] || row['Recommended_Plan'] || null,
-        excel_credit_mediator: row['excel_credit_mediator'] === '1' || row['Credit_Mediator'] === true,
-        excel_bank_of_portugal_link: row['excel_bank_of_portugal_link'] || row['Bank_Of_Portugal_Link'] || null,
-        excel_financing_agreements: row['excel_financing_agreements'] || row['Financing_Agreements'] || null,
-        excel_last_visit_date: row['excel_last_visit_date'] || row['Last_Visit_Date'] || null,
-        excel_company_group: row['excel_company_group'] || row['Company_Group'] || null,
-        excel_represented_brands: row['excel_represented_brands'] || row['Represented_Brands'] || null,
-        excel_company_type: row['excel_company_type'] || row['Company_Type'] || null,
-        excel_wants_ct: row['excel_wants_ct'] === '1' || row['Wants_CT'] === true,
-        excel_wants_crb_partner: row['excel_wants_crb_partner'] === '1' || row['Wants_CRB_Partner'] === true,
-        excel_autobiz_info: row['excel_autobiz_info'] || row['Autobiz_Info'] || null,
-      }));
+      const dataToUpsert: CompanyAdditionalExcelData[] = parsedData.map((row: Record<string, any>) => {
+        const excelCompanyId = String(row['excel_company_id'] || row['Company_id'] || '');
+        console.log(`Processing excel_company_id: ${excelCompanyId}`); // Log the ID being processed
+        return {
+          user_id: userId,
+          excel_company_id: excelCompanyId, // Adjust key names as per your Excel structure
+          excel_commercial_name: row['excel_commercial_name'] || row['Commercial_Name'] || null,
+          excel_company_email: row['excel_company_email'] || row['Company_Email'] || null,
+          excel_stand_postal_code: row['excel_stand_postal_code'] || row['Company_Postal_Code'] || null,
+          excel_district: row['excel_district'] || row['District'] || null,
+          excel_city: row['excel_city'] || row['Company_City'] || null,
+          excel_address: row['excel_address'] || row['Company_Address'] || null,
+          excel_am_old: row['excel_am_old'] || row['AM_Old'] || null,
+          excel_am_current: row['excel_am_current'] || row['AM_Current'] || null,
+          excel_stock_stv: row['excel_stock_stv'] !== undefined && row['excel_stock_stv'] !== null ? Number(row['excel_stock_stv']) : null,
+          excel_api_value: row['excel_api_value'] || row['Company_API_Info'] || null,
+          excel_website: row['excel_website'] || row['Website'] || null,
+          excel_company_stock: row['excel_company_stock'] !== undefined && row['excel_company_stock'] !== null ? Number(row['excel_company_stock']) : null,
+          excel_logo_url: row['excel_logo_url'] || row['Logo_URL'] || null,
+          excel_classification: row['excel_classification'] || row['Classification'] || null,
+          excel_imported_percentage: row['excel_imported_percentage'] !== undefined && row['excel_imported_percentage'] !== null ? Number(row['excel_imported_percentage']) : null,
+          excel_vehicle_source: row['excel_vehicle_source'] || row['Vehicle_Source'] || null,
+          excel_competition: row['excel_competition'] || row['Competition'] || null,
+          excel_social_media_investment: row['excel_social_media_investment'] !== undefined && row['excel_social_media_investment'] !== null ? Number(row['excel_social_media_investment']) : null,
+          excel_portal_investment: row['excel_portal_investment'] !== undefined && row['excel_portal_investment'] !== null ? Number(row['excel_portal_investment']) : null,
+          excel_b2b_market: row['excel_b2b_market'] === '1' || row['B2B_Market'] === true,
+          excel_uses_crm: row['excel_uses_crm'] === '1' || row['Uses_CRM'] === true,
+          excel_crm_software: row['excel_crm_software'] || row['CRM_Software'] || null,
+          excel_recommended_plan: row['excel_recommended_plan'] || row['Recommended_Plan'] || null,
+          excel_credit_mediator: row['excel_credit_mediator'] === '1' || row['Credit_Mediator'] === true,
+          excel_bank_of_portugal_link: row['excel_bank_of_portugal_link'] || row['Bank_Of_Portugal_Link'] || null,
+          excel_financing_agreements: row['excel_financing_agreements'] || row['Financing_Agreements'] || null,
+          excel_last_visit_date: row['excel_last_visit_date'] || row['Last_Visit_Date'] || null,
+          excel_company_group: row['excel_company_group'] || row['Company_Group'] || null,
+          excel_represented_brands: row['excel_represented_brands'] || row['Represented_Brands'] || null,
+          excel_company_type: row['excel_company_type'] || row['Company_Type'] || null,
+          excel_wants_ct: row['excel_wants_ct'] === '1' || row['Wants_CT'] === true,
+          excel_wants_crb_partner: row['excel_wants_crb_partner'] === '1' || row['Wants_CRB_Partner'] === true,
+          excel_autobiz_info: row['excel_autobiz_info'] || row['Autobiz_Info'] || null
+        } as CompanyAdditionalExcelData;
+      });
 
       await upsertCompanyAdditionalExcelData(dataToUpsert, userId);
       showSuccess(`Dados adicionais de ${dataToUpsert.length} empresas carregados com sucesso!`);
