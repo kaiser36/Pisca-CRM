@@ -86,21 +86,38 @@ export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalEx
 }
 
 /**
- * Fetches all additional company Excel data for the current authenticated user.
+ * Fetches additional company Excel data for the current authenticated user with pagination.
  */
-export async function fetchCompanyAdditionalExcelData(userId: string): Promise<CompanyAdditionalExcelData[]> {
-  console.log(`Fetching additional company data for userId: ${userId} with limit 100000`);
+export async function fetchCompanyAdditionalExcelData(
+  userId: string,
+  page: number,
+  pageSize: number
+): Promise<{ data: CompanyAdditionalExcelData[]; totalCount: number }> {
+  const offset = (page - 1) * pageSize;
+
+  // First, get the total count
+  const { count, error: countError } = await supabase
+    .from('company_additional_excel_data')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId);
+
+  if (countError) {
+    console.error('Error fetching total count for additional company excel data:', countError);
+    throw new Error(countError.message);
+  }
+
+  // Then, get the paginated data
   const { data, error } = await supabase
     .from('company_additional_excel_data')
     .select('*')
     .eq('user_id', userId)
-    .limit(100000); // Aumentado o limite para 100.000
+    .range(offset, offset + pageSize - 1); // Supabase range is inclusive
 
   if (error) {
-    console.error('Error fetching additional company excel data:', error);
+    console.error('Error fetching paginated additional company excel data:', error);
     throw new Error(error.message);
   }
 
-  console.log(`Fetched ${data?.length || 0} additional company records for user ${userId}`);
-  return data as CompanyAdditionalExcelData[];
+  console.log(`Fetched ${data?.length || 0} additional company records for user ${userId}, page ${page}, total ${count}`);
+  return { data: data as CompanyAdditionalExcelData[], totalCount: count || 0 };
 }

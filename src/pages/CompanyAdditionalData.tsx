@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/layout/Layout';
-import { CompanyAdditionalExcelData, Company } from '@/types/crm'; // Import Company type
-import { fetchCompanyAdditionalExcelData, fetchCompaniesWithStands } from '@/integrations/supabase/utils'; // Import fetchCompaniesWithStands
+import { CompanyAdditionalExcelData, Company } from '@/types/crm';
+import { fetchCompanyAdditionalExcelData, fetchCompaniesWithStands } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import CompanyAdditionalList from '@/components/company-additional-data/CompanyAdditionalList';
 import CompanyAdditionalDetailCard from '@/components/company-additional-data/CompanyAdditionalDetailCard';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'; // Import pagination components
 
 const CompanyAdditionalData: React.FC = () => {
   const [companies, setCompanies] = useState<CompanyAdditionalExcelData[]>([]);
@@ -24,6 +25,11 @@ const CompanyAdditionalData: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
   const isMobile = useIsMobile();
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(100); // As requested, 100 companies per page
+  const [totalCompanies, setTotalCompanies] = useState(0);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -52,10 +58,14 @@ const CompanyAdditionalData: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      console.log(`Attempting to fetch additional company data for userId: ${userId}`);
-      const additionalData = await fetchCompanyAdditionalExcelData(userId);
-      const crmCompanies = await fetchCompaniesWithStands(userId); // Fetch CRM companies
+      console.log(`Attempting to fetch additional company data for userId: ${userId}, page: ${currentPage}, pageSize: ${pageSize}`);
+      const { data: additionalData, totalCount } = await fetchCompanyAdditionalExcelData(userId, currentPage, pageSize);
+      setTotalCompanies(totalCount);
 
+      // Fetch CRM companies (still all of them for now, as merging happens client-side)
+      // This part might still be slow if there are many CRM companies.
+      // A future optimization could be to fetch only relevant CRM companies based on the current page's excel_company_ids.
+      const crmCompanies = await fetchCompaniesWithStands(userId); 
       const crmCompaniesMap = new Map<string, Company>();
       crmCompanies.forEach(company => {
         crmCompaniesMap.set(company.Company_id, company);
@@ -63,7 +73,7 @@ const CompanyAdditionalData: React.FC = () => {
 
       const augmentedCompanies: CompanyAdditionalExcelData[] = additionalData.map(additionalCompany => ({
         ...additionalCompany,
-        crmCompany: crmCompaniesMap.get(additionalCompany.excel_company_id), // Attach CRM company if ID matches
+        crmCompany: crmCompaniesMap.get(additionalCompany.excel_company_id),
       }));
 
       setCompanies(augmentedCompanies);
@@ -75,13 +85,13 @@ const CompanyAdditionalData: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [userId, currentPage, pageSize]); // Add currentPage and pageSize to dependencies
 
   useEffect(() => {
     if (userId) {
       loadCompanies();
     }
-  }, [userId, loadCompanies]);
+  }, [userId, loadCompanies]); // loadCompanies now depends on currentPage and pageSize
 
   const selectedCompany = React.useMemo(() => {
     return companies.find(company => company.excel_company_id === selectedCompanyId) || null;
@@ -94,6 +104,48 @@ const CompanyAdditionalData: React.FC = () => {
   const handleBackToCompanyList = () => {
     setSelectedCompanyId(null);
   };
+
+  const totalPages = Math.ceil(totalCompanies / pageSize);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      setSelectedCompanyId(null); // Clear selection when changing page
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[calc(100vh-var(--header-height)-var(--footer-height))]">
+          <div className="md:col-span-1 flex flex-col space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+          <div className="md:col-span-2 flex flex-col space-y-4">
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="container mx-auto p-6 min-h-[calc(100vh-var(--header-height)-var(--footer-height))]">
+          <Alert variant="destructive">
+            <Terminal className="h-4 w-4" />
+            <AlertTitle>Erro</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -114,7 +166,7 @@ const CompanyAdditionalData: React.FC = () => {
           ) : (
             // Show Company List on mobile
             <div className="flex flex-col h-full">
-              <h2 className="text-xl font-semibold mb-4">Empresas Adicionais ({companies.length})</h2>
+              <h2 className="text-xl font-semibold mb-4">Empresas Adicionais ({totalCompanies})</h2>
               <CompanyAdditionalList
                 companies={companies}
                 onSelectCompany={setSelectedCompanyId}
@@ -122,6 +174,30 @@ const CompanyAdditionalData: React.FC = () => {
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
               />
+              {/* Add pagination for mobile */}
+              {totalPages > 1 && (
+                <div className="mt-4 flex justify-center">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
+                        />
+                      </PaginationItem>
+                      <PaginationItem>
+                        <PaginationLink isActive>{currentPage}</PaginationLink>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : undefined}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
             </div>
           )
         ) : (
@@ -133,19 +209,45 @@ const CompanyAdditionalData: React.FC = () => {
               isCompanyListCollapsed ? "w-0 overflow-hidden md:w-auto md:col-span-0" : "md:col-span-1"
             )}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Empresas Adicionais ({companies.length})</h2>
+                <h2 className="text-xl font-semibold">Empresas Adicionais ({totalCompanies})</h2>
                 <Button variant="ghost" size="icon" onClick={toggleCompanyList} className="ml-2">
                   {isCompanyListCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
                 </Button>
               </div>
               {!isCompanyListCollapsed && (
-                <CompanyAdditionalList
-                  companies={companies}
-                  onSelectCompany={setSelectedCompanyId}
-                  selectedCompanyId={selectedCompanyId}
-                  searchTerm={searchTerm}
-                  onSearchChange={setSearchTerm}
-                />
+                <>
+                  <CompanyAdditionalList
+                    companies={companies}
+                    onSelectCompany={setSelectedCompanyId}
+                    selectedCompanyId={selectedCompanyId}
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                  />
+                  {/* Add pagination for desktop */}
+                  {totalPages > 1 && (
+                    <div className="mt-4 flex justify-center">
+                      <Pagination>
+                        <PaginationContent>
+                          <PaginationItem>
+                            <PaginationPrevious
+                              onClick={() => handlePageChange(currentPage - 1)}
+                              className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
+                            />
+                          </PaginationItem>
+                          <PaginationItem>
+                            <PaginationLink isActive>{currentPage}</PaginationLink>
+                          </PaginationItem>
+                          <PaginationItem>
+                            <PaginationNext
+                              onClick={() => handlePageChange(currentPage + 1)}
+                              className={currentPage === totalPages ? "pointer-events-none opacity-50" : undefined}
+                            />
+                          </PaginationItem>
+                        </PaginationContent>
+                      </Pagination>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
