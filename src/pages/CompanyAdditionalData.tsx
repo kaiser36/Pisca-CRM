@@ -52,7 +52,7 @@ const CompanyAdditionalData: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      console.log(`Attempting to fetch additional company data for userId: ${userId}`); // Novo log
+      console.log(`Attempting to fetch additional company data for userId: ${userId}`);
       const data = await fetchCompanyAdditionalExcelData(userId);
       setCompanies(data);
       console.log(`CompanyAdditionalData: Set ${data.length} companies into state.`);
@@ -83,38 +83,6 @@ const CompanyAdditionalData: React.FC = () => {
     setSelectedCompanyId(null);
   };
 
-  if (isLoading) {
-    return (
-      <Layout>
-        <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[calc(100vh-var(--header-height)-var(--footer-height))]">
-          <div className="md:col-span-1 flex flex-col space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-          </div>
-          <div className="md:col-span-2 flex flex-col space-y-4">
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-40 w-full" />
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
-  if (error) {
-    return (
-      <Layout>
-        <div className="container mx-auto p-6 min-h-[calc(100vh-var(--header-height)-var(--footer-height))]">
-          <Alert variant="destructive">
-            <Terminal className="h-4 w-4" />
-            <AlertTitle>Erro</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        </div>
-      </Layout>
-    );
-  }
-
   return (
     <Layout>
       <div className="h-full flex flex-col">
@@ -129,7 +97,7 @@ const CompanyAdditionalData: React.FC = () => {
                 </Button>
                 <h2 className="text-xl font-semibold">Detalhes da Empresa Adicional</h2>
               </div>
-              <CompanyAdditionalDetailCard company={selectedCompany} />
+              <CompanyAdditionalDetailCard company={selectedCompany} onDataUpdated={loadCompanies} />
             </div>
           ) : (
             // Show Company List on mobile
@@ -175,7 +143,7 @@ const CompanyAdditionalData: React.FC = () => {
               isCompanyListCollapsed ? "md:col-span-3" : "md:col-span-2"
             )}>
               <h2 className="text-xl font-semibold mb-4">Detalhes da Empresa Adicional</h2>
-              <CompanyAdditionalDetailCard company={selectedCompany} />
+              <CompanyAdditionalDetailCard company={selectedCompany} onDataUpdated={loadCompanies} />
             </div>
           </div>
         )}

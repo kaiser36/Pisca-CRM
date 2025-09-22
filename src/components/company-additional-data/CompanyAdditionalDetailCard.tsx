@@ -1,17 +1,23 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { CompanyAdditionalExcelData } from '@/types/crm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, ShieldX } from 'lucide-react';
+import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, ShieldX, Pencil } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import CompanyAdditionalEditForm from './CompanyAdditionalEditForm'; // Import the new form component
 
 interface CompanyAdditionalDetailCardProps {
   company: CompanyAdditionalExcelData | null;
+  onDataUpdated: () => void; // Callback to refresh data in parent
 }
 
-const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = ({ company }) => {
+const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = ({ company, onDataUpdated }) => {
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
   if (!company) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -36,7 +42,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
       );
     } else if (typeof value === 'number') {
       displayValue = value.toLocaleString('pt-PT');
-    } else if (label.includes('Link') || label.includes('Site')) {
+    } else if (label.includes('Link') || label.includes('Site') || label.includes('Logotipo')) {
       displayValue = (
         <a href={String(value)} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
           {String(value)}
@@ -56,7 +62,29 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     <ScrollArea className="h-full w-full pr-4">
       <Card className="w-full">
         <CardHeader>
-          <CardTitle className="text-2xl">{company["Nome Comercial"] || "N/A"}</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl">{company["Nome Comercial"] || "N/A"}</CardTitle>
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="ml-auto">
+                  <Pencil className="mr-2 h-4 w-4" /> Editar
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Editar Dados Adicionais da Empresa</DialogTitle>
+                </DialogHeader>
+                <CompanyAdditionalEditForm
+                  company={company}
+                  onSave={() => {
+                    setIsEditDialogOpen(false);
+                    onDataUpdated(); // Trigger data refresh
+                  }}
+                  onCancel={() => setIsEditDialogOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
           <CardDescription>ID Excel: {company.excel_company_id}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
