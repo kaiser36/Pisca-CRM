@@ -423,3 +423,39 @@ export async function upsertGeneralInfo(info: Partial<GeneralInfo>, userId: stri
     return data as GeneralInfo;
   }
 }
+
+// Upserts generic Excel data for a user
+export async function upsertGenericExcelData(
+  userId: string,
+  fileName: string,
+  data: Record<string, any>[]
+): Promise<void> {
+  // First, delete any existing data for this user and file name
+  const { error: deleteError } = await supabase
+    .from('generic_excel_data')
+    .delete()
+    .eq('user_id', userId)
+    .eq('file_name', fileName);
+
+  if (deleteError) {
+    console.error('Error deleting existing generic Excel data:', deleteError);
+    throw new Error(deleteError.message);
+  }
+
+  // Prepare data for insertion
+  const insertData = data.map(row => ({
+    user_id: userId,
+    file_name: fileName,
+    row_data: row, // Store the entire row as a JSONB object
+  }));
+
+  // Insert new data
+  const { error: insertError } = await supabase
+    .from('generic_excel_data')
+    .insert(insertData);
+
+  if (insertError) {
+    console.error('Error inserting generic Excel data:', insertError);
+    throw new Error(insertError.message);
+  }
+}
