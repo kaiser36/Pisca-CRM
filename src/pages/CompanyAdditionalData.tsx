@@ -53,8 +53,6 @@ const CompanyAdditionalData: React.FC = () => {
     setError(null);
     try {
       const data = await fetchCompanyAdditionalExcelData(userId);
-      console.log("Dados adicionais de empresas carregados:", data); // Log para depuração
-      console.log("Número de empresas adicionais carregadas:", data.length); // Log para depuração
       setCompanies(data);
     } catch (err: any) {
       console.error("Erro ao carregar dados adicionais das empresas:", err);
