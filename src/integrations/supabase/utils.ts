@@ -18,23 +18,6 @@ export async function fetchCompaniesWithStands(userId: string): Promise<Company[
     throw new Error(companiesError.message);
   }
 
-  // Fetch additional excel data for companies
-  const { data: additionalExcelData, error: additionalExcelError } = await supabase
-    .from('company_additional_excel_data')
-    .select('*')
-    .eq('user_id', userId);
-
-  if (additionalExcelError) {
-    console.error('Error fetching additional excel data:', additionalExcelError);
-    throw new Error(additionalExcelError.message);
-  }
-
-  // Create a map for quick lookup of additional excel data by excel_company_id
-  const additionalDataMap = new Map<string, CompanyAdditionalExcelData>();
-  additionalExcelData.forEach(data => {
-    additionalDataMap.set(data.excel_company_id, data);
-  });
-
   const companyIds = companiesData.map(c => c.id);
 
   let allStandsData: any[] = [];
@@ -60,10 +43,8 @@ export async function fetchCompaniesWithStands(userId: string): Promise<Company[
 
   const companiesMap = new Map<string, Company>();
   companiesData.forEach(company => {
-    const additionalInfo = additionalDataMap.get(company.company_id); // Match by company_id from 'companies' table
-
+    // Populate Company object solely from the 'companies' table
     companiesMap.set(company.id, {
-      ...company,
       Company_id: company.company_id, // Map DB field to interface field
       Company_Name: company.company_name,
       NIF: company.nif,
@@ -86,38 +67,38 @@ export async function fetchCompaniesWithStands(userId: string): Promise<Company[
       Current_Bumps: company.current_bumps,
       Total_Bumps: company.total_bumps,
       
-      // Merge additional excel data, prioritizing existing company data if present
-      Commercial_Name: company.commercial_name || additionalInfo?.["Nome Comercial"],
-      Company_Postal_Code: company.company_postal_code || additionalInfo?.["STAND_POSTAL_CODE"],
-      District: company.district || additionalInfo?.["Distrito"],
-      Company_City: company.company_city || additionalInfo?.["Cidade"],
-      Company_Address: company.company_address || additionalInfo?.["Morada"],
-      AM_Old: company.am_old || additionalInfo?.["AM_OLD"],
-      AM_Current: company.am_current || additionalInfo?.["AM"],
-      Stock_STV: company.stock_stv || additionalInfo?.["Stock STV"],
-      Company_API_Info: company.company_api_info || additionalInfo?.["API"],
-      Company_Stock: company.company_stock || additionalInfo?.["Stock na empresa"],
-      Logo_URL: company.logo_url || additionalInfo?.["Logotipo"],
-      Classification: company.classification || additionalInfo?.["Classificação"],
-      Imported_Percentage: company.imported_percentage || additionalInfo?.["Percentagem de Importados"],
-      Vehicle_Source: company.vehicle_source || additionalInfo?.["Onde compra as viaturas"],
-      Competition: company.competition || additionalInfo?.["Concorrencia"],
-      Social_Media_Investment: company.social_media_investment || additionalInfo?.["Investimento redes sociais"],
-      Portal_Investment: company.portal_investment || additionalInfo?.["Investimento em portais"],
-      B2B_Market: company.b2b_market || additionalInfo?.["Mercado b2b"],
-      Uses_CRM: company.uses_crm || additionalInfo?.["Utiliza CRM"],
-      CRM_Software: company.crm_software || additionalInfo?.["Qual o CRM"],
-      Recommended_Plan: company.recommended_plan || additionalInfo?.["Plano Indicado"],
-      Credit_Mediator: company.credit_mediator || additionalInfo?.["Mediador de credito"],
-      Bank_Of_Portugal_Link: company.bank_of_portugal_link || additionalInfo?.["Link do Banco de Portugal"],
-      Financing_Agreements: company.financing_agreements || additionalInfo?.["Financeiras com acordo"],
-      Last_Visit_Date: company.last_visit_date || additionalInfo?.["Data ultima visita"],
-      Company_Group: company.company_group || additionalInfo?.["Grupo"],
-      Represented_Brands: company.represented_brands || additionalInfo?.["Marcas representadas"],
-      Company_Type: company.company_type || additionalInfo?.["Tipo de empresa"],
-      Wants_CT: company.wants_ct || additionalInfo?.["Quer CT"],
-      Wants_CRB_Partner: company.wants_crb_partner || additionalInfo?.["Quer ser parceiro Credibom"],
-      Autobiz_Info: company.autobiz_info || additionalInfo?.["Autobiz"],
+      // Additional fields from 'companies' table
+      Commercial_Name: company.commercial_name,
+      Company_Postal_Code: company.company_postal_code,
+      District: company.district,
+      Company_City: company.company_city,
+      Company_Address: company.company_address,
+      AM_Old: company.am_old,
+      AM_Current: company.am_current,
+      Stock_STV: company.stock_stv,
+      Company_API_Info: company.company_api_info,
+      Company_Stock: company.company_stock,
+      Logo_URL: company.logo_url,
+      Classification: company.classification,
+      Imported_Percentage: company.imported_percentage,
+      Vehicle_Source: company.vehicle_source,
+      Competition: company.competition,
+      Social_Media_Investment: company.social_media_investment,
+      Portal_Investment: company.portal_investment,
+      B2B_Market: company.b2b_market,
+      Uses_CRM: company.uses_crm,
+      CRM_Software: company.crm_software,
+      Recommended_Plan: company.recommended_plan,
+      Credit_Mediator: company.credit_mediator,
+      Bank_Of_Portugal_Link: company.bank_of_portugal_link,
+      Financing_Agreements: company.financing_agreements,
+      Last_Visit_Date: company.last_visit_date,
+      Company_Group: company.company_group,
+      Represented_Brands: company.represented_brands,
+      Company_Type: company.company_type,
+      Wants_CT: company.wants_ct,
+      Wants_CRB_Partner: company.wants_crb_partner,
+      Autobiz_Info: company.autobiz_info,
       
       stands: []
     });
@@ -454,7 +435,7 @@ export async function insertGenericExcelData(fileName: string, excelRows: Record
   const dataToInsert = excelRows.map(row => ({
     user_id: userId,
     file_name: fileName,
-        row_data: row,
+    row_data: row,
   }));
 
   const { error } = await supabase
@@ -469,9 +450,7 @@ export async function insertGenericExcelData(fileName: string, excelRows: Record
 
 // Upserts specific company additional Excel data into the company_additional_excel_data table
 export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalExcelData[], userId: string): Promise<void> {
-  // For upsert, we need to check if a record with the same excel_company_id already exists for the user
-  // This is a simplified upsert. A more robust solution might involve fetching existing records first.
-  for (const row of data) { // 'data' already contains the correctly mapped new column names
+  for (const row of data) {
     const { data: existingRecord, error: fetchError } = await supabase
       .from('company_additional_excel_data')
       .select('id')
