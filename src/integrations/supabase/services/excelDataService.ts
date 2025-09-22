@@ -2,6 +2,26 @@ import { supabase } from '../client';
 import { CompanyAdditionalExcelData } from '@/types/crm';
 
 /**
+ * Inserts generic Excel data into the generic_excel_data table.
+ */
+// export async function insertGenericExcelData(fileName: string, excelRows: Record<string, any>[], userId: string): Promise<void> {
+//   const dataToInsert = excelRows.map(row => ({
+//     user_id: userId,
+//     file_name: fileName,
+//     row_data: row,
+//   }));
+
+//   const { error } = await supabase
+//     .from('generic_excel_data')
+//     .insert(dataToInsert);
+
+//   if (error) {
+//     console.error('Error inserting generic Excel data:', error);
+//     throw new Error(error.message);
+//   }
+// }
+
+/**
  * Upserts specific company additional Excel data into the company_additional_excel_data table.
  * This function now operates independently of the 'companies' table, as requested.
  */
@@ -79,4 +99,21 @@ export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalEx
       }
     }
   }
+}
+
+/**
+ * Fetches all additional company Excel data for the current authenticated user.
+ */
+export async function fetchCompanyAdditionalExcelData(userId: string): Promise<CompanyAdditionalExcelData[]> {
+  const { data, error } = await supabase
+    .from('company_additional_excel_data')
+    .select('*')
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('Error fetching additional company excel data:', error);
+    throw new Error(error.message);
+  }
+
+  return data as CompanyAdditionalExcelData[];
 }

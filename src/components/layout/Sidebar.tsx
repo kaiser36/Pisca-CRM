@@ -4,7 +4,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Home, Building, Settings, ChevronLeft, ChevronRight } from 'lucide-react'; // Removed FileText icon
+import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -47,7 +47,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             )}
           >
             <Building className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
-            {!isCollapsed && "Empresas"}
+            {!isCollapsed && "CRM Empresas"}
+          </Button>
+        </Link>
+        <Link to="/company-additional-data">
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              isCollapsed ? "px-2" : "px-4"
+            )}
+          >
+            <Building2 className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
+            {!isCollapsed && "Empresas Adicionais"}
           </Button>
         </Link>
         <Link to="/settings">
