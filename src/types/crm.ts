@@ -120,4 +120,5 @@ export interface CompanyAdditionalExcelData {
   "Quer ser parceiro Credibom"?: boolean | null;
   "Autobiz"?: string | null;
   created_at?: string;
+  crmCompany?: Company; // Adicionado para incluir dados do CRM principal
 }

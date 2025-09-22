@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/layout/Layout';
-import { CompanyAdditionalExcelData } from '@/types/crm';
-import { fetchCompanyAdditionalExcelData } from '@/integrations/supabase/utils';
+import { CompanyAdditionalExcelData, Company } from '@/types/crm'; // Import Company type
+import { fetchCompanyAdditionalExcelData, fetchCompaniesWithStands } from '@/integrations/supabase/utils'; // Import fetchCompaniesWithStands
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -53,9 +53,21 @@ const CompanyAdditionalData: React.FC = () => {
     setError(null);
     try {
       console.log(`Attempting to fetch additional company data for userId: ${userId}`);
-      const data = await fetchCompanyAdditionalExcelData(userId);
-      setCompanies(data);
-      console.log(`CompanyAdditionalData: Set ${data.length} companies into state.`);
+      const additionalData = await fetchCompanyAdditionalExcelData(userId);
+      const crmCompanies = await fetchCompaniesWithStands(userId); // Fetch CRM companies
+
+      const crmCompaniesMap = new Map<string, Company>();
+      crmCompanies.forEach(company => {
+        crmCompaniesMap.set(company.Company_id, company);
+      });
+
+      const augmentedCompanies: CompanyAdditionalExcelData[] = additionalData.map(additionalCompany => ({
+        ...additionalCompany,
+        crmCompany: crmCompaniesMap.get(additionalCompany.excel_company_id), // Attach CRM company if ID matches
+      }));
+
+      setCompanies(augmentedCompanies);
+      console.log(`CompanyAdditionalData: Set ${augmentedCompanies.length} companies into state.`);
     } catch (err: any) {
       console.error("Erro ao carregar dados adicionais das empresas:", err);
       setError(err.message || "Falha ao carregar os dados adicionais das empresas.");

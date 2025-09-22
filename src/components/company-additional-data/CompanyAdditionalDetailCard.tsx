@@ -5,7 +5,7 @@ import { CompanyAdditionalExcelData } from '@/types/crm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, ShieldX, Pencil } from 'lucide-react';
+import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, ShieldX, Pencil, Landmark, Briefcase } from 'lucide-react'; // Added Landmark, Briefcase
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CompanyAdditionalEditForm from './CompanyAdditionalEditForm'; // Import the new form component
@@ -88,6 +88,35 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
           <CardDescription>ID Excel: {company.excel_company_id}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {company.crmCompany && (
+            <>
+              <h3 className="text-lg font-semibold">Informações do CRM Principal</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {renderField(Building, "Nome da Empresa (CRM)", company.crmCompany.Company_Name)}
+                {renderField(Landmark, "NIF (CRM)", company.crmCompany.NIF)}
+                {renderField(Mail, "Email da Empresa (CRM)", company.crmCompany.Company_Email)}
+                {renderField(User, "Pessoa de Contacto (CRM)", company.crmCompany.Company_Contact_Person)}
+                {renderField(Globe, "Website (CRM)", company.crmCompany.Website)}
+                {renderField(DollarSign, "Plafond (CRM)", company.crmCompany.Plafond)}
+                {renderField(Briefcase, "Supervisor (CRM)", company.crmCompany.Supervisor)}
+                {renderField(CheckCircle, "Parceiro Credibom (CRM)", company.crmCompany.Is_CRB_Partner)}
+                {renderField(CheckCircle, "APDCA (CRM)", company.crmCompany.Is_APDCA_Partner)}
+                {renderField(Calendar, "Data de Criação (CRM)", company.crmCompany.Creation_Date)}
+                {renderField(Clock, "Último Login (CRM)", company.crmCompany.Last_Login_Date)}
+                {renderField(Car, "Simulador Financiamento (CRM)", company.crmCompany.Financing_Simulator_On)}
+                {renderField(Package, "Último Plano (CRM)", company.crmCompany.Last_Plan)}
+                {renderField(DollarSign, "Preço do Plano (CRM)", company.crmCompany.Plan_Price)}
+                {renderField(Calendar, "Expiração do Plano (CRM)", company.crmCompany.Plan_Expiration_Date)}
+                {renderField(CheckCircle, "Plano Ativo (CRM)", company.crmCompany.Plan_Active)}
+                {renderField(Repeat, "Renovação Automática (CRM)", company.crmCompany.Plan_Auto_Renewal)}
+                {renderField(TrendingUp, "Bumps Atuais (CRM)", company.crmCompany.Current_Bumps)}
+                {renderField(TrendingUp, "Bumps Totais (CRM)", company.crmCompany.Total_Bumps)}
+              </div>
+              <Separator />
+            </>
+          )}
+
+          <h3 className="text-lg font-semibold">Dados Adicionais do Excel</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {renderField(Building, "Nome Comercial", company["Nome Comercial"])}
             {renderField(Mail, "Email da empresa", company["Email da empresa"])}
