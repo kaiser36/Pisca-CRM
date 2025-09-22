@@ -52,9 +52,10 @@ const CompanyAdditionalData: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
+      console.log(`Attempting to fetch additional company data for userId: ${userId}`); // Novo log
       const data = await fetchCompanyAdditionalExcelData(userId);
       setCompanies(data);
-      // console.log(`CompanyAdditionalData: Set ${data.length} companies into state.`); // Removido para evitar duplicação de logs
+      console.log(`CompanyAdditionalData: Set ${data.length} companies into state.`);
     } catch (err: any) {
       console.error("Erro ao carregar dados adicionais das empresas:", err);
       setError(err.message || "Falha ao carregar os dados adicionais das empresas.");

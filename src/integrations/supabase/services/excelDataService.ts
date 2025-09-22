@@ -93,7 +93,7 @@ export async function fetchCompanyAdditionalExcelData(userId: string): Promise<C
     .from('company_additional_excel_data')
     .select('*')
     .eq('user_id', userId)
-    .range(0, null); // Adicionado para remover o limite padrão de 1000 linhas
+    .limit(5000); // Alterado de .range(0, null) para .limit(5000)
 
   if (error) {
     console.error('Error fetching additional company excel data:', error);
