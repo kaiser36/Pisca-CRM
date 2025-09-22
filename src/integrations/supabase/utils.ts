@@ -1,5 +1,4 @@
 // This file re-exports all Supabase utility functions for easier import.
 export * from './services/companyService.ts';
 export * from './services/standService.ts';
-export * from './services/generalInfoService.ts';
 export * from './services/excelDataService.ts';

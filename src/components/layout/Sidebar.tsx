@@ -4,7 +4,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Home, Building, Settings, ChevronLeft, ChevronRight, Info, FileText } from 'lucide-react'; // Import FileText icon
+import { Home, Building, Settings, ChevronLeft, ChevronRight } from 'lucide-react'; // Removed FileText icon
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -48,30 +48,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           >
             <Building className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
             {!isCollapsed && "Empresas"}
-          </Button>
-        </Link>
-        {/* <Link to="/maisinfo"> */} {/* Removed as per user request */}
-          {/* <Button
-            variant="ghost"
-            className={cn(
-              "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-              isCollapsed ? "px-2" : "px-4"
-            )}
-          >
-            <Info className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
-            {!isCollapsed && "Mais Info"}
-          </Button>
-        </Link> */}
-        <Link to="/informacao">
-          <Button
-            variant="ghost"
-            className={cn(
-              "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-              isCollapsed ? "px-2" : "px-4"
-            )}
-          >
-            <FileText className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
-            {!isCollapsed && "Informação"}
           </Button>
         </Link>
         <Link to="/settings">

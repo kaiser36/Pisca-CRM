@@ -1,25 +1,5 @@
 import { supabase } from '../client';
-import { GenericExcelUpload, CompanyAdditionalExcelData } from '@/types/crm';
-
-/**
- * Inserts generic Excel data into the generic_excel_data table.
- */
-export async function insertGenericExcelData(fileName: string, excelRows: Record<string, any>[], userId: string): Promise<void> {
-  const dataToInsert = excelRows.map(row => ({
-    user_id: userId,
-    file_name: fileName,
-    row_data: row,
-  }));
-
-  const { error } = await supabase
-    .from('generic_excel_data')
-    .insert(dataToInsert);
-
-  if (error) {
-    console.error('Error inserting generic Excel data:', error);
-    throw new Error(error.message);
-  }
-}
+import { CompanyAdditionalExcelData } from '@/types/crm';
 
 /**
  * Upserts specific company additional Excel data into the company_additional_excel_data table.
