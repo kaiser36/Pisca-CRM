@@ -2,26 +2,6 @@ import { supabase } from '../client';
 import { CompanyAdditionalExcelData } from '@/types/crm';
 
 /**
- * Inserts generic Excel data into the generic_excel_data table.
- */
-// export async function insertGenericExcelData(fileName: string, excelRows: Record<string, any>[], userId: string): Promise<void> {
-//   const dataToInsert = excelRows.map(row => ({
-//     user_id: userId,
-//     file_name: fileName,
-//     row_data: row,
-//   }));
-
-//   const { error } = await supabase
-//     .from('generic_excel_data')
-//     .insert(dataToInsert);
-
-//   if (error) {
-//     console.error('Error inserting generic Excel data:', error);
-//     throw new Error(error.message);
-//   }
-// }
-
-/**
  * Upserts specific company additional Excel data into the company_additional_excel_data table.
  * This function now operates independently of the 'companies' table, as requested.
  */
@@ -108,7 +88,8 @@ export async function fetchCompanyAdditionalExcelData(userId: string): Promise<C
   const { data, error } = await supabase
     .from('company_additional_excel_data')
     .select('*')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .range(0, null); // Adicionado para remover o limite padrão de 1000 linhas
 
   if (error) {
     console.error('Error fetching additional company excel data:', error);
