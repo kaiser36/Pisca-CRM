@@ -4,11 +4,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Home, Building, Settings, ChevronLeft, ChevronRight, FileText, LogIn, LogOut } from 'lucide-react';
-import { useSession } from '@/components/auth/SessionContextProvider'; // Import useSession
-import { supabase } from '@/integrations/supabase/client';
-import { showError, showSuccess } from '@/utils/toast';
-import { useNavigate } from 'react-router-dom';
+import { Home, Building, Settings, ChevronLeft, ChevronRight, Info, FileText } from 'lucide-react'; // Import FileText icon
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -16,20 +12,6 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
-  const { session } = useSession();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error("Erro ao fazer logout:", error);
-      showError("Falha ao fazer logout.");
-    } else {
-      showSuccess("Logout efetuado com sucesso!");
-      navigate('/login');
-    }
-  };
-
   return (
     <aside
       className={cn(
@@ -68,6 +50,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             {!isCollapsed && "Empresas"}
           </Button>
         </Link>
+        {/* <Link to="/maisinfo"> */} {/* Removed as per user request */}
+          {/* <Button
+            variant="ghost"
+            className={cn(
+              "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              isCollapsed ? "px-2" : "px-4"
+            )}
+          >
+            <Info className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
+            {!isCollapsed && "Mais Info"}
+          </Button>
+        </Link> */}
         <Link to="/informacao">
           <Button
             variant="ghost"
@@ -93,34 +87,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           </Button>
         </Link>
       </nav>
-      <div className="p-2 border-t">
-        {session ? (
-          <Button
-            variant="ghost"
-            className={cn(
-              "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-              isCollapsed ? "px-2" : "px-4"
-            )}
-            onClick={handleLogout}
-          >
-            <LogOut className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
-            {!isCollapsed && "Sair"}
-          </Button>
-        ) : (
-          <Link to="/login">
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                isCollapsed ? "px-2" : "px-4"
-              )}
-            >
-              <LogIn className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
-              {!isCollapsed && "Login"}
-            </Button>
-          </Link>
-        )}
-      </div>
     </aside>
   );
 };
