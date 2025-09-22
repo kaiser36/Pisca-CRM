@@ -89,11 +89,12 @@ export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalEx
  * Fetches all additional company Excel data for the current authenticated user.
  */
 export async function fetchCompanyAdditionalExcelData(userId: string): Promise<CompanyAdditionalExcelData[]> {
+  console.log(`Fetching additional company data for userId: ${userId} with limit 100000`);
   const { data, error } = await supabase
     .from('company_additional_excel_data')
     .select('*')
     .eq('user_id', userId)
-    .limit(5000); // Alterado de .range(0, null) para .limit(5000)
+    .limit(100000); // Aumentado o limite para 100.000
 
   if (error) {
     console.error('Error fetching additional company excel data:', error);
