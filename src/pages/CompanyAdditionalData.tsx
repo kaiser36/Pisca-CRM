@@ -28,7 +28,7 @@ const CompanyAdditionalData: React.FC = () => {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(25); // Alterado de 100 para 25
+  const [pageSize] = useState(25);
   const [totalCompanies, setTotalCompanies] = useState(0);
 
   useEffect(() => {
@@ -58,8 +58,8 @@ const CompanyAdditionalData: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      console.log(`Attempting to fetch additional company data for userId: ${userId}, page: ${currentPage}, pageSize: ${pageSize}`);
-      const { data: additionalData, totalCount } = await fetchCompanyAdditionalExcelData(userId, currentPage, pageSize);
+      console.log(`Attempting to fetch additional company data for userId: ${userId}, page: ${currentPage}, pageSize: ${pageSize}, searchTerm: ${searchTerm}`);
+      const { data: additionalData, totalCount } = await fetchCompanyAdditionalExcelData(userId, currentPage, pageSize, searchTerm); // Pass searchTerm
       setTotalCompanies(totalCount);
 
       // Extract excel_company_ids from the currently paginated additional data
@@ -86,13 +86,19 @@ const CompanyAdditionalData: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, currentPage, pageSize]);
+  }, [userId, currentPage, pageSize, searchTerm]); // Add searchTerm to dependencies
 
   useEffect(() => {
     if (userId) {
       loadCompanies();
     }
   }, [userId, loadCompanies]);
+
+  const handleSearchChange = (term: string) => {
+    setSearchTerm(term);
+    setCurrentPage(1); // Reset to first page on new search
+    setSelectedCompanyId(null); // Clear selection on new search
+  };
 
   const selectedCompany = React.useMemo(() => {
     return companies.find(company => company.excel_company_id === selectedCompanyId) || null;
@@ -173,7 +179,7 @@ const CompanyAdditionalData: React.FC = () => {
                 onSelectCompany={setSelectedCompanyId}
                 selectedCompanyId={selectedCompanyId}
                 searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
+                onSearchChange={handleSearchChange} // Use the new handler
               />
               {/* Add pagination for mobile */}
               {totalPages > 1 && (
@@ -222,7 +228,7 @@ const CompanyAdditionalData: React.FC = () => {
                     onSelectCompany={setSelectedCompanyId}
                     selectedCompanyId={selectedCompanyId}
                     searchTerm={searchTerm}
-                    onSearchChange={setSearchTerm}
+                    onSearchChange={handleSearchChange} // Use the new handler
                   />
                   {/* Add pagination for desktop */}
                   {totalPages > 1 && (

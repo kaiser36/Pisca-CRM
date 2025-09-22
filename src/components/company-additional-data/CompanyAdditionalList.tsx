@@ -22,17 +22,8 @@ const CompanyAdditionalList: React.FC<CompanyAdditionalListProps> = ({
   searchTerm,
   onSearchChange,
 }) => {
-  const filteredCompanies = React.useMemo(() => {
-    if (!searchTerm) {
-      return companies;
-    }
-    const lowercasedSearchTerm = searchTerm.toLowerCase();
-    return companies.filter(company =>
-      company["Nome Comercial"]?.toLowerCase().includes(lowercasedSearchTerm) ||
-      company.excel_company_id.toLowerCase().includes(lowercasedSearchTerm) ||
-      company["Email da empresa"]?.toLowerCase().includes(lowercasedSearchTerm)
-    );
-  }, [companies, searchTerm]);
+  // A filtragem agora é feita no backend, 'companies' já vem filtrado e paginado.
+  // O memoization de filteredCompanies foi removido.
 
   return (
     <div className="flex flex-col h-full">
@@ -48,10 +39,10 @@ const CompanyAdditionalList: React.FC<CompanyAdditionalListProps> = ({
       </div>
       <ScrollArea className="flex-1 pr-4">
         <div className="space-y-4">
-          {filteredCompanies.length === 0 ? (
+          {companies.length === 0 ? (
             <p className="text-muted-foreground text-center">Nenhuma empresa encontrada.</p>
           ) : (
-            filteredCompanies.map((company) => (
+            companies.map((company) => (
               <Card
                 key={company.id || company.excel_company_id}
                 className={`cursor-pointer transition-colors ${

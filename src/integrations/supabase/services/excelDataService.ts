@@ -86,31 +86,39 @@ export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalEx
 }
 
 /**
- * Fetches additional company Excel data for the current authenticated user with pagination.
+ * Fetches additional company Excel data for the current authenticated user with pagination and search.
  */
 export async function fetchCompanyAdditionalExcelData(
   userId: string,
   page: number,
-  pageSize: number
+  pageSize: number,
+  searchTerm: string = '' // Adicionado searchTerm
 ): Promise<{ data: CompanyAdditionalExcelData[]; totalCount: number }> {
   const offset = (page - 1) * pageSize;
 
-  // First, get the total count
-  const { count, error: countError } = await supabase
+  let query = supabase
     .from('company_additional_excel_data')
-    .select('*', { count: 'exact', head: true })
+    .select('*', { count: 'exact' })
     .eq('user_id', userId);
 
-  if (countError) {
+  // Apply search filter if searchTerm is provided
+  if (searchTerm) {
+    const searchPattern = `%${searchTerm.toLowerCase()}%`;
+    query = query.or(
+      `"Nome Comercial".ilike.${searchPattern},excel_company_id.ilike.${searchPattern},"Email da empresa".ilike.${searchPattern}`
+    );
+  }
+
+  // First, get the total count of filtered results
+  const { count, error: countError } = await query.limit(0).single(); // Use limit(0).single() to get count without data
+
+  if (countError && countError.code !== 'PGRST116') { // PGRST116 means "no rows found"
     console.error('Error fetching total count for additional company excel data:', countError);
     throw new Error(countError.message);
   }
 
   // Then, get the paginated data
-  const { data, error } = await supabase
-    .from('company_additional_excel_data')
-    .select('*')
-    .eq('user_id', userId)
+  const { data, error } = await query
     .range(offset, offset + pageSize - 1); // Supabase range is inclusive
 
   if (error) {
