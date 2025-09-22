@@ -9,8 +9,8 @@ import { Upload, Loader2, FileText, Save } from 'lucide-react';
 import { parseGenericExcel } from '@/lib/general-excel-parser';
 import { showError, showSuccess } from '@/utils/toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { supabase } from '@/integrations/supabase/client'; // Import supabase client
-import { upsertGenericExcelData } from '@/integrations/supabase/utils'; // Import new utility
+import { supabase } from '@/integrations/supabase/client';
+import { upsertGenericExcelData } from '@/integrations/supabase/utils'; // Updated import
 
 const ExcelDisplayCard: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -170,7 +170,7 @@ const ExcelDisplayCard: React.FC = () => {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+            </Table>
             </ScrollArea>
           </>
         )}

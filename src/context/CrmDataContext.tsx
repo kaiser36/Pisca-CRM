@@ -1,11 +1,11 @@
 "use client";
 
-import React, { createContext, useState, useContext, useCallback, useEffect } from 'react'; // Added useEffect
+import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
 import { Company } from '@/types/crm';
 import { parseStandsExcel } from '@/lib/excel-parser';
 import { showSuccess, showError } from '@/utils/toast';
-import { supabase } from '@/integrations/supabase/client'; // Import supabase client
-import { fetchCompaniesWithStands, fetchGenericExcelData } from '@/integrations/supabase/utils'; // Import new utility functions
+import { supabase } from '@/integrations/supabase/client';
+import { fetchCompaniesWithStands, fetchGenericExcelData } from '@/integrations/supabase/utils'; // Updated import
 
 interface CrmContextType {
   companies: Company[];

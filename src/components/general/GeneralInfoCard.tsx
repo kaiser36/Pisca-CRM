@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, Edit, XCircle } from 'lucide-react';
-import { fetchGeneralInfo, upsertGeneralInfo } from '@/integrations/supabase/utils';
+import { fetchGeneralInfo, upsertGeneralInfo } from '@/integrations/supabase/utils'; // Updated import
 import { showSuccess, showError } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
 import { GeneralInfo } from '@/types/crm';
