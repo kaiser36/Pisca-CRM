@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/layout/Layout';
 import { CompanyAdditionalExcelData, Company } from '@/types/crm';
-import { fetchCompanyAdditionalExcelData, fetchCompaniesWithStands } from '@/integrations/supabase/utils';
+import { fetchCompanyAdditionalExcelData, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils'; // Updated import
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -62,10 +62,11 @@ const CompanyAdditionalData: React.FC = () => {
       const { data: additionalData, totalCount } = await fetchCompanyAdditionalExcelData(userId, currentPage, pageSize);
       setTotalCompanies(totalCount);
 
-      // Fetch CRM companies (still all of them for now, as merging happens client-side)
-      // This part might still be slow if there are many CRM companies.
-      // A future optimization could be to fetch only relevant CRM companies based on the current page's excel_company_ids.
-      const crmCompanies = await fetchCompaniesWithStands(userId); 
+      // Extract excel_company_ids from the currently paginated additional data
+      const excelCompanyIds = additionalData.map(company => company.excel_company_id);
+
+      // Fetch only the CRM companies that match the excel_company_ids on the current page
+      const crmCompanies = await fetchCompaniesByExcelCompanyIds(userId, excelCompanyIds); 
       const crmCompaniesMap = new Map<string, Company>();
       crmCompanies.forEach(company => {
         crmCompaniesMap.set(company.Company_id, company);
