@@ -80,7 +80,6 @@ export interface Company {
   Autobiz_Info?: string;
 
   stands: Stand[];
-  genericExcelData?: { file_name: string; row_data: Record<string, any> }[]; // New field for generic Excel data
 }
 
 export interface GeneralInfo {
