@@ -7,6 +7,8 @@ import { CompanyAdditionalExcelData } from '@/types/crm';
  */
 export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalExcelData[], userId: string): Promise<void> {
   for (const row of data) {
+    console.log(`Processing excel_company_id: ${row.excel_company_id} for user: ${userId}`);
+
     const { data: existingRecord, error: fetchError } = await supabase
       .from('company_additional_excel_data')
       .select('id')
@@ -15,7 +17,7 @@ export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalEx
       .single();
 
     if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means "no rows found"
-      console.error('Error fetching existing additional company data:', fetchError);
+      console.error(`Error fetching existing additional company data for excel_company_id ${row.excel_company_id}:`, fetchError);
       throw new Error(fetchError.message);
     }
 
@@ -59,6 +61,7 @@ export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalEx
     };
 
     if (existingRecord) {
+      console.log(`Updating existing record for excel_company_id: ${row.excel_company_id}, id: ${existingRecord.id}`);
       // Update existing record
       const { error } = await supabase
         .from('company_additional_excel_data')
@@ -69,6 +72,7 @@ export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalEx
         throw new Error(error.message);
       }
     } else {
+      console.log(`Inserting new record for excel_company_id: ${row.excel_company_id}`);
       // Insert new record
       const { error } = await supabase
         .from('company_additional_excel_data')
