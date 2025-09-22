@@ -4,12 +4,14 @@ import StandCard from './StandCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, User, Building, Landmark, Globe, Wallet, Briefcase, CheckCircle, XCircle, Calendar, Clock, CreditCard, DollarSign, Package, Repeat, TrendingUp, Car, ArrowLeft } from 'lucide-react'; // Added new icons and ArrowLeft
-import { Button } from '@/components/ui/button'; // Import Button
+import { Mail, User, Building, Landmark, Globe, Wallet, Briefcase, CheckCircle, XCircle, Calendar, Clock, CreditCard, DollarSign, Package, Repeat, TrendingUp, Car, ArrowLeft, FileText } from 'lucide-react'; // Added new icons and ArrowLeft, FileText
+import { Button } from '@/components/ui/button';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'; // Import Accordion components
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'; // Import Table components
 
 interface CompanyDetailProps {
   company: Company | null;
-  onBack?: () => void; // New optional prop for back button
+  onBack?: () => void;
 }
 
 const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
@@ -147,6 +149,43 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
               <StandCard key={stand.Stand_ID} stand={stand} />
             ))}
           </div>
+
+          {company.genericExcelData && company.genericExcelData.length > 0 && (
+            <>
+              <Separator />
+              <h3 className="text-lg font-semibold mb-4">Informação Complementar (Excel)</h3>
+              <Accordion type="single" collapsible className="w-full">
+                {company.genericExcelData.map((dataItem, index) => (
+                  <AccordionItem key={index} value={`item-${index}`}>
+                    <AccordionTrigger className="flex items-center">
+                      <FileText className="mr-2 h-4 w-4 text-muted-foreground" />
+                      {dataItem.file_name} (Linha {index + 1})
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              {Object.keys(dataItem.row_data).map((key) => (
+                                <TableHead key={key}>{key}</TableHead>
+                              ))}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            <TableRow>
+                              {Object.values(dataItem.row_data).map((value, valIndex) => (
+                                <TableCell key={valIndex}>{String(value)}</TableCell>
+                              ))}
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </>
+          )}
         </CardContent>
       </Card>
     </ScrollArea>
