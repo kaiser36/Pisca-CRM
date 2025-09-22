@@ -3,7 +3,8 @@
 import React from 'react';
 import Layout from '@/components/layout/Layout';
 import GeneralInfoCard from '@/components/general/GeneralInfoCard';
-import ExcelDisplayCard from '@/components/general/ExcelDisplayCard'; // Import the new component
+import ExcelDisplayCard from '@/components/general/ExcelDisplayCard';
+import CompanyAdditionalExcelUploadCard from '@/components/general/CompanyAdditionalExcelUploadCard'; // Import the new component
 
 const Informacao: React.FC = () => {
   return (
@@ -12,7 +13,8 @@ const Informacao: React.FC = () => {
         <h1 className="text-3xl font-bold mb-6">Informação Geral</h1>
         <div className="grid grid-cols-1 gap-6">
           <GeneralInfoCard />
-          <ExcelDisplayCard /> {/* Add the new Excel display card here */}
+          <ExcelDisplayCard />
+          <CompanyAdditionalExcelUploadCard /> {/* Add the new Excel upload card here */}
         </div>
       </div>
     </Layout>

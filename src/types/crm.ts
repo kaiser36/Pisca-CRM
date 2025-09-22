@@ -90,3 +90,51 @@ export interface GeneralInfo {
   created_at: string;
   updated_at: string;
 }
+
+export interface GenericExcelUpload {
+  id: string;
+  user_id: string;
+  file_name: string;
+  row_data: Record<string, any>; // To store each row as a JSON object
+  created_at: string;
+}
+
+export interface CompanyAdditionalExcelData {
+  id: string;
+  user_id: string;
+  excel_company_id: string;
+  excel_commercial_name?: string;
+  excel_company_email?: string;
+  excel_stand_postal_code?: string;
+  excel_district?: string;
+  excel_city?: string;
+  excel_address?: string;
+  excel_am_old?: string;
+  excel_am_current?: string;
+  excel_stock_stv?: number;
+  excel_api_value?: string;
+  excel_website?: string;
+  excel_company_stock?: number;
+  excel_logo_url?: string;
+  excel_classification?: string;
+  excel_imported_percentage?: number;
+  excel_vehicle_source?: string;
+  excel_competition?: string;
+  excel_social_media_investment?: number;
+  excel_portal_investment?: number;
+  excel_b2b_market?: boolean;
+  excel_uses_crm?: boolean;
+  excel_crm_software?: string;
+  excel_recommended_plan?: string;
+  excel_credit_mediator?: boolean;
+  excel_bank_of_portugal_link?: string;
+  excel_financing_agreements?: string;
+  excel_last_visit_date?: string;
+  excel_company_group?: string;
+  excel_represented_brands?: string;
+  excel_company_type?: string;
+  excel_wants_ct?: boolean;
+  excel_wants_crb_partner?: boolean;
+  excel_autobiz_info?: string;
+  created_at: string;
+}

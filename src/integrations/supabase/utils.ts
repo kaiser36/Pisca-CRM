@@ -1,5 +1,5 @@
 import { supabase } from './client';
-import { Company, Stand, GeneralInfo } from '@/types/crm';
+import { Company, Stand, GeneralInfo, GenericExcelUpload, CompanyAdditionalExcelData } from '@/types/crm';
 
 interface ParsedCrmData {
   companies: Company[];
@@ -421,5 +421,70 @@ export async function upsertGeneralInfo(info: Partial<GeneralInfo>, userId: stri
       throw new Error(error.message);
     }
     return data as GeneralInfo;
+  }
+}
+
+// Inserts generic Excel data into the generic_excel_data table
+export async function insertGenericExcelData(fileName: string, excelRows: Record<string, any>[], userId: string): Promise<void> {
+  const dataToInsert = excelRows.map(row => ({
+    user_id: userId,
+    file_name: fileName,
+    row_data: row,
+  }));
+
+  const { error } = await supabase
+    .from('generic_excel_data')
+    .insert(dataToInsert);
+
+  if (error) {
+    console.error('Error inserting generic Excel data:', error);
+    throw new Error(error.message);
+  }
+}
+
+// Inserts specific company additional Excel data into the company_additional_excel_data table
+export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalExcelData[], userId: string): Promise<void> {
+  const dataToUpsert = data.map(row => ({
+    ...row,
+    user_id: userId, // Ensure user_id is set for RLS
+    id: undefined, // Let Supabase generate UUID for new rows
+    created_at: new Date().toISOString(),
+  }));
+
+  // For upsert, we need to check if a record with the same excel_company_id already exists for the user
+  // This is a simplified upsert. A more robust solution might involve fetching existing records first.
+  for (const row of dataToUpsert) {
+    const { data: existingRecord, error: fetchError } = await supabase
+      .from('company_additional_excel_data')
+      .select('id')
+      .eq('excel_company_id', row.excel_company_id)
+      .eq('user_id', userId)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means "no rows found"
+      console.error('Error fetching existing additional company data:', fetchError);
+      throw new Error(fetchError.message);
+    }
+
+    if (existingRecord) {
+      // Update existing record
+      const { error } = await supabase
+        .from('company_additional_excel_data')
+        .update(row)
+        .eq('id', existingRecord.id);
+      if (error) {
+        console.error(`Error updating additional company data for company_id ${row.excel_company_id}:`, error);
+        throw new Error(error.message);
+      }
+    } else {
+      // Insert new record
+      const { error } = await supabase
+        .from('company_additional_excel_data')
+        .insert(row);
+      if (error) {
+        console.error(`Error inserting additional company data for company_id ${row.excel_company_id}:`, error);
+        throw new Error(error.message);
+      }
+    }
   }
 }
