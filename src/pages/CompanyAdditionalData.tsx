@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/layout/Layout';
 import { CompanyAdditionalExcelData, Company } from '@/types/crm';
-import { fetchCompanyAdditionalExcelData, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils'; // Updated import
+import { fetchCompanyAdditionalExcelData, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import CompanyAdditionalList from '@/components/company-additional-data/CompanyAdditionalList';
 import CompanyAdditionalDetailCard from '@/components/company-additional-data/CompanyAdditionalDetailCard';
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'; // Import pagination components
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 const CompanyAdditionalData: React.FC = () => {
   const [companies, setCompanies] = useState<CompanyAdditionalExcelData[]>([]);
@@ -28,7 +28,7 @@ const CompanyAdditionalData: React.FC = () => {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(100); // As requested, 100 companies per page
+  const [pageSize] = useState(25); // Alterado de 100 para 25
   const [totalCompanies, setTotalCompanies] = useState(0);
 
   useEffect(() => {
@@ -86,13 +86,13 @@ const CompanyAdditionalData: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, currentPage, pageSize]); // Add currentPage and pageSize to dependencies
+  }, [userId, currentPage, pageSize]);
 
   useEffect(() => {
     if (userId) {
       loadCompanies();
     }
-  }, [userId, loadCompanies]); // loadCompanies now depends on currentPage and pageSize
+  }, [userId, loadCompanies]);
 
   const selectedCompany = React.useMemo(() => {
     return companies.find(company => company.excel_company_id === selectedCompanyId) || null;
