@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Upload, Loader2 } from 'lucide-react';
 import { parseGenericExcel } from '@/lib/general-excel-parser';
-import { upsertCompanyAdditionalExcelData } from '@/integrations/supabase/utils';
+import { upsertCompanyAdditionalExcelData } from '@/integrations/supabase/utils'; // Updated import
 import { showSuccess, showError } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
 import { CompanyAdditionalExcelData } from '@/types/crm';
