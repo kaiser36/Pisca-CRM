@@ -96,5 +96,6 @@ export async function fetchCompanyAdditionalExcelData(userId: string): Promise<C
     throw new Error(error.message);
   }
 
+  console.log(`Fetched ${data?.length || 0} additional company records for user ${userId}`);
   return data as CompanyAdditionalExcelData[];
 }
