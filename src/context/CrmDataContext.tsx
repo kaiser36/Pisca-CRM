@@ -5,7 +5,7 @@ import { Company } from '@/types/crm';
 import { parseStandsExcel } from '@/lib/excel-parser';
 import { showSuccess, showError } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchCompaniesWithStands, fetchGenericExcelData } from '@/integrations/supabase/utils'; // Updated import
+import { fetchCompaniesWithStands, fetchGenericExcelData } from '@/integrations/supabase/utils';
 
 interface CrmContextType {
   companies: Company[];
@@ -48,6 +48,7 @@ export const CrmDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed:', _event, 'User ID:', session?.user?.id);
       if (session?.user) {
         setUserId(session.user.id);
       } else {
@@ -56,6 +57,7 @@ export const CrmDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check. User ID:', session?.user?.id);
       if (session?.user) {
         setUserId(session.user.id);
       }
@@ -65,20 +67,21 @@ export const CrmDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   const loadInitialData = useCallback(async () => {
+    console.log('Attempting to load initial data. Current userId:', userId);
     if (!userId) {
+      console.log('No userId found, skipping initial data load.');
       setIsLoading(false);
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch CRM data from Supabase
+      console.log('Fetching companies with stands for userId:', userId);
       const fetchedCompanies = await fetchCompaniesWithStands(userId);
       
-      // Fetch generic Excel data from Supabase
+      console.log('Fetching generic Excel data for userId:', userId);
       const fetchedGenericData = await fetchGenericExcelData(userId);
 
-      // Merge generic data into companies
       const mergedCompanies = mergeGenericDataIntoCompanies(fetchedCompanies, fetchedGenericData);
 
       setCompanies(mergedCompanies);
@@ -93,7 +96,6 @@ export const CrmDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [userId]);
 
   const updateCrmData = useCallback(async (newCompanies: Company[]) => {
-    // When CRM data is updated, we should also re-fetch and merge generic data
     if (!userId) {
       showError("Utilizador não autenticado. Não foi possível atualizar os dados CRM.");
       return;
@@ -111,6 +113,7 @@ export const CrmDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   React.useEffect(() => {
     if (userId) {
+      console.log('userId changed, triggering loadInitialData...');
       loadInitialData();
     }
   }, [userId, loadInitialData]);
