@@ -5,10 +5,11 @@ import { CompanyAdditionalExcelData } from '@/types/crm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, ShieldX, Pencil, Landmark, Briefcase } from 'lucide-react'; // Added Landmark, Briefcase
+import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, ShieldX, Pencil, Landmark, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import CompanyAdditionalEditForm from './CompanyAdditionalEditForm'; // Import the new form component
+import CompanyAdditionalEditForm from './CompanyAdditionalEditForm';
+import StandCard from '@/components/crm/StandCard'; // Importar o StandCard
 
 interface CompanyAdditionalDetailCardProps {
   company: CompanyAdditionalExcelData | null;
@@ -156,6 +157,18 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
           <p className="text-xs text-muted-foreground">
             Criado em: {company.created_at ? new Date(company.created_at).toLocaleString() : 'N/A'}
           </p>
+
+          {company.crmCompany && company.crmCompany.stands && company.crmCompany.stands.length > 0 && (
+            <>
+              <Separator />
+              <h3 className="text-lg font-semibold mb-4">Stands Associados ({company.crmCompany.stands.length})</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {company.crmCompany.stands.map((stand) => (
+                  <StandCard key={stand.Stand_ID} stand={stand} />
+                ))}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </ScrollArea>
