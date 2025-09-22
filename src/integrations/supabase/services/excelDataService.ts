@@ -98,7 +98,7 @@ export async function fetchCompanyAdditionalExcelData(
 
   let query = supabase
     .from('company_additional_excel_data')
-    .select('*', { count: 'exact' })
+    .select('*', { count: 'exact' }) // Request count here
     .eq('user_id', userId);
 
   // Apply search filter if searchTerm is provided
@@ -109,16 +109,8 @@ export async function fetchCompanyAdditionalExcelData(
     );
   }
 
-  // First, get the total count of filtered results
-  const { count, error: countError } = await query.limit(0).single(); // Use limit(0).single() to get count without data
-
-  if (countError && countError.code !== 'PGRST116') { // PGRST116 means "no rows found"
-    console.error('Error fetching total count for additional company excel data:', countError);
-    throw new Error(countError.message);
-  }
-
-  // Then, get the paginated data
-  const { data, error } = await query
+  // Execute the query once, fetching both data and count with range
+  const { data, error, count } = await query
     .range(offset, offset + pageSize - 1); // Supabase range is inclusive
 
   if (error) {
