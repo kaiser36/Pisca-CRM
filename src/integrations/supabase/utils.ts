@@ -1,5 +1,5 @@
 import { supabase } from './client';
-import { Company, Stand, GeneralInfo } from '@/types/crm';
+import { Company, Stand, GeneralInfo, GenericExcelUpload, CompanyAdditionalExcelData } from '@/types/crm';
 
 interface ParsedCrmData {
   companies: Company[];
@@ -18,20 +18,50 @@ export async function fetchCompaniesWithStands(userId: string): Promise<Company[
     throw new Error(companiesError.message);
   }
 
+  // Fetch additional excel data for companies
+  const { data: additionalExcelData, error: additionalExcelError } = await supabase
+    .from('company_additional_excel_data')
+    .select('*')
+    .eq('user_id', userId);
+
+  if (additionalExcelError) {
+    console.error('Error fetching additional excel data:', additionalExcelError);
+    throw new Error(additionalExcelError.message);
+  }
+
+  // Create a map for quick lookup of additional excel data by excel_company_id
+  const additionalDataMap = new Map<string, CompanyAdditionalExcelData>();
+  additionalExcelData.forEach(data => {
+    additionalDataMap.set(data.excel_company_id, data);
+  });
+
   const companyIds = companiesData.map(c => c.id);
 
-  const { data: standsData, error: standsError } = await supabase
-    .from('stands')
-    .select('*')
-    .in('company_db_id', companyIds);
+  let allStandsData: any[] = [];
+  const BATCH_SIZE = 50; // Fetch stands in batches of 50 company IDs to avoid URI Too Long error
 
-  if (standsError) {
-    console.error('Error fetching stands:', standsError);
-    throw new Error(standsError.message);
+  for (let i = 0; i < companyIds.length; i += BATCH_SIZE) {
+    const batchIds = companyIds.slice(i, i + BATCH_SIZE);
+    if (batchIds.length === 0) continue;
+
+    const { data: batchStandsData, error: batchStandsError } = await supabase
+      .from('stands')
+      .select('*')
+      .in('company_db_id', batchIds);
+
+    if (batchStandsError) {
+      console.error('Error fetching stands in batch:', batchStandsError);
+      throw new Error(batchStandsError.message);
+    }
+    allStandsData = allStandsData.concat(batchStandsData);
   }
+
+  const standsData = allStandsData;
 
   const companiesMap = new Map<string, Company>();
   companiesData.forEach(company => {
+    const additionalInfo = additionalDataMap.get(company.company_id); // Match by company_id from 'companies' table
+
     companiesMap.set(company.id, {
       ...company,
       Company_id: company.company_id, // Map DB field to interface field
@@ -55,37 +85,40 @@ export async function fetchCompaniesWithStands(userId: string): Promise<Company[
       Plan_Auto_Renewal: company.plan_auto_renewal,
       Current_Bumps: company.current_bumps,
       Total_Bumps: company.total_bumps,
-      Commercial_Name: company.commercial_name,
-      Company_Postal_Code: company.company_postal_code,
-      District: company.district,
-      Company_City: company.company_city,
-      Company_Address: company.company_address,
-      AM_Old: company.am_old,
-      AM_Current: company.am_current,
-      Stock_STV: company.stock_stv,
-      Company_API_Info: company.company_api_info,
-      Company_Stock: company.company_stock,
-      Logo_URL: company.logo_url,
-      Classification: company.classification,
-      Imported_Percentage: company.imported_percentage,
-      Vehicle_Source: company.vehicle_source,
-      Competition: company.competition,
-      Social_Media_Investment: company.social_media_investment,
-      Portal_Investment: company.portal_investment,
-      B2B_Market: company.b2b_market,
-      Uses_CRM: company.uses_crm,
-      CRM_Software: company.crm_software,
-      Recommended_Plan: company.recommended_plan,
-      Credit_Mediator: company.credit_mediator,
-      Bank_Of_Portugal_Link: company.bank_of_portugal_link,
-      Financing_Agreements: company.financing_agreements,
-      Last_Visit_Date: company.last_visit_date,
-      Company_Group: company.company_group,
-      Represented_Brands: company.represented_brands,
-      Company_Type: company.company_type,
-      Wants_CT: company.wants_ct,
-      Wants_CRB_Partner: company.wants_crb_partner,
-      Autobiz_Info: company.autobiz_info,
+      
+      // Merge additional excel data, prioritizing existing company data if present
+      Commercial_Name: company.commercial_name || additionalInfo?.excel_commercial_name,
+      Company_Postal_Code: company.company_postal_code || additionalInfo?.excel_stand_postal_code,
+      District: company.district || additionalInfo?.excel_district,
+      Company_City: company.company_city || additionalInfo?.excel_city,
+      Company_Address: company.company_address || additionalInfo?.excel_address,
+      AM_Old: company.am_old || additionalInfo?.excel_am_old,
+      AM_Current: company.am_current || additionalInfo?.excel_am_current,
+      Stock_STV: company.stock_stv || additionalInfo?.excel_stock_stv,
+      Company_API_Info: company.company_api_info || additionalInfo?.excel_api_value,
+      Company_Stock: company.company_stock || additionalInfo?.excel_company_stock,
+      Logo_URL: company.logo_url || additionalInfo?.excel_logo_url,
+      Classification: company.classification || additionalInfo?.excel_classification,
+      Imported_Percentage: company.imported_percentage || additionalInfo?.excel_imported_percentage,
+      Vehicle_Source: company.vehicle_source || additionalInfo?.excel_vehicle_source,
+      Competition: company.competition || additionalInfo?.excel_competition,
+      Social_Media_Investment: company.social_media_investment || additionalInfo?.excel_social_media_investment,
+      Portal_Investment: company.portal_investment || additionalInfo?.excel_portal_investment,
+      B2B_Market: company.b2b_market || additionalInfo?.excel_b2b_market,
+      Uses_CRM: company.uses_crm || additionalInfo?.excel_uses_crm,
+      CRM_Software: company.crm_software || additionalInfo?.excel_crm_software,
+      Recommended_Plan: company.recommended_plan || additionalInfo?.excel_recommended_plan,
+      Credit_Mediator: company.credit_mediator || additionalInfo?.excel_credit_mediator,
+      Bank_Of_Portugal_Link: company.bank_of_portugal_link || additionalInfo?.excel_bank_of_portugal_link,
+      Financing_Agreements: company.financing_agreements || additionalInfo?.excel_financing_agreements,
+      Last_Visit_Date: company.last_visit_date || additionalInfo?.excel_last_visit_date,
+      Company_Group: company.company_group || additionalInfo?.excel_company_group,
+      Represented_Brands: company.represented_brands || additionalInfo?.excel_represented_brands,
+      Company_Type: company.company_type || additionalInfo?.excel_company_type,
+      Wants_CT: company.wants_ct || additionalInfo?.excel_wants_ct,
+      Wants_CRB_Partner: company.wants_crb_partner || additionalInfo?.excel_wants_crb_partner,
+      Autobiz_Info: company.autobiz_info || additionalInfo?.excel_autobiz_info,
+      
       stands: []
     });
   });
@@ -421,5 +454,70 @@ export async function upsertGeneralInfo(info: Partial<GeneralInfo>, userId: stri
       throw new Error(error.message);
     }
     return data as GeneralInfo;
+  }
+}
+
+// Inserts generic Excel data into the generic_excel_data table
+export async function insertGenericExcelData(fileName: string, excelRows: Record<string, any>[], userId: string): Promise<void> {
+  const dataToInsert = excelRows.map(row => ({
+    user_id: userId,
+    file_name: fileName,
+    row_data: row,
+  }));
+
+  const { error } = await supabase
+    .from('generic_excel_data')
+    .insert(dataToInsert);
+
+  if (error) {
+    console.error('Error inserting generic Excel data:', error);
+    throw new Error(error.message);
+  }
+}
+
+// Upserts specific company additional Excel data into the company_additional_excel_data table
+export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalExcelData[], userId: string): Promise<void> {
+  const dataToUpsert = data.map(row => ({
+    ...row,
+    user_id: userId, // Ensure user_id is set for RLS
+    id: undefined, // Let Supabase generate UUID for new rows
+    created_at: new Date().toISOString(),
+  }));
+
+  // For upsert, we need to check if a record with the same excel_company_id already exists for the user
+  // This is a simplified upsert. A more robust solution might involve fetching existing records first.
+  for (const row of dataToUpsert) {
+    const { data: existingRecord, error: fetchError } = await supabase
+      .from('company_additional_excel_data')
+      .select('id')
+      .eq('excel_company_id', row.excel_company_id)
+      .eq('user_id', userId)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means "no rows found"
+      console.error('Error fetching existing additional company data:', fetchError);
+      throw new Error(fetchError.message);
+    }
+
+    if (existingRecord) {
+      // Update existing record
+      const { error } = await supabase
+        .from('company_additional_excel_data')
+        .update(row)
+        .eq('id', existingRecord.id);
+      if (error) {
+        console.error(`Error updating additional company data for company_id ${row.excel_company_id}:`, error);
+        throw new Error(error.message);
+      }
+    } else {
+      // Insert new record
+      const { error } = await supabase
+        .from('company_additional_excel_data')
+        .insert(row);
+      if (error) {
+        console.error(`Error inserting additional company data for company_id ${row.excel_company_id}:`, error);
+        throw new Error(error.message);
+      }
+    }
   }
 }
