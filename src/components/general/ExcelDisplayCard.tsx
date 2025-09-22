@@ -15,12 +15,14 @@ const ExcelDisplayCard: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [excelData, setExcelData] = useState<Record<string, any>[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
+  const [rowCount, setRowCount] = useState<number>(0); // New state for row count
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       setSelectedFile(event.target.files[0]);
       setExcelData([]); // Clear previous data
       setHeaders([]); // Clear previous headers
+      setRowCount(0); // Reset row count
     } else {
       setSelectedFile(null);
     }
@@ -38,15 +40,18 @@ const ExcelDisplayCard: React.FC = () => {
       if (data.length > 0) {
         setHeaders(Object.keys(data[0]));
         setExcelData(data);
-        showSuccess("Ficheiro Excel carregado e exibido com sucesso!");
+        setRowCount(data.length); // Set row count
+        showSuccess(`Ficheiro Excel carregado e exibido com sucesso! ${data.length} linhas encontradas.`);
       } else {
         showError("O ficheiro Excel está vazio ou não contém dados válidos.");
         setHeaders([]);
         setExcelData([]);
+        setRowCount(0); // Reset row count
       }
     } catch (error: any) {
       console.error("Erro ao carregar ou analisar o ficheiro Excel:", error);
       showError(error.message || "Falha ao carregar ou analisar o ficheiro Excel.");
+      setRowCount(0); // Reset row count on error
     } finally {
       setIsProcessing(false);
     }
@@ -75,6 +80,12 @@ const ExcelDisplayCard: React.FC = () => {
             )}
           </Button>
         </div>
+
+        {rowCount > 0 && ( // Display row count if greater than 0
+          <p className="text-sm text-muted-foreground">
+            Total de linhas carregadas: <span className="font-semibold">{rowCount}</span>
+          </p>
+        )}
 
         {excelData.length > 0 && (
           <ScrollArea className="h-[400px] w-full border rounded-md">
