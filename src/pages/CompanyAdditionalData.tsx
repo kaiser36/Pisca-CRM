@@ -15,6 +15,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import CompanyAdditionalList from '@/components/company-additional-data/CompanyAdditionalList';
 import CompanyAdditionalDetailCard from '@/components/company-additional-data/CompanyAdditionalDetailCard';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { useDebounce } from '@/hooks/use-debounce'; // Importar o hook useDebounce
 
 const CompanyAdditionalData: React.FC = () => {
   const [companies, setCompanies] = useState<CompanyAdditionalExcelData[]>([]);
@@ -23,6 +24,7 @@ const CompanyAdditionalData: React.FC = () => {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [isCompanyListCollapsed, setIsCompanyListCollapsed] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500); // Aplicar debounce ao termo de pesquisa
   const [userId, setUserId] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
@@ -58,8 +60,8 @@ const CompanyAdditionalData: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      console.log(`Attempting to fetch additional company data for userId: ${userId}, page: ${currentPage}, pageSize: ${pageSize}, searchTerm: ${searchTerm}`);
-      const { data: additionalData, totalCount } = await fetchCompanyAdditionalExcelData(userId, currentPage, pageSize, searchTerm); // Pass searchTerm
+      console.log(`Attempting to fetch additional company data for userId: ${userId}, page: ${currentPage}, pageSize: ${pageSize}, searchTerm: ${debouncedSearchTerm}`);
+      const { data: additionalData, totalCount } = await fetchCompanyAdditionalExcelData(userId, currentPage, pageSize, debouncedSearchTerm); // Usar debouncedSearchTerm
       setTotalCompanies(totalCount);
 
       // Extract excel_company_ids from the currently paginated additional data
@@ -86,7 +88,7 @@ const CompanyAdditionalData: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, currentPage, pageSize, searchTerm]); // Add searchTerm to dependencies
+  }, [userId, currentPage, pageSize, debouncedSearchTerm]); // Depender de debouncedSearchTerm
 
   useEffect(() => {
     if (userId) {
@@ -179,7 +181,7 @@ const CompanyAdditionalData: React.FC = () => {
                 onSelectCompany={setSelectedCompanyId}
                 selectedCompanyId={selectedCompanyId}
                 searchTerm={searchTerm}
-                onSearchChange={handleSearchChange} // Use the new handler
+                onSearchChange={handleSearchChange}
               />
               {/* Add pagination for mobile */}
               {totalPages > 1 && (
@@ -228,7 +230,7 @@ const CompanyAdditionalData: React.FC = () => {
                     onSelectCompany={setSelectedCompanyId}
                     selectedCompanyId={selectedCompanyId}
                     searchTerm={searchTerm}
-                    onSearchChange={handleSearchChange} // Use the new handler
+                    onSearchChange={handleSearchChange}
                   />
                   {/* Add pagination for desktop */}
                   {totalPages > 1 && (
