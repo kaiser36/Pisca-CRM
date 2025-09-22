@@ -15,7 +15,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import CompanyAdditionalList from '@/components/company-additional-data/CompanyAdditionalList';
 import CompanyAdditionalDetailCard from '@/components/company-additional-data/CompanyAdditionalDetailCard';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { useDebounce } from '@/hooks/use-debounce'; // Importar o hook useDebounce
+import { useDebounce } from '@/hooks/use-debounce';
 
 const CompanyAdditionalData: React.FC = () => {
   const [companies, setCompanies] = useState<CompanyAdditionalExcelData[]>([]);
@@ -24,7 +24,7 @@ const CompanyAdditionalData: React.FC = () => {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [isCompanyListCollapsed, setIsCompanyListCollapsed] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearchTerm = useDebounce(searchTerm, 500); // Aplicar debounce ao termo de pesquisa
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [userId, setUserId] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
@@ -32,6 +32,9 @@ const CompanyAdditionalData: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(25);
   const [totalCompanies, setTotalCompanies] = useState(0);
+
+  // Determine if a search is actively happening (after debounce, before results)
+  const isSearching = isLoading && searchTerm !== '';
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -61,13 +64,11 @@ const CompanyAdditionalData: React.FC = () => {
     setError(null);
     try {
       console.log(`Attempting to fetch additional company data for userId: ${userId}, page: ${currentPage}, pageSize: ${pageSize}, searchTerm: ${debouncedSearchTerm}`);
-      const { data: additionalData, totalCount } = await fetchCompanyAdditionalExcelData(userId, currentPage, pageSize, debouncedSearchTerm); // Usar debouncedSearchTerm
+      const { data: additionalData, totalCount } = await fetchCompanyAdditionalExcelData(userId, currentPage, pageSize, debouncedSearchTerm);
       setTotalCompanies(totalCount);
 
-      // Extract excel_company_ids from the currently paginated additional data
       const excelCompanyIds = additionalData.map(company => company.excel_company_id);
 
-      // Fetch only the CRM companies that match the excel_company_ids on the current page
       const crmCompanies = await fetchCompaniesByExcelCompanyIds(userId, excelCompanyIds); 
       const crmCompaniesMap = new Map<string, Company>();
       crmCompanies.forEach(company => {
@@ -88,7 +89,7 @@ const CompanyAdditionalData: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, currentPage, pageSize, debouncedSearchTerm]); // Depender de debouncedSearchTerm
+  }, [userId, currentPage, pageSize, debouncedSearchTerm]);
 
   useEffect(() => {
     if (userId) {
@@ -98,8 +99,8 @@ const CompanyAdditionalData: React.FC = () => {
 
   const handleSearchChange = (term: string) => {
     setSearchTerm(term);
-    setCurrentPage(1); // Reset to first page on new search
-    setSelectedCompanyId(null); // Clear selection on new search
+    setCurrentPage(1);
+    setSelectedCompanyId(null);
   };
 
   const selectedCompany = React.useMemo(() => {
@@ -119,11 +120,11 @@ const CompanyAdditionalData: React.FC = () => {
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
-      setSelectedCompanyId(null); // Clear selection when changing page
+      setSelectedCompanyId(null);
     }
   };
 
-  if (isLoading) {
+  if (isLoading && searchTerm === '') { // Only show full skeleton if initial load and no search term
     return (
       <Layout>
         <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[calc(100vh-var(--header-height)-var(--footer-height))]">
@@ -182,6 +183,7 @@ const CompanyAdditionalData: React.FC = () => {
                 selectedCompanyId={selectedCompanyId}
                 searchTerm={searchTerm}
                 onSearchChange={handleSearchChange}
+                isSearching={isSearching}
               />
               {/* Add pagination for mobile */}
               {totalPages > 1 && (
@@ -231,6 +233,7 @@ const CompanyAdditionalData: React.FC = () => {
                     selectedCompanyId={selectedCompanyId}
                     searchTerm={searchTerm}
                     onSearchChange={handleSearchChange}
+                    isSearching={isSearching}
                   />
                   {/* Add pagination for desktop */}
                   {totalPages > 1 && (
