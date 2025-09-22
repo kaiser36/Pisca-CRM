@@ -20,15 +20,26 @@ export async function fetchCompaniesWithStands(userId: string): Promise<Company[
 
   const companyIds = companiesData.map(c => c.id);
 
-  const { data: standsData, error: standsError } = await supabase
-    .from('stands')
-    .select('*')
-    .in('company_db_id', companyIds);
+  let allStandsData: any[] = [];
+  const BATCH_SIZE = 50; // Fetch stands in batches of 50 company IDs to avoid URI Too Long error
 
-  if (standsError) {
-    console.error('Error fetching stands:', standsError);
-    throw new Error(standsError.message);
+  for (let i = 0; i < companyIds.length; i += BATCH_SIZE) {
+    const batchIds = companyIds.slice(i, i + BATCH_SIZE);
+    if (batchIds.length === 0) continue;
+
+    const { data: batchStandsData, error: batchStandsError } = await supabase
+      .from('stands')
+      .select('*')
+      .in('company_db_id', batchIds);
+
+    if (batchStandsError) {
+      console.error('Error fetching stands in batch:', batchStandsError);
+      throw new Error(batchStandsError.message);
+    }
+    allStandsData = allStandsData.concat(batchStandsData);
   }
+
+  const standsData = allStandsData;
 
   const companiesMap = new Map<string, Company>();
   companiesData.forEach(company => {
