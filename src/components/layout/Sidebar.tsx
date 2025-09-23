@@ -4,7 +4,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2, UserCog, Info, Users } from 'lucide-react';
+import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2, UserCog, Info, Users, Package } from 'lucide-react'; // Added Package icon
 import {
   Accordion,
   AccordionContent,
@@ -25,7 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const [accordionValue, setAccordionValue] = React.useState<string | undefined>(undefined);
 
   React.useEffect(() => {
-    if (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view')) {
+    if (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view') || isPathActive('/products')) { // Updated to include /products
       setAccordionValue('settings-accordion');
     } else {
       setAccordionValue(undefined);
@@ -91,7 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             <AccordionTrigger className={cn(
               "flex items-center w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground py-2 px-4 rounded-md transition-colors",
               isCollapsed ? "px-2" : "px-4",
-              (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view')) && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+              (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view') || isPathActive('/products')) && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90" // Updated condition
             )}>
               <Settings className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
               {!isCollapsed && "Configurações"}
@@ -137,6 +137,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 >
                   <UserCog className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
                   {!isCollapsed && "AM"}
+                </Button>
+              </Link>
+              <Link to="/products"> {/* New submenu item */}
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    isCollapsed ? "px-2" : "px-4",
+                    "pl-8",
+                    isActive('/products') && "bg-sidebar-accent text-sidebar-accent-foreground"
+                  )}
+                >
+                  <Package className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} /> {/* Icon for products */}
+                  {!isCollapsed && "Produtos"}
                 </Button>
               </Link>
             </AccordionContent>
