@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, ChevronLeft, ChevronRight, ArrowLeft, Building2 } from 'lucide-react';
+import { Terminal, ChevronLeft, ChevronRight, ArrowLeft, PlusCircle } from 'lucide-react'; // Adicionado PlusCircle
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -16,6 +16,8 @@ import CompanyAdditionalList from '@/components/company-additional-data/CompanyA
 import CompanyAdditionalDetailCard from '@/components/company-additional-data/CompanyAdditionalDetailCard';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useDebounce } from '@/hooks/use-debounce';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'; // Importar Dialog components
+import CompanyAdditionalCreateForm from '@/components/company-additional-data/CompanyAdditionalCreateForm'; // Importar o novo formulário
 
 const CompanyAdditionalData: React.FC = () => {
   const [companies, setCompanies] = useState<CompanyAdditionalExcelData[]>([]);
@@ -27,6 +29,7 @@ const CompanyAdditionalData: React.FC = () => {
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [userId, setUserId] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false); // Estado para o diálogo de criação
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -176,7 +179,28 @@ const CompanyAdditionalData: React.FC = () => {
           ) : (
             // Show Company List on mobile
             <div className="flex flex-col h-full">
-              <h2 className="text-xl font-semibold mb-4">Empresas Adicionais ({totalCompanies})</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">Empresas Adicionais ({totalCompanies})</h2>
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="ml-2">
+                      <PlusCircle className="mr-2 h-4 w-4" /> Criar
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Criar Nova Empresa Adicional</DialogTitle>
+                    </DialogHeader>
+                    <CompanyAdditionalCreateForm
+                      onSave={() => {
+                        setIsCreateDialogOpen(false);
+                        loadCompanies(); // Recarregar dados após a criação
+                      }}
+                      onCancel={() => setIsCreateDialogOpen(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
               <CompanyAdditionalList
                 companies={companies}
                 onSelectCompany={setSelectedCompanyId}
@@ -221,9 +245,30 @@ const CompanyAdditionalData: React.FC = () => {
             )}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold">Empresas Adicionais ({totalCompanies})</h2>
-                <Button variant="ghost" size="icon" onClick={toggleCompanyList} className="ml-2">
-                  {isCompanyListCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-                </Button>
+                <div className="flex items-center">
+                  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="ml-2">
+                        <PlusCircle className="mr-2 h-4 w-4" /> Criar
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Criar Nova Empresa Adicional</DialogTitle>
+                      </DialogHeader>
+                      <CompanyAdditionalCreateForm
+                        onSave={() => {
+                          setIsCreateDialogOpen(false);
+                          loadCompanies(); // Recarregar dados após a criação
+                        }}
+                        onCancel={() => setIsCreateDialogOpen(false)}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                  <Button variant="ghost" size="icon" onClick={toggleCompanyList} className="ml-2">
+                    {isCompanyListCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+                  </Button>
+                </div>
               </div>
               {!isCompanyListCollapsed && (
                 <>
