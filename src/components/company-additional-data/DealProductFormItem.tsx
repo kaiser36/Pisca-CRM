@@ -29,7 +29,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
   initialDiscountType,
   initialDiscountValue,
 }) => {
-  console.log(`[DealProductFormItem ${index}] Render start. Initial Product ID: ${initialProductId}`);
+  console.log(`[DealProductFormItem ${index}] Re-render`);
   const { watch, setValue, formState: { errors } } = useFormContext(); // Get errors from context
 
   const selectedProductId = watch(`deal_products.${index}.product_id`);
@@ -162,7 +162,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
               <SelectItem value="no-products-available" disabled>Nenhum produto disponível</SelectItem>
             ) : (
               filteredProducts.map(product => (
-                <SelectItem key={product.id} value={product.id!}>{product.produto}</SelectItem>
+                <SelectItem key={product.id} value={product.id}>{product.produto}</SelectItem>
               ))
             )}
           </SelectContent>

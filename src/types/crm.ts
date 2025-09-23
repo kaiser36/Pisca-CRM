@@ -233,7 +233,7 @@ export interface Negocio {
 }
 
 export interface Product {
-  id?: string;
+  id: string; // Changed from optional to required
   user_id: string;
   categoria?: string | null;
   produto: string;

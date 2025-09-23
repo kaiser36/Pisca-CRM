@@ -70,6 +70,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commercialName, onSave, onCancel }) => {
+  console.log("[DealCreateForm] Re-render");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -169,6 +170,12 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
   const onSubmit = async (values: FormData) => {
     if (!userId) {
       showError("Utilizador não autenticado. Por favor, faça login para criar o negócio.");
+      return;
+    }
+
+    if (Object.keys(errors).length > 0) {
+      console.error("Form validation errors:", errors); // Add this line
+      showError("Por favor, corrija os erros no formulário.");
       return;
     }
 
