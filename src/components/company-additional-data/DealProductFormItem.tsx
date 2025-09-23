@@ -43,30 +43,31 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
 
-  // Effect 1: Initialize form fields and category based on initialProductId
+  // Effect 1: Initialize form fields (runs once on mount or when initial props change)
   useEffect(() => {
     console.log(`[DealProductFormItem ${index}] Effect 1: Initializing fields.`);
-    setValue(`deal_products.${index}.product_id`, initialProductId || '');
-    setValue(`deal_products.${index}.quantity`, initialQuantity || 1);
-    setValue(`deal_products.${index}.discount_type`, initialDiscountType || 'none');
-    setValue(`deal_products.${index}.discount_value`, initialDiscountValue || 0);
+    setValue(`deal_products.${index}.product_id`, initialProductId || '', { shouldDirty: true });
+    setValue(`deal_products.${index}.quantity`, initialQuantity || 1, { shouldDirty: true });
+    setValue(`deal_products.${index}.discount_type`, initialDiscountType || 'none', { shouldDirty: true });
+    setValue(`deal_products.${index}.discount_value`, initialDiscountValue || 0, { shouldDirty: true });
 
+    // Set initial product category if initialProductId is provided
     if (initialProductId) {
       const product = allProducts.find(p => p.id === initialProductId);
       if (product) {
-        setValue(`deal_products.${index}.product_category`, product.categoria || '');
+        setValue(`deal_products.${index}.product_category`, product.categoria || '', { shouldDirty: true });
         console.log(`[DealProductFormItem ${index}] Initial product found. Setting category: ${product.categoria}`);
       } else {
-        setValue(`deal_products.${index}.product_category`, '');
+        setValue(`deal_products.${index}.product_category`, '', { shouldDirty: true });
         console.log(`[DealProductFormItem ${index}] Initial product ID provided but product not found. Resetting category.`);
       }
     } else {
-      setValue(`deal_products.${index}.product_category`, '');
+      setValue(`deal_products.${index}.product_category`, '', { shouldDirty: true });
       console.log(`[DealProductFormItem ${index}] No initial product ID. Resetting category.`);
     }
-  }, [initialProductId, initialQuantity, initialDiscountType, initialDiscountValue, index, setValue, allProducts]);
+  }, [initialProductId, initialQuantity, initialDiscountType, initialDiscountValue, index, setValue, allProducts]); // allProducts is a dependency because initial product lookup depends on it
 
-  // Effect 2: Filter products based on selected category
+  // Effect 2: Filter products based on selected category (runs when productCategory or allProducts change)
   useEffect(() => {
     console.log(`[DealProductFormItem ${index}] Effect 2: Filtering products. Category: ${productCategory}, All Products Count: ${allProducts.length}`);
     if (productCategory) {
@@ -79,7 +80,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
     }
   }, [productCategory, allProducts, index]);
 
-  // Effect 3: Update current product details and calculate total_price_at_deal_time
+  // Effect 3: Update current product details and calculate total_price_at_deal_time (runs when product selection or quantity/discount changes)
   useEffect(() => {
     console.log(`[DealProductFormItem ${index}] Effect 3: Updating product details. Selected Product ID: ${selectedProductId}, Quantity: ${quantity}, Discount Type: ${discountType}, Discount Value: ${discountValue}`);
     const product = allProducts.find(p => p.id === selectedProductId);
@@ -96,14 +97,23 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
     }
     discountedProductLineTotal = Math.max(0, discountedProductLineTotal); // Ensure not negative
 
-    setValue(`deal_products.${index}.unit_price_at_deal_time`, calculatedUnitPrice);
-    setValue(`deal_products.${index}.total_price_at_deal_time`, discountedProductLineTotal);
-    setValue(`deal_products.${index}.product_name`, product?.produto || '');
-    setValue(`deal_products.${index}.product_category`, product?.categoria || ''); // Ensure category is set here too
+    // Only set these values if they are different to prevent unnecessary re-renders
+    if (watch(`deal_products.${index}.unit_price_at_deal_time`) !== calculatedUnitPrice) {
+      setValue(`deal_products.${index}.unit_price_at_deal_time`, calculatedUnitPrice, { shouldDirty: true });
+    }
+    if (watch(`deal_products.${index}.total_price_at_deal_time`) !== discountedProductLineTotal) {
+      setValue(`deal_products.${index}.total_price_at_deal_time`, discountedProductLineTotal, { shouldDirty: true });
+    }
+    if (watch(`deal_products.${index}.product_name`) !== (product?.produto || '')) {
+      setValue(`deal_products.${index}.product_name`, product?.produto || '', { shouldDirty: true });
+    }
+    // IMPORTANT: Do NOT set product_category here. It should be controlled by the Select component or Effect 1.
+    // setValue(`deal_products.${index}.product_category`, product?.categoria || ''); 
     
+    // Notify parent for re-calculation of overall deal value
     onProductChange(index, selectedProductId, quantity);
     console.log(`[DealProductFormItem ${index}] Calculated total price: ${discountedProductLineTotal}`);
-  }, [selectedProductId, quantity, discountType, discountValue, allProducts, index, setValue, onProductChange]);
+  }, [selectedProductId, quantity, discountType, discountValue, allProducts, index, setValue, onProductChange, watch]); // Added 'watch' to dependencies for comparison
 
   const productCategories = Array.from(new Set(allProducts.map(p => p.categoria).filter((cat): cat is string => cat !== null && cat.trim() !== '')));
   console.log(`[DealProductFormItem ${index}] Available product categories:`, productCategories);
@@ -115,8 +125,8 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
         <Select
           onValueChange={(value) => {
             console.log(`[DealProductFormItem ${index}] Category changed to: ${value}`);
-            setValue(`deal_products.${index}.product_category`, value);
-            setValue(`deal_products.${index}.product_id`, ''); // Reset product when category changes
+            setValue(`deal_products.${index}.product_category`, value, { shouldDirty: true });
+            setValue(`deal_products.${index}.product_id`, '', { shouldDirty: true }); // Reset product when category changes
           }}
           value={productCategory || ''} // Ensure value is always a string
         >
@@ -140,7 +150,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
         <Select
           onValueChange={(value) => {
             console.log(`[DealProductFormItem ${index}] Product changed to: ${value}`);
-            setValue(`deal_products.${index}.product_id`, value);
+            setValue(`deal_products.${index}.product_id`, value, { shouldDirty: true });
           }}
           value={selectedProductId || ''}
           disabled={!productCategory} // Disable if no category is selected
@@ -166,7 +176,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
           type="number"
           min="1"
           value={quantity || 1}
-          onChange={(e) => setValue(`deal_products.${index}.quantity`, Number(e.target.value))}
+          onChange={(e) => setValue(`deal_products.${index}.quantity`, Number(e.target.value), { shouldDirty: true })}
           disabled={!selectedProductId}
         />
       </div>
@@ -174,8 +184,8 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
         <Label htmlFor={`discount-type-${index}`}>Desc. Tipo</Label>
         <Select
           onValueChange={(value) => {
-            setValue(`deal_products.${index}.discount_type`, value);
-            if (value === 'none') setValue(`deal_products.${index}.discount_value`, 0);
+            setValue(`deal_products.${index}.discount_type`, value, { shouldDirty: true });
+            if (value === 'none') setValue(`deal_products.${index}.discount_value`, 0, { shouldDirty: true });
           }}
           value={discountType || 'none'}
           disabled={!selectedProductId}
@@ -197,7 +207,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
           type="number"
           min="0"
           value={discountValue || 0}
-          onChange={(e) => setValue(`deal_products.${index}.discount_value`, Number(e.target.value))}
+          onChange={(e) => setValue(`deal_products.${index}.discount_value`, Number(e.target.value), { shouldDirty: true })}
           disabled={!selectedProductId || discountType === 'none'}
         />
       </div>
