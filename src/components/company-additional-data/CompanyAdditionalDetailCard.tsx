@@ -77,7 +77,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
       <Card className="w-full shadow-md">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <CardTitle className="text-2xl font-bold">{company["Nome Comercial"] || "N/A"}</CardTitle>
+            <CardTitle className="text-2xl font-bold">{company["Nome Comercial"] || company.crmCompany?.Company_Name || "N/A"}</CardTitle>
             <div className="flex flex-wrap gap-2">
               <Dialog open={isCreateContactDialogOpen} onOpenChange={setIsCreateContactDialogOpen}>
                 <DialogTrigger asChild>
@@ -151,87 +151,43 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
               <TabsTrigger value="easyvistas">Easyvistas</TabsTrigger>
             </TabsList>
             <TabsContent value="details" className="mt-4 space-y-6"> {/* Increased spacing */}
-              {company.crmCompany && (
-                <>
-                  <h3 className="text-lg font-semibold text-primary mb-4">Informações do CRM Principal</h3>
-                  <Accordion type="multiple" className="w-full space-y-4">
-                    <AccordionItem value="crm-basic-info" className="border rounded-md shadow-sm">
-                      <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                        <div className="flex items-center">
-                          <Building className="mr-2 h-5 w-5 text-muted-foreground" />
-                          Informações Básicas
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {renderField(Building, "Nome da Empresa (CRM)", company.crmCompany.Company_Name)}
-                        {renderField(Landmark, "NIF (CRM)", company.crmCompany.NIF)}
-                        {renderField(Mail, "Email da Empresa (CRM)", company.crmCompany.Company_Email)}
-                        {renderField(User, "Pessoa de Contacto (CRM)", company.crmCompany.Company_Contact_Person)}
-                        {renderField(Globe, "Website (CRM)", company.crmCompany.Website)}
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="crm-financial-plan" className="border rounded-md shadow-sm">
-                      <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                        <div className="flex items-center">
-                          <DollarSign className="mr-2 h-5 w-5 text-muted-foreground" />
-                          Detalhes Financeiros e do Plano
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {renderField(Wallet, "Plafond (CRM)", company.crmCompany.Plafond)}
-                        {renderField(Briefcase, "Supervisor (CRM)", company.crmCompany.Supervisor)}
-                        {renderField(CheckCircle, "Parceiro Credibom (CRM)", company.crmCompany.Is_CRB_Partner)}
-                        {renderField(CheckCircle, "APDCA (CRM)", company.crmCompany.Is_APDCA_Partner)}
-                        {renderField(Package, "Último Plano (CRM)", company.crmCompany.Last_Plan)}
-                        {renderField(DollarSign, "Preço do Plano (CRM)", company.crmCompany.Plan_Price)}
-                        {renderField(CheckCircle, "Plano Ativo (CRM)", company.crmCompany.Plan_Active)}
-                        {renderField(Repeat, "Renovação Automática (CRM)", company.crmCompany.Plan_Auto_Renewal)}
-                        {renderField(TrendingUp, "Bumps Atuais (CRM)", company.crmCompany.Current_Bumps)}
-                        {renderField(TrendingUp, "Bumps Totais (CRM)", company.crmCompany.Total_Bumps)}
-                        {renderField(Car, "Simulador Financiamento (CRM)", company.crmCompany.Financing_Simulator_On)}
-                        {renderField(Car, "Cor do Simulador (CRM)", company.crmCompany.Simulator_Color)}
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="crm-dates" className="border rounded-md shadow-sm">
-                      <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                        <div className="flex items-center">
-                          <Calendar className="mr-2 h-5 w-5 text-muted-foreground" />
-                          Datas Importantes
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {renderField(Calendar, "Data de Criação (CRM)", company.crmCompany.Creation_Date)}
-                        {renderField(Clock, "Último Login (CRM)", company.crmCompany.Last_Login_Date)}
-                        {renderField(Calendar, "Expiração do Plano (CRM)", company.crmCompany.Plan_Expiration_Date)}
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                  <Separator className="my-6" />
-                </>
-              )}
-
-              <h3 className="text-lg font-semibold text-primary mb-4">Dados Adicionais do Excel</h3>
               <Accordion type="multiple" className="w-full space-y-4">
-                <AccordionItem value="additional-general-info" className="border rounded-md shadow-sm">
+                <AccordionItem value="essential-info" className="border rounded-md shadow-sm">
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
                     <div className="flex items-center">
                       <Info className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Informações Gerais
+                      Informações Essenciais da Empresa
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderField(Building, "Nome Fiscal", company.crmCompany?.Company_Name)}
                     {renderField(Building, "Nome Comercial", company["Nome Comercial"])}
-                    {renderField(Mail, "Email da empresa", company["Email da empresa"])}
-                    {renderField(MapPin, "Morada", company["Morada"])}
-                    {renderField(MapPin, "Código Postal do Stand", company["STAND_POSTAL_CODE"])}
-                    {renderField(MapPin, "Distrito", company["Distrito"])}
-                    {renderField(MapPin, "Cidade", company["Cidade"])}
+                    {renderField(Landmark, "NIF", company.crmCompany?.NIF)}
+                    {renderField(Mail, "Email Principal", company["Email da empresa"] || company.crmCompany?.Company_Email)}
+                    {renderField(Globe, "Website", company["Site"] || company.crmCompany?.Website)}
+                    {renderField(Car, "Logotipo (URL)", company["Logotipo"])}
+                    {renderField(Building, "Tipo de Empresa", company["Tipo de empresa"])}
+                    {renderField(Factory, "Grupo", company["Grupo"])}
+                    {renderField(Tag, "Marcas Representadas", company["Marcas representadas"])}
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="additional-account-management" className="border rounded-md shadow-sm">
+                <AccordionItem value="location-address" className="border rounded-md shadow-sm">
+                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
+                    <div className="flex items-center">
+                      <MapPin className="mr-2 h-5 w-5 text-muted-foreground" />
+                      Localização e Morada
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderField(MapPin, "Morada", company["Morada"] || company.crmCompany?.Company_Address)}
+                    {renderField(MapPin, "Código Postal", company["STAND_POSTAL_CODE"] || company.crmCompany?.Company_Postal_Code)}
+                    {renderField(MapPin, "Distrito", company["Distrito"] || company.crmCompany?.District)}
+                    {renderField(MapPin, "Cidade", company["Cidade"] || company.crmCompany?.Company_City)}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="account-management" className="border rounded-md shadow-sm">
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
                     <div className="flex items-center">
                       <User className="mr-2 h-5 w-5 text-muted-foreground" />
@@ -239,35 +195,60 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderField(User, "Pessoa de Contacto (CRM)", company.crmCompany?.Company_Contact_Person)}
+                    {renderField(Briefcase, "Supervisor (CRM)", company.crmCompany?.Supervisor)}
                     {renderField(User, "AM Antigo", company["AM_OLD"])}
                     {renderField(User, "AM Atual", company["AM"])}
+                    {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="additional-stock-api" className="border rounded-md shadow-sm">
+                <AccordionItem value="stock-api" className="border rounded-md shadow-sm">
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
                     <div className="flex items-center">
                       <Package className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Stock e API
+                      Dados de Stock e API
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Package, "Stock STV", company["Stock STV"])}
-                    {renderField(Info, "API", company["API"])}
-                    {renderField(Package, "Stock na empresa", company["Stock na empresa"])}
+                    {renderField(Package, "Stock STV", company["Stock STV"] || company.crmCompany?.Stock_STV)}
+                    {renderField(Package, "Stock na Empresa", company["Stock na empresa"] || company.crmCompany?.Company_Stock)}
+                    {renderField(Info, "API Info", company["API"] || company.crmCompany?.Company_API_Info)}
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="additional-marketing-sales" className="border rounded-md shadow-sm">
+                <AccordionItem value="plan-financing" className="border rounded-md shadow-sm">
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
                     <div className="flex items-center">
-                      <TrendingUp className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Marketing e Vendas
+                      <DollarSign className="mr-2 h-5 w-5 text-muted-foreground" />
+                      Detalhes do Plano e Financiamento
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Globe, "Site", company["Site"])}
-                    {renderField(Car, "Logotipo", company["Logotipo"])}
+                    {renderField(Wallet, "Plafond", company.crmCompany?.Plafond)}
+                    {renderField(Package, "Último Plano", company["Plano Indicado"] || company.crmCompany?.Last_Plan)}
+                    {renderField(DollarSign, "Preço do Plano", company.crmCompany?.Plan_Price)}
+                    {renderField(Calendar, "Expiração do Plano", company.crmCompany?.Plan_Expiration_Date)}
+                    {renderField(CheckCircle, "Plano Ativo", company.crmCompany?.Plan_Active)}
+                    {renderField(Repeat, "Renovação Automática", company.crmCompany?.Plan_Auto_Renewal)}
+                    {renderField(TrendingUp, "Bumps Atuais", company.crmCompany?.Current_Bumps)}
+                    {renderField(TrendingUp, "Bumps Totais", company.crmCompany?.Total_Bumps)}
+                    {renderField(Banknote, "Mediador de Crédito", company["Mediador de credito"])}
+                    {renderField(LinkIcon, "Link Banco de Portugal", company["Link do Banco de Portugal"])}
+                    {renderField(ShieldCheck, "Financeiras com Acordo", company["Financeiras com acordo"])}
+                    {renderField(Car, "Simulador Financiamento", company.crmCompany?.Financing_Simulator_On)}
+                    {renderField(Car, "Cor do Simulador", company.crmCompany?.Simulator_Color)}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="marketing-competition" className="border rounded-md shadow-sm">
+                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
+                    <div className="flex items-center">
+                      <TrendingUp className="mr-2 h-5 w-5 text-muted-foreground" />
+                      Marketing e Concorrência
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField(Tag, "Classificação", company["Classificação"])}
                     {renderField(TrendingUp, "Percentagem de Importados", company["Percentagem de Importados"])}
                     {renderField(Car, "Onde compra as viaturas", company["Onde compra as viaturas"])}
@@ -277,40 +258,10 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                     {renderField(Building, "Mercado B2B", company["Mercado b2b"])}
                     {renderField(ShieldCheck, "Utiliza CRM", company["Utiliza CRM"])}
                     {renderField(Info, "Qual o CRM", company["Qual o CRM"])}
-                    {renderField(Package, "Plano Indicado", company["Plano Indicado"])}
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="additional-financing-legal" className="border rounded-md shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
-                      <Banknote className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Financiamento e Legal
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Banknote, "Mediador de Crédito", company["Mediador de credito"])}
-                    {renderField(LinkIcon, "Link do Banco de Portugal", company["Link do Banco de Portugal"])}
-                    {renderField(ShieldCheck, "Financeiras com Acordo", company["Financeiras com acordo"])}
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="additional-visits-group" className="border rounded-md shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
-                      <Factory className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Visitas e Grupo
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
-                    {renderField(Factory, "Grupo", company["Grupo"])}
-                    {renderField(Tag, "Marcas Representadas", company["Marcas representadas"])}
-                    {renderField(Building, "Tipo de Empresa", company["Tipo de empresa"])}
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="additional-partnerships-other" className="border rounded-md shadow-sm">
+                <AccordionItem value="partnerships-other" className="border rounded-md shadow-sm">
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
                     <div className="flex items-center">
                       <ShieldCheck className="mr-2 h-5 w-5 text-muted-foreground" />
@@ -318,9 +269,24 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderField(CheckCircle, "Parceiro Credibom (CRM)", company.crmCompany?.Is_CRB_Partner)}
+                    {renderField(CheckCircle, "Parceiro APDCA (CRM)", company.crmCompany?.Is_APDCA_Partner)}
                     {renderField(ShieldCheck, "Quer CT", company["Quer CT"])}
-                    {renderField(ShieldCheck, "Quer ser Parceiro Credibom", company["Quer ser parceiro Credibom"])}
+                    {renderField(ShieldCheck, "Quer ser Parceiro Credibom (Adicional)", company["Quer ser parceiro Credibom"])}
                     {renderField(Info, "Autobiz", company["Autobiz"])}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="important-dates" className="border rounded-md shadow-sm">
+                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
+                    <div className="flex items-center">
+                      <Calendar className="mr-2 h-5 w-5 text-muted-foreground" />
+                      Datas Importantes
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderField(Calendar, "Data de Criação (CRM)", company.crmCompany?.Creation_Date)}
+                    {renderField(Clock, "Último Login (CRM)", company.crmCompany?.Last_Login_Date)}
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
