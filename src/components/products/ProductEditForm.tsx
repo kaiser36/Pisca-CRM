@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/ui/input'; // Corrected: changed '=' to 'from'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -117,7 +117,7 @@ const ProductEditForm: React.FC<ProductEditFormProps> = ({ product, onSave, onCa
   };
 
   const fields: FormFieldConfig[] = [
-    { name: "categoria", label: "Categoria", type: "text" },
+    { name: "categoria", label: "Categoria", type: "select", options: ["Extras", "Planos"] },
     { name: "produto", label: "Produto", type: "text", required: true },
     { name: "unidade", label: "Unidade", type: "text" },
     { name: "preco_unitario", label: "Preço Unitário", type: "number" },
