@@ -20,11 +20,13 @@ export async function fetchCompaniesMissingAdditionalData(userId: string): Promi
   }
 
   // The RPC function returns an array of objects, each with a key matching the function name.
-  // We need to extract the UUIDs from these objects.
-  const missingCompanyDbIds = companyIdsData.map((row: { get_companies_missing_additional_data: string }) => row.get_companies_missing_additional_data);
+  // We need to extract the UUIDs from these objects and filter out any invalid values.
+  const missingCompanyDbIds = companyIdsData
+    .map((row: { get_companies_missing_additional_data: string | null | undefined }) => row.get_companies_missing_additional_data)
+    .filter((id): id is string => typeof id === 'string' && id.trim() !== ''); // Filter out null, undefined, and empty strings
 
   if (missingCompanyDbIds.length === 0) {
-    return []; // No companies missing additional data
+    return []; // No companies missing additional data or no valid IDs returned
   }
 
   // Now fetch the full company details for these IDs
