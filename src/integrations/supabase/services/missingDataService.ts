@@ -11,26 +11,42 @@ export async function fetchCompaniesMissingAdditionalData(userId: string): Promi
     throw new Error("User ID is required to fetch missing additional data.");
   }
 
-  const { data, error } = await supabase
+  // Step 1: Fetch all emails from company_additional_excel_data for the current user
+  const { data: additionalEmailsData, error: additionalEmailsError } = await supabase
+    .from('company_additional_excel_data')
+    .select('"Email da empresa"')
+    .eq('user_id', userId);
+
+  if (additionalEmailsError) {
+    console.error('Error fetching additional company emails:', additionalEmailsError);
+    throw new Error(additionalEmailsError.message);
+  }
+
+  const existingAdditionalEmails = additionalEmailsData
+    .map(row => row['Email da empresa'])
+    .filter((email): email is string => typeof email === 'string' && email.length > 0);
+
+  // Step 2: Fetch companies from the main 'companies' table that are NOT in the list of existing additional emails
+  let query = supabase
     .from('companies')
     .select('*')
-    .eq('user_id', userId)
-    .not(
-      'company_email',
-      'in',
-      supabase
-        .from('company_additional_excel_data')
-        .select('"Email da empresa"')
-        .eq('user_id', userId)
-    );
+    .eq('user_id', userId);
 
-  if (error) {
-    console.error('Error fetching companies missing additional data:', error);
-    throw new Error(error.message);
+  if (existingAdditionalEmails.length > 0) {
+    query = query.not('company_email', 'in', existingAdditionalEmails);
+  }
+  // If existingAdditionalEmails is empty, it means no additional data exists, so all companies are "missing"
+  // The query will naturally return all companies for the user in this case.
+
+  const { data: companiesData, error: companiesError } = await query;
+
+  if (companiesError) {
+    console.error('Error fetching companies missing additional data:', companiesError);
+    throw new Error(companiesError.message);
   }
 
   // Map Supabase data to Company type
-  return data.map(company => ({
+  return companiesData.map(company => ({
     Company_id: company.company_id,
     Company_Name: company.company_name,
     NIF: company.nif,
