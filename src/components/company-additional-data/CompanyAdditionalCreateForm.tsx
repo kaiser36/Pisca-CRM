@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { CompanyAdditionalExcelData } from '@/types/crm';
-import { upsertCompanyAdditionalExcelData } from '@/integrations/supabase/utils';
+import { CompanyAdditionalExcelData, Company as CrmCompanyType } from '@/types/crm'; // Renamed Company to CrmCompanyType to avoid conflict
+import { upsertCompanyAdditionalExcelData, fetchCompanyByEmail } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -15,6 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Switch } from '@/components/ui/switch';
 import { Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { useDebounce } from '@/hooks/use-debounce'; // Import useDebounce
 
 interface CompanyAdditionalCreateFormProps {
   onSave: () => void;
@@ -23,9 +24,9 @@ interface CompanyAdditionalCreateFormProps {
 
 // Define o esquema de validação com Zod
 const formSchema = z.object({
-  excel_company_id: z.string().min(1, "ID Excel da empresa é obrigatório."),
+  // excel_company_id will be generated, not directly input
   "Nome Comercial": z.string().nullable().optional(),
-  "Email da empresa": z.string().email("Email inválido").nullable().optional().or(z.literal('')),
+  "Email da empresa": z.string().email("Email inválido").min(1, "Email da empresa é obrigatório para gerar o ID.").nullable().optional().or(z.literal('')), // This will be used for lookup
   "STAND_POSTAL_CODE": z.string().nullable().optional(),
   "Distrito": z.string().nullable().optional(),
   "Cidade": z.string().nullable().optional(),
@@ -79,29 +80,13 @@ type FormData = z.infer<typeof formSchema>;
 const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = ({ onSave, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-      } else {
-        setUserId(null);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const [generatedExcelCompanyId, setGeneratedExcelCompanyId] = useState<string | null>(null);
+  const [isProvisional, setIsProvisional] = useState(false);
+  const [isLookingUpEmail, setIsLookingUpEmail] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      excel_company_id: '',
       "Nome Comercial": '',
       "Email da empresa": '',
       "STAND_POSTAL_CODE": '',
@@ -138,9 +123,72 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
     },
   });
 
+  const companyEmail = form.watch("Email da empresa");
+  const debouncedCompanyEmail = useDebounce(companyEmail, 700); // Debounce email input
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      } else {
+        setUserId(null);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const generateProvisionalId = useCallback(() => {
+    const timestamp = Date.now();
+    return `P-${timestamp}`;
+  }, []);
+
+  useEffect(() => {
+    const lookupCompanyId = async () => {
+      if (!userId || !debouncedCompanyEmail || !z.string().email().safeParse(debouncedCompanyEmail).success) {
+        setGeneratedExcelCompanyId(generateProvisionalId());
+        setIsProvisional(true);
+        return;
+      }
+
+      setIsLookingUpEmail(true);
+      try {
+        const crmCompany = await fetchCompanyByEmail(userId, debouncedCompanyEmail);
+        if (crmCompany) {
+          setGeneratedExcelCompanyId(crmCompany.Company_id);
+          setIsProvisional(false);
+          showSuccess(`Email encontrado no CRM. ID da Empresa: ${crmCompany.Company_id}`);
+        } else {
+          setGeneratedExcelCompanyId(generateProvisionalId());
+          setIsProvisional(true);
+          showError("Email não encontrado no CRM. Gerado ID provisório.");
+        }
+      } catch (err: any) {
+        console.error("Error during email lookup:", err);
+        showError(err.message || "Erro ao procurar email no CRM.");
+        setGeneratedExcelCompanyId(generateProvisionalId());
+        setIsProvisional(true);
+      } finally {
+        setIsLookingUpEmail(false);
+      }
+    };
+
+    lookupCompanyId();
+  }, [userId, debouncedCompanyEmail, generateProvisionalId]);
+
   const onSubmit = async (values: FormData) => {
     if (!userId) {
       showError("Utilizador não autenticado. Por favor, faça login para criar a empresa.");
+      return;
+    }
+    if (!generatedExcelCompanyId) {
+      showError("Não foi possível gerar um ID para a empresa. Por favor, insira um email válido e tente novamente.");
       return;
     }
 
@@ -148,7 +196,7 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
     try {
       const newCompanyData: CompanyAdditionalExcelData = {
         user_id: userId,
-        excel_company_id: values.excel_company_id,
+        excel_company_id: generatedExcelCompanyId, // Use the generated ID
         "Nome Comercial": values["Nome Comercial"],
         "Email da empresa": values["Email da empresa"],
         "STAND_POSTAL_CODE": values["STAND_POSTAL_CODE"],
@@ -196,9 +244,9 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
   };
 
   const fields = [
-    { name: "excel_company_id", label: "ID Excel da Empresa", type: "text", required: true },
+    // Removed excel_company_id from direct input
     { name: "Nome Comercial", label: "Nome Comercial", type: "text" },
-    { name: "Email da empresa", label: "Email da empresa", type: "email" },
+    { name: "Email da empresa", label: "Email da empresa", type: "email", required: true }, // Made email required for lookup
     { name: "STAND_POSTAL_CODE", label: "Código Postal do Stand", type: "text" },
     { name: "Distrito", label: "Distrito", type: "text" },
     { name: "Cidade", label: "Cidade", type: "text" },
@@ -236,6 +284,29 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Display generated Excel Company ID */}
+          <FormItem className="md:col-span-2">
+            <FormLabel>ID Excel da Empresa</FormLabel>
+            <div className="flex items-center">
+              <Input
+                value={generatedExcelCompanyId || 'A gerar...'}
+                readOnly
+                className={isProvisional ? "border-orange-500 text-orange-500" : ""}
+              />
+              {isLookingUpEmail && <Loader2 className="ml-2 h-4 w-4 animate-spin text-muted-foreground" />}
+            </div>
+            {isProvisional && (
+              <p className="text-sm text-orange-500 mt-1">
+                ID provisório gerado. O email não foi encontrado no CRM principal.
+              </p>
+            )}
+            {!generatedExcelCompanyId && !isLookingUpEmail && (
+              <p className="text-sm text-red-500 mt-1">
+                Por favor, insira um email válido para gerar o ID da empresa.
+              </p>
+            )}
+          </FormItem>
+
           {fields.map((field) => (
             <FormField
               key={field.name}
@@ -281,7 +352,7 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting || !userId}>
+          <Button type="submit" disabled={isSubmitting || !userId || !generatedExcelCompanyId}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

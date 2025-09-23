@@ -444,3 +444,81 @@ export async function updateCompanyAdditionalInfo(companyIdExcel: string, data: 
     throw new Error(error.message);
   }
 }
+
+/**
+ * Fetches a company by its email for a given user.
+ */
+export async function fetchCompanyByEmail(userId: string, email: string): Promise<Company | null> {
+  const { data, error } = await supabase
+    .from('companies')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('company_email', email)
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // PGRST116 means "no rows found"
+    console.error('Error fetching company by email:', error);
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  // Map Supabase data to Company type
+  return {
+    Company_id: data.company_id,
+    Company_Name: data.company_name,
+    NIF: data.nif,
+    Company_Email: data.company_email,
+    Company_Contact_Person: data.company_contact_person,
+    Website: data.website,
+    Plafond: data.plafond,
+    Supervisor: data.supervisor,
+    Is_CRB_Partner: data.is_crb_partner,
+    Is_APDCA_Partner: data.is_apdca_partner,
+    Creation_Date: data.creation_date,
+    Last_Login_Date: data.last_login_date,
+    Financing_Simulator_On: data.financing_simulator_on,
+    Simulator_Color: data.simulator_color,
+    Last_Plan: data.last_plan,
+    Plan_Price: data.plan_price,
+    Plan_Expiration_Date: data.plan_expiration_date,
+    Plan_Active: data.plan_active,
+    Plan_Auto_Renewal: data.plan_auto_renewal,
+    Current_Bumps: data.current_bumps,
+    Total_Bumps: data.total_bumps,
+    Commercial_Name: data.commercial_name,
+    Company_Postal_Code: data.company_postal_code,
+    District: data.district,
+    Company_City: data.company_city,
+    Company_Address: data.company_address,
+    AM_Old: data.am_old,
+    AM_Current: data.am_current,
+    Stock_STV: data.stock_stv,
+    Company_API_Info: data.company_api_info,
+    Company_Stock: data.company_stock,
+    Logo_URL: data.logo_url,
+    Classification: data.classification,
+    Imported_Percentage: data.imported_percentage,
+    Vehicle_Source: data.vehicle_source,
+    Competition: data.competition,
+    Social_Media_Investment: data.social_media_investment,
+    Portal_Investment: data.portal_investment,
+    B2B_Market: data.b2b_market,
+    Uses_CRM: data.uses_crm,
+    CRM_Software: data.crm_software,
+    Recommended_Plan: data.recommended_plan,
+    Credit_Mediator: data.credit_mediator,
+    Bank_Of_Portugal_Link: data.bank_of_portugal_link,
+    Financing_Agreements: data.financing_agreements,
+    Last_Visit_Date: data.last_visit_date,
+    Company_Group: data.company_group,
+    Represented_Brands: data.represented_brands,
+    Company_Type: data.company_type,
+    Wants_CT: data.wants_ct,
+    Wants_CRB_Partner: data.wants_crb_partner,
+    Autobiz_Info: data.autobiz_info,
+    stands: [] // Stands are not fetched by this function
+  };
+}
