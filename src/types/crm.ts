@@ -201,6 +201,7 @@ export interface Negocio {
   id?: string;
   user_id: string;
   company_excel_id: string;
+  commercial_name?: string | null; // Adicionado para exibir o nome comercial da empresa
   deal_name: string;
   deal_status?: string | null;
   deal_value?: number | null;

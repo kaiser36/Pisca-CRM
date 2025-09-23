@@ -2,17 +2,22 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { Negocio } from '@/types/crm';
-import { fetchDealsByCompanyExcelId } from '@/integrations/supabase/utils';
+import { fetchDealsByCompanyExcelId, updateDeal, deleteDeal } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { showError } from '@/utils/toast';
+import { showError, showSuccess } from '@/utils/toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Calendar, DollarSign, Tag, Info, MessageSquareText, Clock, TrendingUp, Handshake, Search, FileText, CheckCircle, XCircle } from 'lucide-react'; // Import new icons
+import { Terminal, Calendar, DollarSign, Tag, Info, MessageSquareText, Clock, TrendingUp, Handshake, Search, FileText, CheckCircle, XCircle, MoreHorizontal, Edit, Trash, ArrowLeft, ArrowRight, Building } from 'lucide-react'; // Added Building icon
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import DealEditForm from './DealEditForm';
 
 interface DealListProps {
   companyExcelId: string;
@@ -80,6 +85,8 @@ const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedDeal, setSelectedDeal] = useState<Negocio | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -143,25 +150,39 @@ const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
     return grouped;
   }, [deals]);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
-      </div>
-    );
-  }
+  const handleDelete = async (dealId: string) => {
+    try {
+      await deleteDeal(dealId);
+      showSuccess("Negócio eliminado com sucesso!");
+      loadDeals(); // Refresh the list
+    } catch (err: any) {
+      console.error("Erro ao eliminar negócio:", err);
+      showError(err.message || "Falha ao eliminar o negócio.");
+    }
+  };
 
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <Terminal className="h-4 w-4" />
-        <AlertTitle>Erro</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
-  }
+  const handleMoveDeal = async (deal: Negocio, direction: 'next' | 'prev') => {
+    const currentIndex = DEAL_STATUSES.indexOf(deal.deal_status || 'Prospecting');
+    let newIndex = -1;
+
+    if (direction === 'next') {
+      newIndex = currentIndex + 1;
+    } else {
+      newIndex = currentIndex - 1;
+    }
+
+    if (newIndex >= 0 && newIndex < DEAL_STATUSES.length) {
+      const newStatus = DEAL_STATUSES[newIndex];
+      try {
+        await updateDeal(deal.id!, { deal_status: newStatus });
+        showSuccess(`Negócio "${deal.deal_name}" movido para "${newStatus}" com sucesso!`);
+        loadDeals(); // Refresh the list
+      } catch (err: any) {
+        console.error("Erro ao mover negócio:", err);
+        showError(err.message || "Falha ao mover o negócio.");
+      }
+    }
+  };
 
   const renderDealCard = (deal: Negocio) => {
     const displayValue = (value: string | number | boolean | null | undefined, prefix: string = '', suffix: string = '') => {
@@ -170,13 +191,54 @@ const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
       return `${prefix}${String(value)}${suffix}`;
     };
 
+    const currentIndex = DEAL_STATUSES.indexOf(deal.deal_status || 'Prospecting');
+    const canMovePrev = currentIndex > 0;
+    const canMoveNext = currentIndex < DEAL_STATUSES.length - 1;
+
     return (
       <Card key={deal.id} className="w-full mb-3 shadow-sm hover:shadow-md transition-shadow">
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base font-semibold">{deal.deal_name}</CardTitle>
-          <CardDescription className="text-xs text-muted-foreground">ID Excel: {deal.company_excel_id}</CardDescription>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Abrir menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => { setSelectedDeal(deal); setIsEditDialogOpen(true); }}>
+                <Edit className="mr-2 h-4 w-4" /> Editar
+              </DropdownMenuItem>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}> {/* Prevent dropdown close */}
+                    <Trash className="mr-2 h-4 w-4 text-red-500" /> <span className="text-red-500">Eliminar</span>
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Tem a certeza?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. Isto irá eliminar permanentemente o negócio "{deal.deal_name}".
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => deal.id && handleDelete(deal.id)}>
+                      Eliminar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </CardHeader>
         <CardContent className="space-y-1 text-sm">
+          <div className="flex items-center text-xs">
+            <Building className="mr-1 h-3 w-3 text-muted-foreground" />
+            <span className="font-medium">Empresa:</span> <span className="ml-1 text-foreground">{deal.commercial_name || 'N/A'}</span>
+          </div>
           <div className="flex items-center text-xs">
             <DollarSign className="mr-1 h-3 w-3 text-muted-foreground" />
             <span className="font-medium">Valor:</span> <span className="ml-1 text-foreground">{displayValue(deal.deal_value, '', ` ${deal.currency || 'EUR'}`)}</span>
@@ -193,6 +255,26 @@ const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
               <span className="font-medium">Prioridade:</span> <span className="ml-1 text-foreground">{deal.priority}</span>
             </div>
           )}
+          <div className="flex justify-between mt-2 pt-2 border-t border-muted-foreground/10">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleMoveDeal(deal, 'prev')}
+              disabled={!canMovePrev}
+              className="h-6 w-6"
+            >
+              <ArrowLeft className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleMoveDeal(deal, 'next')}
+              disabled={!canMoveNext}
+              className="h-6 w-6"
+            >
+              <ArrowRight className="h-3 w-3" />
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -235,6 +317,24 @@ const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
             })}
           </div>
         </ScrollArea>
+      )}
+
+      {selectedDeal && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Editar Negócio</DialogTitle>
+            </DialogHeader>
+            <DealEditForm
+              deal={selectedDeal}
+              onSave={() => {
+                setIsEditDialogOpen(false);
+                loadDeals(); // Refresh the list after saving
+              }}
+              onCancel={() => setIsEditDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

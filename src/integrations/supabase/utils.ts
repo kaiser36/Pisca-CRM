@@ -6,4 +6,4 @@ export * from './services/missingDataService.ts';
 export * from './services/accountContactService.ts';
 export * from './services/easyvistaService.ts';
 export * from './services/accountManagementService.ts';
-export * from './services/dealService.ts'; // New export
+export * from './services/dealService.ts';
