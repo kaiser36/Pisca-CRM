@@ -86,6 +86,7 @@ export interface CompanyAdditionalExcelData {
   id?: string;
   user_id: string;
   excel_company_id: string;
+  company_db_id?: string; // New field: Foreign key to public.companies(id)
   "Nome Comercial"?: string | null;
   "Email da empresa"?: string | null;
   "STAND_POSTAL_CODE"?: string | null;

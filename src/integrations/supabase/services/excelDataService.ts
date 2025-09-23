@@ -9,6 +9,21 @@ export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalEx
   for (const row of data) {
     console.log(`Processing excel_company_id: ${row.excel_company_id} for user: ${userId}`);
 
+    // First, find the corresponding company_db_id from the 'companies' table
+    const { data: companyData, error: companyFetchError } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('company_id', row.excel_company_id)
+      .eq('user_id', userId)
+      .single();
+
+    if (companyFetchError) {
+      console.error(`Error finding company_db_id for excel_company_id ${row.excel_company_id}:`, companyFetchError);
+      throw new Error(`Company with excel_company_id ${row.excel_company_id} not found in main CRM data for this user.`);
+    }
+
+    const companyDbId = companyData.id;
+
     const { data: existingRecord, error: fetchError } = await supabase
       .from('company_additional_excel_data')
       .select('id')
@@ -24,6 +39,7 @@ export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalEx
     const dataToInsertOrUpdate = {
       user_id: userId,
       excel_company_id: row.excel_company_id,
+      company_db_id: companyDbId, // Add the new foreign key
       "Nome Comercial": row["Nome Comercial"],
       "Email da empresa": row["Email da empresa"],
       "STAND_POSTAL_CODE": row["STAND_POSTAL_CODE"],
