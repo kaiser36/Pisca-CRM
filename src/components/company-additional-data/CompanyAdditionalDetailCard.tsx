@@ -21,6 +21,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface CompanyAdditionalDetailCardProps {
   company: CompanyAdditionalExcelData | null;
@@ -72,12 +73,15 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     );
   };
 
+  const companyDisplayName = company["Nome Comercial"] || company.crmCompany?.Company_Name || "Empresa Desconhecida";
+  const firstLetter = companyDisplayName.charAt(0).toUpperCase();
+
   return (
     <ScrollArea className="h-full w-full pr-4">
       <Card className="w-full shadow-md">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <CardTitle className="text-2xl font-bold">{company["Nome Comercial"] || company.crmCompany?.Company_Name || "N/A"}</CardTitle>
+            <CardTitle className="text-2xl font-bold">{companyDisplayName}</CardTitle>
             <div className="flex flex-wrap gap-2">
               <Dialog open={isCreateContactDialogOpen} onOpenChange={setIsCreateContactDialogOpen}>
                 <DialogTrigger asChild>
@@ -143,6 +147,26 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
           <CardDescription className="text-muted-foreground">ID Excel: {company.excel_company_id}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6"> {/* Increased spacing */}
+          {/* Main Overview Card */}
+          <Card className="p-6 shadow-subtle border-l-4 border-primary">
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={company["Logotipo"] || undefined} alt={companyDisplayName} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
+                  {firstLetter}
+                </AvatarFallback>
+              </Avatar>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 flex-1">
+                {renderField(Mail, "Email", company["Email da empresa"] || company.crmCompany?.Company_Email)}
+                {renderField(Globe, "Website", company["Site"] || company.crmCompany?.Website)}
+                {renderField(Landmark, "NIF", company.crmCompany?.NIF)}
+                {renderField(User, "AM Atual", company["AM"] || company.crmCompany?.AM_Current)}
+                {renderField(Wallet, "Plafond", company.crmCompany?.Plafond)}
+              </div>
+            </div>
+          </Card>
+          {/* End Main Overview Card */}
+
           <Tabs defaultValue="details">
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-10"> {/* Adjusted grid for tabs */}
               <TabsTrigger value="details">Detalhes</TabsTrigger>
@@ -287,6 +311,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField(Calendar, "Data de Criação (CRM)", company.crmCompany?.Creation_Date)}
                     {renderField(Clock, "Último Login (CRM)", company.crmCompany?.Last_Login_Date)}
+                    {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
