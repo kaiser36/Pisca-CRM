@@ -2,7 +2,7 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout"; // Import Layout
-import MissingAdditionalDataList from "@/components/dashboard/MissingAdditionalDataList"; // New import
+// import MissingAdditionalDataList from "@/components/dashboard/MissingAdditionalDataList"; // Removed import
 
 const Index = () => {
   return (
@@ -21,7 +21,7 @@ const Index = () => {
               </Button>
             </Link>
           </div>
-          <MissingAdditionalDataList /> {/* Add the new component here */}
+          {/* MissingAdditionalDataList component removed from here */}
         </div>
       </div>
     </Layout>
