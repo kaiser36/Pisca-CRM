@@ -122,3 +122,31 @@ export interface CompanyAdditionalExcelData {
   created_at?: string;
   crmCompany?: Company; // Adicionado para incluir dados do CRM principal
 }
+
+export interface AccountContact {
+  id?: string;
+  user_id: string;
+  account_am?: string | null;
+  contact_type?: string | null;
+  report_text?: string | null;
+  contact_date?: string | null; // ISO string for timestamp
+  contact_method?: string | null;
+  commercial_name?: string | null;
+  company_name?: string | null;
+  crm_id?: string | null;
+  company_excel_id: string; // Links to Company.Company_id
+  stand_name?: string | null;
+  subject?: string | null;
+  contact_person_name?: string | null;
+  company_group?: string | null;
+  account_armatis?: string | null;
+  quarter?: string | null;
+  is_credibom_partner?: boolean | null;
+  send_email?: boolean | null;
+  email_type?: string | null;
+  email_subject?: string | null;
+  email_body?: string | null;
+  attachment_url?: string | null;
+  sending_email?: string | null;
+  created_at?: string;
+}

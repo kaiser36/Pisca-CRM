@@ -2,4 +2,5 @@
 export * from './services/companyService.ts';
 export * from './services/standService.ts';
 export * from './services/excelDataService.ts';
-export * from './services/missingDataService.ts'; // New export
+export * from './services/missingDataService.ts';
+export * from './services/accountContactService.ts'; // New export
