@@ -28,7 +28,8 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
       *,
       companies (
         commercial_name
-      )
+      ),
+      company_additional_excel_data ("Nome Comercial")
     `)
     .eq('user_id', userId)
     .eq('company_excel_id', companyExcelId)
@@ -39,10 +40,10 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
     throw new Error(error.message);
   }
 
-  // Map the fetched data to the Negocio interface, extracting commercial_name from the joined table
+  // Map the fetched data to the Negocio interface, prioritizing "Nome Comercial" from additional data
   return data.map(deal => ({
     ...deal,
-    commercial_name: deal.companies?.commercial_name || null,
+    commercial_name: deal.company_additional_excel_data?.["Nome Comercial"] || deal.companies?.commercial_name || null,
   })) as Negocio[];
 }
 
