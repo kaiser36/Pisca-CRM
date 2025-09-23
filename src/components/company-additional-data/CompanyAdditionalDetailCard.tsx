@@ -5,14 +5,16 @@ import { CompanyAdditionalExcelData } from '@/types/crm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, ShieldX, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore } from 'lucide-react';
+import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, ShieldX, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye } from 'lucide-react'; // Added Eye icon
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CompanyAdditionalEditForm from './CompanyAdditionalEditForm';
 import StandCard from '@/components/crm/StandCard';
-import AccountContactCreateForm from './AccountContactCreateForm'; // New import
-import AccountContactList from './AccountContactList'; // New import
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // New import
+import AccountContactCreateForm from './AccountContactCreateForm';
+import AccountContactList from './AccountContactList';
+import EasyvistaCreateForm from './EasyvistaCreateForm'; // New import
+import EasyvistaList from './EasyvistaList'; // New import
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface CompanyAdditionalDetailCardProps {
   company: CompanyAdditionalExcelData | null;
@@ -22,6 +24,7 @@ interface CompanyAdditionalDetailCardProps {
 const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = ({ company, onDataUpdated }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateContactDialogOpen, setIsCreateContactDialogOpen] = useState(false);
+  const [isCreateEasyvistaDialogOpen, setIsCreateEasyvistaDialogOpen] = useState(false);
 
   if (!company) {
     return (
@@ -90,6 +93,25 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </DialogContent>
               </Dialog>
 
+              <Dialog open={isCreateEasyvistaDialogOpen} onOpenChange={setIsCreateEasyvistaDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Eye className="mr-2 h-4 w-4" /> Novo Easyvista
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Criar Novo Registo Easyvista</DialogTitle>
+                  </DialogHeader>
+                  <EasyvistaCreateForm
+                    companyExcelId={company.excel_company_id}
+                    commercialName={company["Nome Comercial"]}
+                    onSave={() => setIsCreateEasyvistaDialogOpen(false)}
+                    onCancel={() => setIsCreateEasyvistaDialogOpen(false)}
+                  />
+                </DialogContent>
+              </Dialog>
+
               <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -120,6 +142,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
               <TabsTrigger value="details">Detalhes</TabsTrigger>
               <TabsTrigger value="stands">Stands</TabsTrigger>
               <TabsTrigger value="contacts">Contactos</TabsTrigger>
+              <TabsTrigger value="easyvistas">Easyvistas</TabsTrigger> {/* New Tab */}
             </TabsList>
             <TabsContent value="details" className="mt-4">
               {company.crmCompany && (
@@ -207,6 +230,12 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 <MessageSquareMore className="mr-2 h-5 w-5" /> Histórico de Contactos
               </h3>
               <AccountContactList companyExcelId={company.excel_company_id} />
+            </TabsContent>
+            <TabsContent value="easyvistas" className="mt-4"> {/* New TabsContent */}
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Eye className="mr-2 h-5 w-5" /> Registos Easyvista
+              </h3>
+              <EasyvistaList companyExcelId={company.excel_company_id} />
             </TabsContent>
           </Tabs>
         </CardContent>

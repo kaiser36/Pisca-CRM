@@ -150,3 +150,35 @@ export interface AccountContact {
   sending_email?: string | null;
   created_at?: string;
 }
+
+export interface Easyvista {
+  id?: number;
+  created_at?: string;
+  user_id: string;
+  company_excel_id?: string | null; // New field to link to CompanyAdditionalExcelData
+  "Nome comercial"?: string | null;
+  "EV_ID"?: string | null;
+  "Data Criação"?: string | null;
+  "Status"?: string | null;
+  "Account"?: string | null;
+  "Titulo"?: string | null;
+  "Descrição"?: string | null;
+  "Anexos"?: string[] | null; // Array of URLs
+  "Ultima actualização"?: string | null;
+  "Tipo de report"?: string | null;
+  "PV"?: boolean | null;
+  "Tipo EVS"?: string | null;
+  "Urgência"?: string | null;
+  "Email Pisca"?: string | null;
+  "Pass Pisca"?: string | null;
+  "Client ID"?: string | null;
+  "Client Secret"?: string | null;
+  "Integração"?: string | null;
+  "NIF da empresa"?: string | null;
+  "Campanha"?: string | null;
+  "Duração do acordo"?: string | null;
+  "Plano do acordo"?: string | null;
+  "Valor sem iva"?: number | null;
+  "ID_Proposta"?: string | null;
+  "Account Armatis"?: string | null;
+}
