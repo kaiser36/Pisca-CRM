@@ -224,7 +224,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
               )}
             </div>
             <div className="flex flex-wrap gap-2">
-              <Dialog open={isCreateContactDialogOpen} onOpenChange={setIsCreateContactDialogOpen}>
+              <Dialog open={isCreateContactDialogOpen} onOpenChange={(open) => { console.log('Create Contact Dialog open change:', open); setIsCreateContactDialogOpen(open); }}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
                     <PlusCircle className="mr-2 h-4 w-4" /> Novo Contacto
@@ -244,7 +244,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </DialogContent>
               </Dialog>
 
-              <Dialog open={isCreateEasyvistaDialogOpen} onOpenChange={setIsCreateEasyvistaDialogOpen}>
+              <Dialog open={isCreateEasyvistaDialogOpen} onOpenChange={(open) => { console.log('Create Easyvista Dialog open change:', open); setIsCreateEasyvistaDialogOpen(open); }}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
                     <Eye className="mr-2 h-4 w-4" /> Novo Easyvista
@@ -263,7 +263,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </DialogContent>
               </Dialog>
 
-              <Dialog open={isCreateDealDialogOpen} onOpenChange={setIsCreateDealDialogOpen}>
+              <Dialog open={isCreateDealDialogOpen} onOpenChange={(open) => { console.log('Create Deal Dialog open change:', open); setIsCreateDealDialogOpen(open); }}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
                     <Handshake className="mr-2 h-4 w-4" /> Novo Negócio
@@ -282,7 +282,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </DialogContent>
               </Dialog>
 
-              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <Dialog open={isEditDialogOpen} onOpenChange={(open) => { console.log('Edit Dialog open change:', open); setIsEditDialogOpen(open); }}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
                     <Pencil className="mr-2 h-4 w-4" /> Editar
@@ -385,7 +385,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
           </div>
           {/* End New Overview Cards */}
 
-          <Tabs defaultValue="details">
+          <Tabs defaultValue="details" onValueChange={(value) => console.log('Tab changed to:', value)}>
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-10">
               <TabsTrigger value="details">Detalhes</TabsTrigger>
               <TabsTrigger value="stands">Stands</TabsTrigger>
