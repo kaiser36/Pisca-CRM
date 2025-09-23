@@ -239,16 +239,28 @@ const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
             <Building className="mr-1 h-3 w-3 text-muted-foreground" />
             <span className="font-medium">Empresa:</span> <span className="ml-1 text-foreground">{deal.commercial_name || 'N/A'}</span>
           </div>
-          {deal.product_name && ( // NEW: Display product name
+          {deal.product_name && (
             <div className="flex items-center text-xs">
               <Package className="mr-1 h-3 w-3 text-muted-foreground" />
               <span className="font-medium">Produto:</span> <span className="ml-1 text-foreground">{deal.product_name}</span>
+            </div>
+          )}
+          {deal.product_category && ( // NEW: Display product category
+            <div className="flex items-center text-xs">
+              <Tag className="mr-1 h-3 w-3 text-muted-foreground" />
+              <span className="font-medium">Categoria:</span> <span className="ml-1 text-foreground">{deal.product_category}</span>
             </div>
           )}
           <div className="flex items-center text-xs">
             <DollarSign className="mr-1 h-3 w-3 text-muted-foreground" />
             <span className="font-medium">Valor:</span> <span className="ml-1 text-foreground">{displayValue(deal.deal_value, '', ` ${deal.currency || 'EUR'}`)}</span>
           </div>
+          {deal.product_total_price !== null && deal.product_total_price !== undefined && ( // NEW: Display product total price
+            <div className="flex items-center text-xs">
+              <DollarSign className="mr-1 h-3 w-3 text-muted-foreground" />
+              <span className="font-medium">Preço Total Produto:</span> <span className="ml-1 text-foreground">{displayValue(deal.product_total_price, '', ` ${deal.currency || 'EUR'}`)}</span>
+            </div>
+          )}
           {deal.expected_close_date && (
             <div className="flex items-center text-xs">
               <Calendar className="mr-1 h-3 w-3 text-muted-foreground" />

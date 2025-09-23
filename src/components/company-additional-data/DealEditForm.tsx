@@ -39,7 +39,12 @@ const formSchema = z.object({
   stage: z.string().nullable().optional(),
   priority: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
+  product_category: z.string().nullable().optional(), // NEW: For filtering products
   product_id: z.string().nullable().optional(), // NEW: Product ID
+  product_total_price: z.preprocess( // NEW: For display
+    (val) => (val === "" ? null : Number(val)),
+    z.number().nullable().optional()
+  ),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -47,7 +52,8 @@ type FormData = z.infer<typeof formSchema>;
 const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [products, setProducts] = useState<Product[]>([]); // State to store products
+  const [allProducts, setAllProducts] = useState<Product[]>([]); // All products
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]); // Products filtered by category
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -67,13 +73,13 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch products when userId is available
+  // Fetch all products when userId is available
   useEffect(() => {
     const loadProducts = async () => {
       if (!userId) return;
       try {
         const fetchedProducts = await fetchProducts(userId);
-        setProducts(fetchedProducts);
+        setAllProducts(fetchedProducts);
       } catch (err: any) {
         console.error("Erro ao carregar produtos:", err);
         showError(err.message || "Falha ao carregar a lista de produtos.");
@@ -88,7 +94,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      commercial_name: deal.commercial_name || '', // Set default from prop
+      commercial_name: deal.commercial_name || '',
       deal_name: deal.deal_name || '',
       deal_status: deal.deal_status || 'Prospecting',
       deal_value: deal.deal_value || 0,
@@ -97,9 +103,43 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
       stage: deal.stage || '',
       priority: deal.priority || 'Medium',
       notes: deal.notes || '',
-      product_id: deal.product_id || '', // NEW: Default product_id
+      product_category: deal.product_category || '', // Set default from existing deal
+      product_id: deal.product_id || '',
+      product_total_price: deal.product_total_price || 0, // Set default from existing deal
     },
   });
+
+  const { watch, setValue } = form;
+  const selectedCategory = watch("product_category");
+  const selectedProductId = watch("product_id");
+
+  // Effect to filter products based on selected category
+  useEffect(() => {
+    if (selectedCategory) {
+      setFilteredProducts(allProducts.filter(p => p.categoria === selectedCategory));
+    } else {
+      setFilteredProducts(allProducts);
+    }
+    // Reset selected product if its category changes or category is cleared
+    if (selectedProductId) {
+      const currentProduct = allProducts.find(p => p.id === selectedProductId);
+      if (!currentProduct || (selectedCategory && currentProduct.categoria !== selectedCategory)) {
+        setValue("product_id", '');
+        setValue("product_total_price", 0);
+      }
+    }
+  }, [selectedCategory, allProducts, selectedProductId, setValue]);
+
+  // Effect to update product_total_price and product_category when product_id changes
+  useEffect(() => {
+    const product = allProducts.find(p => p.id === selectedProductId);
+    if (product) {
+      setValue("product_total_price", product.preco_total || 0);
+      setValue("product_category", product.categoria || ''); // Also set category if product is selected directly
+    } else {
+      setValue("product_total_price", 0);
+    }
+  }, [selectedProductId, allProducts, setValue]);
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
@@ -109,7 +149,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
 
     setIsSubmitting(true);
     try {
-      const updatedDeal: Partial<Omit<Negocio, 'id' | 'created_at' | 'user_id' | 'commercial_name' | 'product_name'>> = {
+      const updatedDeal: Partial<Omit<Negocio, 'id' | 'created_at' | 'user_id' | 'commercial_name' | 'product_name' | 'product_category' | 'product_total_price'>> = {
         deal_name: values.deal_name,
         deal_status: values.deal_status || 'Prospecting',
         deal_value: values.deal_value || 0,
@@ -118,10 +158,10 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
         stage: values.stage || null,
         priority: values.priority || 'Medium',
         notes: values.notes || null,
-        product_id: values.product_id || null, // NEW: Include product_id
+        product_id: values.product_id || null,
       };
 
-      await updateDeal(deal.id!, updatedDeal); // deal.id is guaranteed to exist for an existing deal
+      await updateDeal(deal.id!, updatedDeal);
       showSuccess("Negócio atualizado com sucesso!");
       onSave();
     } catch (error: any) {
@@ -132,8 +172,10 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
     }
   };
 
+  const productCategories = Array.from(new Set(allProducts.map(p => p.categoria).filter((cat): cat is string => cat !== null && cat.trim() !== '')));
+
   const fields = [
-    { name: "commercial_name", label: "Nome Comercial da Empresa", type: "text", readOnly: true }, // Read-only field
+    { name: "commercial_name", label: "Nome Comercial da Empresa", type: "text", readOnly: true },
     { name: "deal_name", label: "Nome do Negócio", type: "text", required: true },
     { name: "deal_status", label: "Status", type: "select", options: ["Prospecting", "Qualification", "Proposal", "Negotiation", "Closed Won", "Closed Lost"] },
     { name: "deal_value", label: "Valor do Negócio", type: "number" },
@@ -141,7 +183,9 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
     { name: "expected_close_date", label: "Data de Fecho Esperada", type: "date" },
     { name: "stage", label: "Etapa", type: "text" },
     { name: "priority", label: "Prioridade", type: "select", options: ["Low", "Medium", "High"] },
-    { name: "product_id", label: "Produto", type: "select", options: products.map(p => ({ value: p.id!, label: p.produto })) }, // NEW: Product Select
+    { name: "product_category", label: "Categoria do Produto", type: "select", options: productCategories }, // NEW: Category Select
+    { name: "product_id", label: "Produto", type: "select", options: filteredProducts.map(p => ({ value: p.id!, label: p.produto })) }, // Filtered products
+    { name: "product_total_price", label: "Preço Total do Produto", type: "number", readOnly: true }, // NEW: Display total price
     { name: "notes", label: "Notas", type: "textarea", colSpan: 2 },
   ];
 
@@ -191,12 +235,18 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
                         onChange={formField.onChange}
                       />
                     ) : field.type === "select" ? (
-                      <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
+                      <Select onValueChange={(value) => {
+                        formField.onChange(value);
+                        if (field.name === "product_category") {
+                          setValue("product_id", ''); // Reset product when category changes
+                          setValue("product_total_price", 0);
+                        }
+                      }} defaultValue={formField.value as string}>
                         <SelectTrigger>
                           <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
                         </SelectTrigger>
                         <SelectContent>
-                          {field.options?.map((option: any) => ( // Adjusted type for options
+                          {field.options?.map((option: any) => (
                             <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
                           ))}
                         </SelectContent>
@@ -213,7 +263,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
                             formField.onChange(e.target.value);
                           }
                         }}
-                        readOnly={field.readOnly} // Apply readOnly prop
+                        readOnly={field.readOnly}
                       />
                     )}
                   </FormControl>

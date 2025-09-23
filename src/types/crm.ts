@@ -212,6 +212,8 @@ export interface Negocio {
   notes?: string | null;
   product_id?: string | null; // NEW: Link to the product
   product_name?: string | null; // NEW: For display purposes
+  product_category?: string | null; // NEW: For display purposes
+  product_total_price?: number | null; // NEW: For display purposes
   created_at?: string;
   updated_at?: string;
 }
