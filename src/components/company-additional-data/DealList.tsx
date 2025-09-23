@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Negocio } from '@/types/crm';
 import { fetchDealsByCompanyExcelId } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,13 +9,24 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Calendar, DollarSign, Tag, Info, MessageSquareText, Clock, TrendingUp } from 'lucide-react';
+import { Terminal, Calendar, DollarSign, Tag, Info, MessageSquareText, Clock, TrendingUp, Handshake } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface DealListProps {
   companyExcelId: string;
 }
+
+// Define a ordem dos status para as colunas do pipeline
+const DEAL_STATUSES = [
+  "Prospecting",
+  "Qualification",
+  "Proposal",
+  "Negotiation",
+  "Closed Won",
+  "Closed Lost",
+];
 
 const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
   const [deals, setDeals] = useState<Negocio[]>([]);
@@ -67,6 +78,24 @@ const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
     }
   }, [userId, companyExcelId]);
 
+  // Agrupar negócios por status
+  const dealsByStatus = useMemo(() => {
+    const grouped: { [key: string]: Negocio[] } = {};
+    DEAL_STATUSES.forEach(status => {
+      grouped[status] = [];
+    });
+    deals.forEach(deal => {
+      const status = deal.deal_status || 'Prospecting'; // Default status
+      if (grouped[status]) {
+        grouped[status].push(deal);
+      } else {
+        // Handle unexpected statuses by putting them in a generic 'Other' category or first category
+        grouped['Prospecting'].push(deal); 
+      }
+    });
+    return grouped;
+  }, [deals]);
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -87,66 +116,70 @@ const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
     );
   }
 
-  const renderField = (Icon: React.ElementType, label: string, value: string | number | boolean | null | undefined) => {
-    if (value === null || value === undefined || value === '' || (typeof value === 'number' && value === 0 && !label.includes('Valor'))) return null;
-
-    let displayValue: React.ReactNode = value;
-    if (label.includes('Data')) {
-      try {
-        displayValue = format(new Date(String(value)), 'dd/MM/yyyy');
-      } catch {
-        displayValue = String(value);
-      }
-    } else if (label.includes('Valor')) {
-      displayValue = `${Number(value).toFixed(2)} ${deals[0]?.currency || 'EUR'}`;
-    }
+  const renderDealCard = (deal: Negocio) => {
+    const displayValue = (value: string | number | boolean | null | undefined, prefix: string = '', suffix: string = '') => {
+      if (value === null || value === undefined || value === '' || (typeof value === 'number' && value === 0 && !prefix.includes('Valor'))) return null;
+      if (typeof value === 'number') return `${prefix}${value.toFixed(2)}${suffix}`;
+      return `${prefix}${String(value)}${suffix}`;
+    };
 
     return (
-      <div className="flex items-center text-sm">
-        <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
-        <span className="font-medium">{label}:</span> <span className="ml-1 text-foreground">{displayValue}</span>
-      </div>
+      <Card key={deal.id} className="w-full mb-3 shadow-sm hover:shadow-md transition-shadow">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold">{deal.deal_name}</CardTitle>
+          <CardDescription className="text-xs text-muted-foreground">ID Excel: {deal.company_excel_id}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-1 text-sm">
+          <div className="flex items-center text-xs">
+            <DollarSign className="mr-1 h-3 w-3 text-muted-foreground" />
+            <span className="font-medium">Valor:</span> <span className="ml-1 text-foreground">{displayValue(deal.deal_value, '', ` ${deal.currency || 'EUR'}`)}</span>
+          </div>
+          {deal.expected_close_date && (
+            <div className="flex items-center text-xs">
+              <Calendar className="mr-1 h-3 w-3 text-muted-foreground" />
+              <span className="font-medium">Fecho Esperado:</span> <span className="ml-1 text-foreground">{format(new Date(deal.expected_close_date), 'dd/MM/yyyy')}</span>
+            </div>
+          )}
+          {deal.priority && (
+            <div className="flex items-center text-xs">
+              <Info className="mr-1 h-3 w-3 text-muted-foreground" />
+              <span className="font-medium">Prioridade:</span> <span className="ml-1 text-foreground">{deal.priority}</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     );
   };
 
+  const allDealsEmpty = deals.length === 0;
+
   return (
-    <ScrollArea className="h-full w-full pr-4">
-      <div className="space-y-4">
-        {deals.length === 0 ? (
-          <p className="text-muted-foreground text-center py-4">Nenhum negócio encontrado para esta empresa.</p>
-        ) : (
-          deals.map((deal) => (
-            <Card key={deal.id} className="w-full shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold">{deal.deal_name}</CardTitle>
-                <CardDescription className="text-muted-foreground">ID Excel da Empresa: {deal.company_excel_id}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {renderField(Tag, "Status", deal.deal_status)}
-                  {renderField(DollarSign, "Valor", deal.deal_value)}
-                  {renderField(Calendar, "Data de Fecho Esperada", deal.expected_close_date)}
-                  {renderField(TrendingUp, "Etapa", deal.stage)}
-                  {renderField(Info, "Prioridade", deal.priority)}
-                </div>
-                {deal.notes && (
-                  <>
-                    <Separator className="my-3" />
-                    <div className="flex items-start text-sm">
-                      <MessageSquareText className="mr-2 h-4 w-4 text-muted-foreground mt-1" />
-                      <span className="font-medium">Notas:</span> <span className="ml-1 flex-1 text-foreground">{deal.notes}</span>
-                    </div>
-                  </>
-                )}
-                <p className="text-xs text-muted-foreground mt-2">
-                  Criado em: {deal.created_at ? format(new Date(deal.created_at), 'dd/MM/yyyy HH:mm') : 'N/A'} | Última atualização: {deal.updated_at ? format(new Date(deal.updated_at), 'dd/MM/yyyy HH:mm') : 'N/A'}
-                </p>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-    </ScrollArea>
+    <div className="flex flex-col h-full">
+      {allDealsEmpty ? (
+        <p className="text-muted-foreground text-center py-4">Nenhum negócio encontrado para esta empresa.</p>
+      ) : (
+        <ScrollArea className="flex-1 pb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-2">
+            {DEAL_STATUSES.map(status => (
+              <div key={status} className="flex flex-col bg-muted/40 rounded-lg p-3 shadow-inner border border-muted-foreground/10">
+                <h4 className="font-semibold text-lg mb-3 flex items-center text-primary">
+                  <Handshake className="mr-2 h-5 w-5" /> {status} ({dealsByStatus[status]?.length || 0})
+                </h4>
+                <ScrollArea className="flex-1 max-h-[calc(100vh-250px)]"> {/* Adjust max-height as needed */}
+                  <div className="space-y-3 pr-2">
+                    {dealsByStatus[status]?.length === 0 ? (
+                      <p className="text-muted-foreground text-sm text-center py-4">Nenhum negócio neste status.</p>
+                    ) : (
+                      dealsByStatus[status]?.map(renderDealCard)
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      )}
+    </div>
   );
 };
 
