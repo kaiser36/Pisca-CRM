@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, ChevronLeft, ChevronRight, ArrowLeft, PlusCircle } from 'lucide-react'; // Adicionado PlusCircle
+import { Terminal, ChevronLeft, ChevronRight, ArrowLeft, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -16,8 +16,9 @@ import CompanyAdditionalList from '@/components/company-additional-data/CompanyA
 import CompanyAdditionalDetailCard from '@/components/company-additional-data/CompanyAdditionalDetailCard';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'; // Importar Dialog components
-import CompanyAdditionalCreateForm from '@/components/company-additional-data/CompanyAdditionalCreateForm'; // Importar o novo formulário
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import CompanyAdditionalCreateForm from '@/components/company-additional-data/CompanyAdditionalCreateForm';
+import { useLocation } from 'react-router-dom'; // Import useLocation
 
 const CompanyAdditionalData: React.FC = () => {
   const [companies, setCompanies] = useState<CompanyAdditionalExcelData[]>([]);
@@ -29,7 +30,9 @@ const CompanyAdditionalData: React.FC = () => {
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [userId, setUserId] = useState<string | null>(null);
   const isMobile = useIsMobile();
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false); // Estado para o diálogo de criação
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+  const location = useLocation(); // Initialize useLocation
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -85,6 +88,17 @@ const CompanyAdditionalData: React.FC = () => {
 
       setCompanies(augmentedCompanies);
       console.log(`CompanyAdditionalData: Set ${augmentedCompanies.length} companies into state.`);
+
+      // Check for companyId in URL and select it
+      const params = new URLSearchParams(location.search);
+      const companyIdFromUrl = params.get('companyId');
+      if (companyIdFromUrl && !selectedCompanyId) {
+        const foundCompany = augmentedCompanies.find(c => c.excel_company_id === companyIdFromUrl);
+        if (foundCompany) {
+          setSelectedCompanyId(companyIdFromUrl);
+        }
+      }
+
     } catch (err: any) {
       console.error("Erro ao carregar dados adicionais das empresas:", err);
       setError(err.message || "Falha ao carregar os dados adicionais das empresas.");
@@ -92,7 +106,7 @@ const CompanyAdditionalData: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, currentPage, pageSize, debouncedSearchTerm]);
+  }, [userId, currentPage, pageSize, debouncedSearchTerm, location.search, selectedCompanyId]); // Added location.search and selectedCompanyId to dependencies
 
   useEffect(() => {
     if (userId) {
@@ -127,7 +141,7 @@ const CompanyAdditionalData: React.FC = () => {
     }
   };
 
-  if (isLoading && searchTerm === '') { // Only show full skeleton if initial load and no search term
+  if (isLoading && searchTerm === '') {
     return (
       <Layout>
         <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[calc(100vh-var(--header-height)-var(--footer-height))]">
@@ -164,9 +178,7 @@ const CompanyAdditionalData: React.FC = () => {
     <Layout>
       <div className="h-full flex flex-col">
         {isMobile ? (
-          // Mobile View
           selectedCompanyId ? (
-            // Show Company Detail on mobile
             <div className="flex flex-col h-full">
               <div className="flex items-center mb-4">
                 <Button variant="ghost" size="icon" onClick={handleBackToCompanyList} className="mr-2">
@@ -177,7 +189,6 @@ const CompanyAdditionalData: React.FC = () => {
               <CompanyAdditionalDetailCard company={selectedCompany} onDataUpdated={loadCompanies} />
             </div>
           ) : (
-            // Show Company List on mobile
             <div className="flex flex-col h-full">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold">Empresas Adicionais ({totalCompanies})</h2>
@@ -194,7 +205,7 @@ const CompanyAdditionalData: React.FC = () => {
                     <CompanyAdditionalCreateForm
                       onSave={() => {
                         setIsCreateDialogOpen(false);
-                        loadCompanies(); // Recarregar dados após a criação
+                        loadCompanies();
                       }}
                       onCancel={() => setIsCreateDialogOpen(false)}
                     />
@@ -209,7 +220,6 @@ const CompanyAdditionalData: React.FC = () => {
                 onSearchChange={handleSearchChange}
                 isSearching={isSearching}
               />
-              {/* Add pagination for mobile */}
               {totalPages > 1 && (
                 <div className="mt-4 flex justify-center">
                   <Pagination>
@@ -236,9 +246,7 @@ const CompanyAdditionalData: React.FC = () => {
             </div>
           )
         ) : (
-          // Desktop View
           <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Company List Section */}
             <div className={cn(
               "flex flex-col h-full transition-all duration-300 ease-in-out",
               isCompanyListCollapsed ? "w-0 overflow-hidden md:w-auto md:col-span-0" : "md:col-span-1"
@@ -259,7 +267,7 @@ const CompanyAdditionalData: React.FC = () => {
                       <CompanyAdditionalCreateForm
                         onSave={() => {
                           setIsCreateDialogOpen(false);
-                          loadCompanies(); // Recarregar dados após a criação
+                          loadCompanies();
                         }}
                         onCancel={() => setIsCreateDialogOpen(false)}
                       />
@@ -280,7 +288,6 @@ const CompanyAdditionalData: React.FC = () => {
                     onSearchChange={handleSearchChange}
                     isSearching={isSearching}
                   />
-                  {/* Add pagination for desktop */}
                   {totalPages > 1 && (
                     <div className="mt-4 flex justify-center">
                       <Pagination>
@@ -308,7 +315,6 @@ const CompanyAdditionalData: React.FC = () => {
               )}
             </div>
 
-            {/* Company Detail Section */}
             <div className={cn(
               "flex flex-col h-full",
               isCompanyListCollapsed ? "md:col-span-3" : "md:col-span-2"
