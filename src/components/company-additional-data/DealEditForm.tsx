@@ -140,7 +140,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
 
   // Effect to calculate deal_value and final_deal_value
   useEffect(() => {
-    // deal_value is the sum of total_price_at_deal_time from each product, which already includes individual product discounts
+    // deal_value é a soma de total_price_at_deal_time de cada produto, que já inclui descontos individuais
     const calculatedBaseDealValue = dealProducts.reduce((sum, item) => {
       return sum + (item.total_price_at_deal_time || 0);
     }, 0);
@@ -159,13 +159,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
     append({ product_id: '', quantity: 1, unit_price_at_deal_time: 0, total_price_at_deal_time: 0, product_name: '', product_category: '', discount_type: 'none', discount_value: 0 });
   };
 
-  const handleProductItemChange = useCallback((index: number, productId: string | null, quantity: number) => {
-    // This callback is primarily to trigger re-calculation in the parent form
-    // The actual product-specific calculations are now handled within DealProductFormItem
-    // We just need to ensure the parent's watched `deal_products` array updates
-    const updatedDealProducts = formMethods.getValues().deal_products;
-    setValue('deal_products', updatedDealProducts, { shouldValidate: true, shouldDirty: true });
-  }, [formMethods, setValue]);
+  // REMOVIDO: handleProductItemChange function
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
@@ -265,7 +259,12 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
                         onChange={formField.onChange}
                       />
                     ) : field.type === "select" ? (
-                      <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
+                      <Select onValueChange={(value) => {
+                        formField.onChange(value);
+                        if (field.name === "discount_type" && value === 'none') {
+                          setValue("discount_value", 0);
+                        }
+                      }} defaultValue={formField.value as string}>
                         <SelectTrigger>
                           <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
                         </SelectTrigger>
@@ -306,7 +305,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
               index={index}
               allProducts={allProducts}
               onRemove={remove}
-              onProductChange={handleProductItemChange}
+              // onProductChange={handleProductItemChange} // REMOVIDO
               initialProductId={item.product_id}
               initialQuantity={item.quantity}
               initialDiscountType={item.discount_type}
@@ -322,7 +321,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
         <h3 className="text-lg font-semibold mt-6 mb-3">Resumo e Desconto Geral</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {discountFields.map((field) => {
-            if (field.conditional && !formMethods.getValues().deal_products.length) { // Only show discount fields if there are products
+            if (field.conditional && !formMethods.getValues().deal_products.length) { // Apenas mostra campos de desconto se houver produtos
               return null;
             }
             if (field.conditional && !field.conditional(formMethods.getValues())) {
