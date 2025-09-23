@@ -43,39 +43,45 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
 
-  // Initialize form fields
+  // Effect 1: Initialize form fields and category based on initialProductId
   useEffect(() => {
+    console.log(`[DealProductFormItem ${index}] Effect 1: Initializing fields.`);
     setValue(`deal_products.${index}.product_id`, initialProductId || '');
     setValue(`deal_products.${index}.quantity`, initialQuantity || 1);
-    setValue(`deal_products.${index}.discount_type`, initialDiscountType || 'none'); // NEW
-    setValue(`deal_products.${index}.discount_value`, initialDiscountValue || 0); // NEW
+    setValue(`deal_products.${index}.discount_type`, initialDiscountType || 'none');
+    setValue(`deal_products.${index}.discount_value`, initialDiscountValue || 0);
 
-    // Set initial product category if initialProductId is provided
     if (initialProductId) {
       const product = allProducts.find(p => p.id === initialProductId);
       if (product) {
         setValue(`deal_products.${index}.product_category`, product.categoria || '');
+        console.log(`[DealProductFormItem ${index}] Initial product found. Setting category: ${product.categoria}`);
       } else {
-        // If initialProductId is provided but product not found (e.g., deleted), reset category
         setValue(`deal_products.${index}.product_category`, '');
+        console.log(`[DealProductFormItem ${index}] Initial product ID provided but product not found. Resetting category.`);
       }
     } else {
-      // Ensure category is reset if no initial product
       setValue(`deal_products.${index}.product_category`, '');
+      console.log(`[DealProductFormItem ${index}] No initial product ID. Resetting category.`);
     }
   }, [initialProductId, initialQuantity, initialDiscountType, initialDiscountValue, index, setValue, allProducts]);
 
-  // Filter products by category
+  // Effect 2: Filter products based on selected category
   useEffect(() => {
+    console.log(`[DealProductFormItem ${index}] Effect 2: Filtering products. Category: ${productCategory}, All Products Count: ${allProducts.length}`);
     if (productCategory) {
-      setFilteredProducts(allProducts.filter(p => p.categoria === productCategory));
+      const newFilteredProducts = allProducts.filter(p => p.categoria === productCategory);
+      setFilteredProducts(newFilteredProducts);
+      console.log(`[DealProductFormItem ${index}] Filtered products count for category ${productCategory}: ${newFilteredProducts.length}`);
     } else {
-      setFilteredProducts(allProducts);
+      setFilteredProducts(allProducts); // If no category selected, show all products
+      console.log(`[DealProductFormItem ${index}] No category selected. Showing all products: ${allProducts.length}`);
     }
-  }, [productCategory, allProducts]);
+  }, [productCategory, allProducts, index]);
 
-  // Update current product details and calculate total_price_at_deal_time when relevant fields change
+  // Effect 3: Update current product details and calculate total_price_at_deal_time
   useEffect(() => {
+    console.log(`[DealProductFormItem ${index}] Effect 3: Updating product details. Selected Product ID: ${selectedProductId}, Quantity: ${quantity}, Discount Type: ${discountType}, Discount Value: ${discountValue}`);
     const product = allProducts.find(p => p.id === selectedProductId);
     setCurrentProduct(product || null);
 
@@ -93,12 +99,14 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
     setValue(`deal_products.${index}.unit_price_at_deal_time`, calculatedUnitPrice);
     setValue(`deal_products.${index}.total_price_at_deal_time`, discountedProductLineTotal);
     setValue(`deal_products.${index}.product_name`, product?.produto || '');
-    setValue(`deal_products.${index}.product_category`, product?.categoria || '');
+    setValue(`deal_products.${index}.product_category`, product?.categoria || ''); // Ensure category is set here too
     
     onProductChange(index, selectedProductId, quantity);
+    console.log(`[DealProductFormItem ${index}] Calculated total price: ${discountedProductLineTotal}`);
   }, [selectedProductId, quantity, discountType, discountValue, allProducts, index, setValue, onProductChange]);
 
   const productCategories = Array.from(new Set(allProducts.map(p => p.categoria).filter((cat): cat is string => cat !== null && cat.trim() !== '')));
+  console.log(`[DealProductFormItem ${index}] Available product categories:`, productCategories);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end border p-4 rounded-md bg-muted/50">
@@ -106,10 +114,11 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
         <Label htmlFor={`product-category-${index}`}>Categoria</Label>
         <Select
           onValueChange={(value) => {
+            console.log(`[DealProductFormItem ${index}] Category changed to: ${value}`);
             setValue(`deal_products.${index}.product_category`, value);
             setValue(`deal_products.${index}.product_id`, ''); // Reset product when category changes
           }}
-          value={productCategory || ''}
+          value={productCategory || ''} // Ensure value is always a string
         >
           <SelectTrigger id={`product-category-${index}`}>
             <SelectValue placeholder="Selecione a categoria" />
@@ -128,17 +137,24 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
       <div className="md:col-span-2">
         <Label htmlFor={`product-id-${index}`}>Produto</Label>
         <Select
-          onValueChange={(value) => setValue(`deal_products.${index}.product_id`, value)}
+          onValueChange={(value) => {
+            console.log(`[DealProductFormItem ${index}] Product changed to: ${value}`);
+            setValue(`deal_products.${index}.product_id`, value);
+          }}
           value={selectedProductId || ''}
-          disabled={!productCategory}
+          disabled={!productCategory} // Disable if no category is selected
         >
           <SelectTrigger id={`product-id-${index}`}>
             <SelectValue placeholder="Selecione o produto" />
           </SelectTrigger>
           <SelectContent>
-            {filteredProducts.map(product => (
-              <SelectItem key={product.id} value={product.id!}>{product.produto}</SelectItem>
-            ))}
+            {filteredProducts.length === 0 ? (
+              <SelectItem value="no-products" disabled>Nenhum produto disponível</SelectItem>
+            ) : (
+              filteredProducts.map(product => (
+                <SelectItem key={product.id} value={product.id!}>{product.produto}</SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
       </div>
