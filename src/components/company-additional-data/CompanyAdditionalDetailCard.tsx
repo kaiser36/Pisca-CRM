@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { CompanyAdditionalExcelData } from '@/types/crm';
+import { CompanyAdditionalExcelData, Negocio } from '@/types/crm'; // Import Negocio type
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -26,7 +26,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { isPast, parseISO, differenceInMonths, differenceInDays } from 'date-fns';
+import { isPast, parseISO, differenceInMonths, differenceInDays, format } from 'date-fns'; // Import format
+import { supabase } from '@/integrations/supabase/client'; // Import supabase client
+import { fetchDealsByCompanyExcelId } from '@/integrations/supabase/utils'; // Import fetchDealsByCompanyExcelId
+import { showError } from '@/utils/toast'; // Import showError
 
 interface CompanyAdditionalDetailCardProps {
   company: CompanyAdditionalExcelData | null;
@@ -37,7 +40,55 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateContactDialogOpen, setIsCreateContactDialogOpen] = useState(false);
   const [isCreateEasyvistaDialogOpen, setIsCreateEasyvistaDialogOpen] = useState(false);
-  const [isCreateDealDialogOpen, setIsCreateDealDialogOpen] = useState(false); // New state for Deal dialog
+  const [isCreateDealDialogOpen, setIsCreateDealDialogOpen] = useState(false);
+  const [deals, setDeals] = useState<Negocio[]>([]); // New state for deals
+  const [isDealsLoading, setIsDealsLoading] = useState(true); // New state for deals loading
+  const [dealsError, setDealsError] = useState<string | null>(null); // New state for deals error
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Fetch userId on component mount
+  React.useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      } else {
+        setUserId(null);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Fetch deals when company or userId changes
+  React.useEffect(() => {
+    const loadDeals = async () => {
+      if (!userId || !company?.excel_company_id) {
+        setIsDealsLoading(false);
+        return;
+      }
+      setIsDealsLoading(true);
+      setDealsError(null);
+      try {
+        const fetchedDeals = await fetchDealsByCompanyExcelId(userId, company.excel_company_id);
+        setDeals(fetchedDeals);
+      } catch (err: any) {
+        console.error("Erro ao carregar negócios para alertas:", err);
+        setDealsError(err.message || "Falha ao carregar negócios para alertas.");
+        showError(err.message || "Falha ao carregar negócios para alertas.");
+      } finally {
+        setIsDealsLoading(false);
+      }
+    };
+
+    loadDeals();
+  }, [userId, company?.excel_company_id]);
+
 
   if (!company) {
     return (
@@ -130,9 +181,19 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   }
 
   // 4. Se o ultimo login foi à mais de uma semana atras
-  const lastLoginDate = crmCompany?.Last_Login_Date || null;
-  if (lastLoginDate && isLoginOld(lastLoginDate)) {
-    alerts.push("O último login foi há mais de uma semana.");
+  if (!isDealsLoading && !dealsError) { // Only check deals if loaded successfully
+    deals.forEach(deal => {
+      if (deal.expected_close_date) {
+        try {
+          const expectedCloseDate = parseISO(deal.expected_close_date);
+          if (isPast(expectedCloseDate)) {
+            alerts.push(`Negócio "${deal.deal_name}" com data de fecho esperada expirada: ${format(expectedCloseDate, 'dd/MM/yyyy')}`);
+          }
+        } catch (e) {
+          console.warn(`Could not parse expected_close_date for deal ${deal.id}: ${deal.expected_close_date}`);
+        }
+      }
+    });
   }
 
   // 5. Se ele for Parceiro Credibom e o Simulador Financiamento = Não
@@ -202,7 +263,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </DialogContent>
               </Dialog>
 
-              <Dialog open={isCreateDealDialogOpen} onOpenChange={setIsCreateDealDialogOpen}> {/* New Deal Dialog */}
+              <Dialog open={isCreateDealDialogOpen} onOpenChange={setIsCreateDealDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
                     <Handshake className="mr-2 h-4 w-4" /> Novo Negócio
@@ -214,7 +275,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                   </DialogHeader>
                   <DealCreateForm
                     companyExcelId={company.excel_company_id}
-                    commercialName={company["Nome Comercial"] || company.crmCompany?.Commercial_Name} // Pass commercial name
+                    commercialName={company["Nome Comercial"] || company.crmCompany?.Commercial_Name}
                     onSave={() => setIsCreateDealDialogOpen(false)}
                     onCancel={() => setIsCreateDealDialogOpen(false)}
                   />
@@ -245,7 +306,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
           </div>
           <CardDescription className="text-muted-foreground">ID Excel: {company.excel_company_id}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6"> {/* Increased spacing */}
+        <CardContent className="space-y-6">
           {/* Main Overview Card */}
           <Card className="p-6 shadow-subtle border-l-4 border-primary">
             <div className="flex items-center space-x-4">
@@ -325,14 +386,14 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
           {/* End New Overview Cards */}
 
           <Tabs defaultValue="details">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-10"> {/* Adjusted grid for tabs */}
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-10">
               <TabsTrigger value="details">Detalhes</TabsTrigger>
               <TabsTrigger value="stands">Stands</TabsTrigger>
               <TabsTrigger value="contacts">Contactos</TabsTrigger>
               <TabsTrigger value="easyvistas">Easyvistas</TabsTrigger>
-              <TabsTrigger value="deals">Negócios</TabsTrigger> {/* New Tab */}
+              <TabsTrigger value="deals">Negócios</TabsTrigger>
             </TabsList>
-            <TabsContent value="details" className="mt-4 space-y-6"> {/* Increased spacing */}
+            <TabsContent value="details" className="mt-4 space-y-6">
               <Accordion type="multiple" className="w-full space-y-4">
                 <AccordionItem value="essential-info" className="border rounded-md shadow-sm">
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
@@ -501,7 +562,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
               </h3>
               <EasyvistaList companyExcelId={company.excel_company_id} />
             </TabsContent>
-            <TabsContent value="deals" className="mt-4"> {/* New Deals Tab Content */}
+            <TabsContent value="deals" className="mt-4">
               <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
                 <Handshake className="mr-2 h-5 w-5" /> Negócios
               </h3>
