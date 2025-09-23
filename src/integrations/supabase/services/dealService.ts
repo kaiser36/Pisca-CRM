@@ -1,21 +1,46 @@
 import { supabase } from '../client';
-import { Negocio } from '@/types/crm';
+import { Negocio, DealProduct } from '@/types/crm';
 
 /**
  * Inserts a new deal into the negocios table.
  */
-export async function insertDeal(deal: Omit<Negocio, 'id' | 'created_at' | 'updated_at' | 'commercial_name' | 'product_name' | 'product_category' | 'product_total_price'>): Promise<Negocio> {
-  const { data, error } = await supabase
+export async function insertDeal(deal: Omit<Negocio, 'id' | 'created_at' | 'updated_at' | 'commercial_name'>): Promise<Negocio> {
+  const { deal_products, ...dealData } = deal; // Extract deal_products from the main deal object
+
+  // 1. Insert the main deal data
+  const { data: newDeal, error: dealError } = await supabase
     .from('negocios')
-    .insert(deal)
+    .insert(dealData)
     .select()
     .single();
 
-  if (error) {
-    console.error('Error inserting deal:', error);
-    throw new Error(error.message);
+  if (dealError) {
+    console.error('Error inserting main deal:', dealError);
+    throw new Error(dealError.message);
   }
-  return data as Negocio;
+
+  // 2. Insert associated deal products
+  if (deal_products && deal_products.length > 0) {
+    const dealProductsToInsert = deal_products.map(dp => ({
+      deal_id: newDeal.id,
+      product_id: dp.product_id,
+      quantity: dp.quantity,
+      unit_price_at_deal_time: dp.unit_price_at_deal_time,
+      total_price_at_deal_time: dp.total_price_at_deal_time,
+    }));
+
+    const { error: dealProductsError } = await supabase
+      .from('deal_products')
+      .insert(dealProductsToInsert);
+
+    if (dealProductsError) {
+      console.error('Error inserting deal products:', dealProductsError);
+      // Optionally, you might want to roll back the main deal insertion here
+      throw new Error(dealProductsError.message);
+    }
+  }
+
+  return newDeal as Negocio;
 }
 
 /**
@@ -40,11 +65,10 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
     return [];
   }
 
-  // 2. Get unique company_excel_ids from the fetched deals
+  const dealIds = dealsData.map(d => d.id);
   const uniqueExcelCompanyIds = Array.from(new Set(dealsData.map(deal => deal.company_excel_id)));
-  const uniqueProductIds = Array.from(new Set(dealsData.map(deal => deal.product_id).filter((id): id is string => id !== null && id !== undefined)));
 
-  // 3. Fetch commercial names from 'company_additional_excel_data'
+  // 2. Fetch commercial names from 'company_additional_excel_data'
   const { data: additionalData, error: additionalError } = await supabase
     .from('company_additional_excel_data')
     .select('excel_company_id, "Nome Comercial"')
@@ -63,7 +87,7 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
     }
   });
 
-  // 4. Fetch commercial names from 'companies' table
+  // 3. Fetch commercial names from 'companies' table
   const { data: companiesData, error: companiesError } = await supabase
     .from('companies')
     .select('company_id, commercial_name')
@@ -82,60 +106,130 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
     }
   });
 
-  // 5. Fetch product names, categories, and total prices from 'produtos' table
-  let productDetailsMap = new Map<string, { produto: string; categoria: string | null; preco_total: number | null }>();
-  if (uniqueProductIds.length > 0) {
+  // 4. Fetch all deal products for these deals
+  const { data: dealProductsData, error: dealProductsError } = await supabase
+    .from('deal_products')
+    .select('*')
+    .in('deal_id', dealIds);
+
+  if (dealProductsError) {
+    console.error('Error fetching deal products:', dealProductsError);
+    throw new Error(dealProductsError.message);
+  }
+
+  const productIds = Array.from(new Set(dealProductsData.map(dp => dp.product_id).filter((id): id is string => id !== null && id !== undefined)));
+
+  // 5. Fetch product details (name, category) for all unique product IDs
+  let productDetailsMap = new Map<string, { produto: string; categoria: string | null }>();
+  if (productIds.length > 0) {
     const { data: productsData, error: productsError } = await supabase
       .from('produtos')
-      .select('id, produto, categoria, preco_total')
-      .eq('user_id', userId)
-      .in('id', uniqueProductIds);
+      .select('id, produto, categoria')
+      .in('id', productIds);
 
     if (productsError) {
-      console.error('Error fetching products data:', productsError);
+      console.error('Error fetching product details:', productsError);
     } else {
-      productsData?.forEach(row => {
-        if (row.id && row.produto) {
-          productDetailsMap.set(row.id, {
-            produto: row.produto,
-            categoria: row.categoria,
-            preco_total: row.preco_total,
-          });
+      productsData?.forEach(p => {
+        if (p.id && p.produto) {
+          productDetailsMap.set(p.id, { produto: p.produto, categoria: p.categoria });
         }
       });
     }
   }
 
-  // 6. Map the fetched deals and add the commercial_name and product_name/category/total_price based on priority
-  return dealsData.map(deal => {
+  // 6. Map deal products to their respective deals and calculate aggregated values
+  const dealsWithProducts = dealsData.map(deal => {
     const commercialName = additionalNamesMap.get(deal.company_excel_id) || companyNamesMap.get(deal.company_excel_id) || null;
-    const productDetails = deal.product_id ? productDetailsMap.get(deal.product_id) : null;
+    
+    const associatedDealProducts: DealProduct[] = dealProductsData
+      .filter(dp => dp.deal_id === deal.id)
+      .map(dp => {
+        const productDetail = dp.product_id ? productDetailsMap.get(dp.product_id) : null;
+        return {
+          ...dp,
+          product_name: productDetail?.produto || null,
+          product_category: productDetail?.categoria || null,
+        } as DealProduct;
+      });
+
+    // Calculate deal_value (sum of all total_price_at_deal_time)
+    const calculatedDealValue = associatedDealProducts.reduce((sum, dp) => sum + (dp.total_price_at_deal_time || 0), 0);
+
+    // Calculate final_deal_value based on discount
+    let calculatedFinalDealValue = calculatedDealValue;
+    if (deal.discount_type === 'percentage' && deal.discount_value !== null) {
+      calculatedFinalDealValue = calculatedDealValue * (1 - (deal.discount_value / 100));
+    } else if (deal.discount_type === 'amount' && deal.discount_value !== null) {
+      calculatedFinalDealValue = calculatedDealValue - deal.discount_value;
+    }
+    calculatedFinalDealValue = Math.max(0, calculatedFinalDealValue); // Ensure not negative
+
     return {
       ...deal,
       commercial_name: commercialName,
-      product_name: productDetails?.produto || null,
-      product_category: productDetails?.categoria || null,
-      product_total_price: productDetails?.preco_total || null,
+      deal_products: associatedDealProducts,
+      deal_value: calculatedDealValue, // Override with calculated value
+      final_deal_value: calculatedFinalDealValue, // Override with calculated value
     } as Negocio;
   });
+
+  return dealsWithProducts;
 }
 
 /**
  * Updates an existing deal in the negocios table.
  */
-export async function updateDeal(id: string, deal: Partial<Omit<Negocio, 'id' | 'created_at' | 'user_id' | 'commercial_name' | 'product_name' | 'product_category' | 'product_total_price'>>): Promise<Negocio> {
-  const { data, error } = await supabase
+export async function updateDeal(id: string, deal: Partial<Omit<Negocio, 'id' | 'created_at' | 'user_id' | 'commercial_name'>> & { deal_products?: DealProduct[] }): Promise<Negocio> {
+  const { deal_products, ...dealData } = deal; // Extract deal_products from the main deal object
+
+  // 1. Update the main deal data
+  const { data: updatedDeal, error: dealError } = await supabase
     .from('negocios')
-    .update({ ...deal, updated_at: new Date().toISOString() }) // Update updated_at timestamp
+    .update({ ...dealData, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single();
 
-  if (error) {
-    console.error(`Error updating deal with id ${id}:`, error);
-    throw new Error(error.message);
+  if (dealError) {
+    console.error(`Error updating main deal with id ${id}:`, dealError);
+    throw new Error(dealError.message);
   }
-  return data as Negocio;
+
+  // 2. Handle associated deal products
+  if (deal_products !== undefined) { // Only update if deal_products is provided in the payload
+    // For simplicity, delete all existing deal_products for this deal and re-insert
+    const { error: deleteError } = await supabase
+      .from('deal_products')
+      .delete()
+      .eq('deal_id', id);
+
+    if (deleteError) {
+      console.error(`Error deleting existing deal products for deal ${id}:`, deleteError);
+      throw new Error(deleteError.message);
+    }
+
+    if (deal_products.length > 0) {
+      const dealProductsToInsert = deal_products.map(dp => ({
+        deal_id: id,
+        product_id: dp.product_id,
+        quantity: dp.quantity,
+        unit_price_at_deal_time: dp.unit_price_at_deal_time,
+        total_price_at_deal_time: dp.total_price_at_deal_time,
+      }));
+
+      const { error: insertError } = await supabase
+        .from('deal_products')
+        .insert(dealProductsToInsert);
+
+      if (insertError) {
+        console.error(`Error re-inserting deal products for deal ${id}:`, insertError);
+        throw new Error(insertError.message);
+      }
+    }
+  }
+
+  return updatedDeal as Negocio;
 }
 
 /**

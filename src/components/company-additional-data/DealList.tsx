@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { Negocio } from '@/types/crm';
+import { Negocio, DealProduct } from '@/types/crm';
 import { fetchDealsByCompanyExcelId, updateDeal, deleteDeal } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showError, showSuccess } from '@/utils/toast';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Calendar, DollarSign, Tag, Info, MessageSquareText, Clock, TrendingUp, Handshake, Search, FileText, CheckCircle, XCircle, MoreHorizontal, Edit, Trash, ArrowLeft, ArrowRight, Building, Package } from 'lucide-react'; // Added Package icon
+import { Terminal, Calendar, DollarSign, Tag, Info, MessageSquareText, Clock, TrendingUp, Handshake, Search, FileText, CheckCircle, XCircle, MoreHorizontal, Edit, Trash, ArrowLeft, ArrowRight, Building, Package } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -239,24 +239,20 @@ const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
             <Building className="mr-1 h-3 w-3 text-muted-foreground" />
             <span className="font-medium">Empresa:</span> <span className="ml-1 text-foreground">{deal.commercial_name || 'N/A'}</span>
           </div>
-          {deal.product_name && (
-            <div className="flex items-center text-xs">
-              <Package className="mr-1 h-3 w-3 text-muted-foreground" />
-              <span className="font-medium">Produto:</span> <span className="ml-1 text-foreground">{deal.product_name}</span>
+
+          {deal.deal_products && deal.deal_products.length > 0 && (
+            <div className="mt-2 space-y-1">
+              <p className="font-medium text-xs flex items-center">
+                <Package className="mr-1 h-3 w-3 text-muted-foreground" /> Produtos:
+              </p>
+              {deal.deal_products.map((dp: DealProduct, idx: number) => (
+                <div key={idx} className="ml-4 text-xs text-muted-foreground">
+                  - {dp.product_name} ({dp.quantity}x) - {displayValue(dp.total_price_at_deal_time, '', ` ${deal.currency || 'EUR'}`)}
+                </div>
+              ))}
             </div>
           )}
-          {deal.product_category && (
-            <div className="flex items-center text-xs">
-              <Tag className="mr-1 h-3 w-3 text-muted-foreground" />
-              <span className="font-medium">Categoria:</span> <span className="ml-1 text-foreground">{deal.product_category}</span>
-            </div>
-          )}
-          {deal.product_quantity !== null && deal.product_quantity !== undefined && (
-            <div className="flex items-center text-xs">
-              <Info className="mr-1 h-3 w-3 text-muted-foreground" />
-              <span className="font-medium">Quantidade:</span> <span className="ml-1 text-foreground">{deal.product_quantity}</span>
-            </div>
-          )}
+
           {deal.deal_value !== null && deal.deal_value !== undefined && (
             <div className="flex items-center text-xs">
               <DollarSign className="mr-1 h-3 w-3 text-muted-foreground" />

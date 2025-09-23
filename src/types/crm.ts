@@ -197,6 +197,18 @@ export interface Account {
   role: string | null;
 }
 
+export interface DealProduct {
+  id?: string;
+  deal_id: string;
+  product_id: string;
+  quantity: number;
+  unit_price_at_deal_time?: number | null;
+  total_price_at_deal_time?: number | null; // quantity * unit_price_at_deal_time
+  product_name?: string | null; // For display purposes
+  product_category?: string | null; // For display purposes
+  created_at?: string;
+}
+
 export interface Negocio {
   id?: string;
   user_id: string;
@@ -204,22 +216,18 @@ export interface Negocio {
   commercial_name?: string | null; // Adicionado para exibir o nome comercial da empresa
   deal_name: string;
   deal_status?: string | null;
-  deal_value?: number | null; // Valor do negócio ANTES do desconto (Quantidade * Preço Total do Produto)
+  deal_value?: number | null; // Valor do negócio ANTES do desconto (Soma de todos os total_price_at_deal_time dos deal_products)
   currency?: string | null;
   expected_close_date?: string | null; // ISO string for timestamp
   stage?: string | null;
   priority?: string | null;
   notes?: string | null;
-  product_id?: string | null; // NEW: Link to the product
-  product_name?: string | null; // NEW: For display purposes
-  product_category?: string | null; // NEW: For display purposes
-  product_total_price?: number | null; // NEW: For display purposes (Preço Unitário * Unidade do Produto)
-  product_quantity?: number | null; // NEW: Quantidade do produto no negócio
-  discount_type?: 'none' | 'percentage' | 'amount' | null; // NEW: Tipo de desconto
-  discount_value?: number | null; // NEW: Valor do desconto
-  final_deal_value?: number | null; // NEW: Valor do negócio APÓS o desconto
+  discount_type?: 'none' | 'percentage' | 'amount' | null; // Tipo de desconto aplicado ao negócio total
+  discount_value?: number | null; // Valor do desconto
+  final_deal_value?: number | null; // Valor do negócio APÓS o desconto
   created_at?: string;
   updated_at?: string;
+  deal_products?: DealProduct[]; // NEW: Lista de produtos associados a este negócio
 }
 
 export interface Product {
