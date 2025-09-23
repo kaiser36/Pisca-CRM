@@ -4,12 +4,12 @@ import StandCard from './StandCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, User, Building, Landmark, Globe, Wallet, Briefcase, CheckCircle, XCircle, Calendar, Clock, CreditCard, DollarSign, Package, Repeat, TrendingUp, Car, ArrowLeft } from 'lucide-react'; // Added new icons and ArrowLeft
-import { Button } from '@/components/ui/button'; // Import Button
+import { Mail, User, Building, Landmark, Globe, Wallet, Briefcase, CheckCircle, XCircle, Calendar, Clock, CreditCard, DollarSign, Package, Repeat, TrendingUp, Car, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface CompanyDetailProps {
   company: Company | null;
-  onBack?: () => void; // New optional prop for back button
+  onBack?: () => void;
 }
 
 const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
@@ -20,6 +20,29 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
       </div>
     );
   }
+
+  // Helper function to format date with time
+  const formatDateWithTime = (dateString: string | null | undefined) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return dateString; // Return original string if invalid date
+      }
+      return date.toLocaleString('pt-PT', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+    } catch (e) {
+      console.error("Error formatting date:", e);
+      return dateString; // Fallback to original string on error
+    }
+  };
 
   return (
     <ScrollArea className="h-full w-full pr-4">
@@ -83,11 +106,11 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
             </div>
             <div className="flex items-center text-sm">
               <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-              <span>Criação da Conta: {company.Creation_Date}</span>
+              <span>Criação da Conta: {formatDateWithTime(company.Creation_Date)}</span>
             </div>
             <div className="flex items-center text-sm">
               <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-              <span>Último Login: {company.Last_Login_Date}</span>
+              <span>Último Login: {formatDateWithTime(company.Last_Login_Date)}</span>
             </div>
             <div className="flex items-center text-sm">
               {company.Financing_Simulator_On ? (
