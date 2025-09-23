@@ -4,7 +4,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2, UserCog, Info } from 'lucide-react'; // Importar o ícone Info
+import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2, UserCog, Info, Users } from 'lucide-react'; // Added Users icon for Accounts
 import {
   Accordion,
   AccordionContent,
@@ -25,7 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const [accordionValue, setAccordionValue] = React.useState<string | undefined>(undefined);
 
   React.useEffect(() => {
-    if (location.pathname.startsWith('/settings') || location.pathname.startsWith('/accounts')) {
+    if (location.pathname.startsWith('/settings') || location.pathname.startsWith('/accounts') || location.pathname.startsWith('/am-view')) {
       setAccordionValue('settings-accordion'); // Um valor único para este item do acordeão
     } else {
       setAccordionValue(undefined);
@@ -91,19 +91,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             <AccordionTrigger className={cn(
               "flex items-center w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground py-2 px-4 rounded-md transition-colors",
               isCollapsed ? "px-2" : "px-4",
-              (location.pathname.startsWith('/settings') || location.pathname.startsWith('/accounts')) && "bg-sidebar-accent text-sidebar-accent-foreground"
+              (location.pathname.startsWith('/settings') || location.pathname.startsWith('/accounts') || location.pathname.startsWith('/am-view')) && "bg-sidebar-accent text-sidebar-accent-foreground"
             )}>
               <Settings className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
               {!isCollapsed && "Configurações"}
             </AccordionTrigger>
             <AccordionContent className="pb-0">
-              <Link to="/settings"> {/* Link para a página principal de definições */}
+              <Link to="/settings">
                 <Button
                   variant="ghost"
                   className={cn(
                     "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     isCollapsed ? "px-2" : "px-4",
-                    "pl-8", // Indentação para submenu
+                    "pl-8",
                     isActive('/settings') && "bg-sidebar-accent text-sidebar-accent-foreground"
                   )}
                 >
@@ -117,12 +117,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                   className={cn(
                     "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     isCollapsed ? "px-2" : "px-4",
-                    "pl-8", // Indentação para submenu
+                    "pl-8",
                     isActive('/accounts') && "bg-sidebar-accent text-sidebar-accent-foreground"
                   )}
                 >
-                  <UserCog className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
+                  <Users className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} /> {/* Changed icon to Users */}
                   {!isCollapsed && "Contas"}
+                </Button>
+              </Link>
+              <Link to="/am-view">
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    isCollapsed ? "px-2" : "px-4",
+                    "pl-8",
+                    isActive('/am-view') && "bg-sidebar-accent text-sidebar-accent-foreground"
+                  )}
+                >
+                  <UserCog className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
+                  {!isCollapsed && "AM"}
                 </Button>
               </Link>
             </AccordionContent>
