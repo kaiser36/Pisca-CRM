@@ -107,19 +107,39 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
   // Alert logic
   const alerts: string[] = [];
-  const planExpirationDate = company.crmCompany?.Plan_Expiration_Date || null;
+  const crmCompany = company.crmCompany;
+
+  // 1. Se o plano estiver expirado
+  const planExpirationDate = crmCompany?.Plan_Expiration_Date || null;
   if (planExpirationDate && isPast(parseISO(planExpirationDate))) {
     alerts.push("O plano da empresa expirou!");
   }
 
-  const lastVisitDate = company["Data ultima visita"] || company.crmCompany?.Last_Visit_Date || null;
+  // 2. Se o plano ativo estiver não
+  if (crmCompany?.Plan_Active === false) {
+    alerts.push("O plano da empresa não está ativo!");
+  }
+
+  // 3. Se a data da ultima visita for mais de 3 meses
+  const lastVisitDate = company["Data ultima visita"] || crmCompany?.Last_Visit_Date || null;
   if (lastVisitDate && isVisitOld(lastVisitDate)) {
     alerts.push("A última visita foi há mais de 3 meses.");
   }
 
-  const lastLoginDate = company.crmCompany?.Last_Login_Date || null;
+  // 4. Se o ultimo login foi à mais de uma semana atras
+  const lastLoginDate = crmCompany?.Last_Login_Date || null;
   if (lastLoginDate && isLoginOld(lastLoginDate)) {
     alerts.push("O último login foi há mais de uma semana.");
+  }
+
+  // 5. Se ele for Parceiro Credibom e o Simulador Financiamento = Não
+  if (crmCompany?.Is_CRB_Partner === true && crmCompany?.Financing_Simulator_On === false) {
+    alerts.push("É Parceiro Credibom, mas o Simulador de Financiamento está desativado.");
+  }
+
+  // 6. Se ele tiver Plano ativo = Sim e Renovação Automática= Não
+  if (crmCompany?.Plan_Active === true && crmCompany?.Plan_Auto_Renewal === false) {
+    alerts.push("Plano ativo, mas a Renovação Automática está desativada.");
   }
 
   return (
@@ -203,11 +223,11 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </AvatarFallback>
               </Avatar>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 flex-1">
-                {renderField(Mail, "Email", company["Email da empresa"] || company.crmCompany?.Company_Email)}
-                {renderField(Globe, "Website", company["Site"] || company.crmCompany?.Website)}
-                {renderField(Landmark, "NIF", company.crmCompany?.NIF)}
-                {renderField(User, "AM Atual", company["AM"] || company.crmCompany?.AM_Current)}
-                {renderField(Wallet, "Plafond", company.crmCompany?.Plafond)}
+                {renderField(Mail, "Email", company["Email da empresa"] || crmCompany?.Company_Email)}
+                {renderField(Globe, "Website", company["Site"] || crmCompany?.Website)}
+                {renderField(Landmark, "NIF", crmCompany?.NIF)}
+                {renderField(User, "AM Atual", company["AM"] || crmCompany?.AM_Current)}
+                {renderField(Wallet, "Plafond", crmCompany?.Plafond)}
               </div>
             </div>
           </Card>
@@ -221,12 +241,12 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 <Package className="mr-2 h-5 w-5" /> Pisca
               </CardTitle>
               <div className="space-y-2">
-                {renderField(Package, "Último Plano", company["Plano Indicado"] || company.crmCompany?.Last_Plan)}
-                {renderField(CheckCircle, "Plano Ativo", company.crmCompany?.Plan_Active)}
-                {renderField(Calendar, "Expiração do Plano", company.crmCompany?.Plan_Expiration_Date)}
-                {renderField(Repeat, "Renovação Automática", company.crmCompany?.Plan_Auto_Renewal)}
-                {renderField(TrendingUp, "Bumps Totais", company.crmCompany?.Total_Bumps)}
-                {renderField(TrendingUp, "Bumps Atuais", company.crmCompany?.Current_Bumps)}
+                {renderField(Package, "Último Plano", company["Plano Indicado"] || crmCompany?.Last_Plan)}
+                {renderField(CheckCircle, "Plano Ativo", crmCompany?.Plan_Active)}
+                {renderField(Calendar, "Expiração do Plano", crmCompany?.Plan_Expiration_Date)}
+                {renderField(Repeat, "Renovação Automática", crmCompany?.Plan_Auto_Renewal)}
+                {renderField(TrendingUp, "Bumps Totais", crmCompany?.Total_Bumps)}
+                {renderField(TrendingUp, "Bumps Atuais", crmCompany?.Current_Bumps)}
               </div>
             </Card>
 
@@ -237,11 +257,11 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
               </CardTitle>
               <div className="space-y-2">
                 {renderField(Tag, "Classificação", company["Classificação"])}
-                {renderField(CheckCircle, "Parceiro Credibom", company.crmCompany?.Is_CRB_Partner)}
-                {renderField(Car, "Simulador Financiamento", company.crmCompany?.Financing_Simulator_On)}
-                {renderField(Clock, "Último Login", company.crmCompany?.Last_Login_Date)}
+                {renderField(CheckCircle, "Parceiro Credibom", crmCompany?.Is_CRB_Partner)}
+                {renderField(Car, "Simulador Financiamento", crmCompany?.Financing_Simulator_On)}
+                {renderField(Clock, "Último Login", crmCompany?.Last_Login_Date)}
                 {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
-                {renderField(Wallet, "Plafond", company.crmCompany?.Plafond)}
+                {renderField(Wallet, "Plafond", crmCompany?.Plafond)}
               </div>
             </Card>
 
@@ -288,11 +308,11 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Building, "Nome Fiscal", company.crmCompany?.Company_Name)}
+                    {renderField(Building, "Nome Fiscal", crmCompany?.Company_Name)}
                     {renderField(Building, "Nome Comercial", company["Nome Comercial"])}
-                    {renderField(Landmark, "NIF", company.crmCompany?.NIF)}
-                    {renderField(Mail, "Email Principal", company["Email da empresa"] || company.crmCompany?.Company_Email)}
-                    {renderField(Globe, "Website", company["Site"] || company.crmCompany?.Website)}
+                    {renderField(Landmark, "NIF", crmCompany?.NIF)}
+                    {renderField(Mail, "Email Principal", company["Email da empresa"] || crmCompany?.Company_Email)}
+                    {renderField(Globe, "Website", company["Site"] || crmCompany?.Website)}
                     {renderField(Car, "Logotipo (URL)", company["Logotipo"])}
                     {renderField(Building, "Tipo de Empresa", company["Tipo de empresa"])}
                     {renderField(Factory, "Grupo", company["Grupo"])}
@@ -308,10 +328,10 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(MapPin, "Morada", company["Morada"] || company.crmCompany?.Company_Address)}
-                    {renderField(MapPin, "Código Postal", company["STAND_POSTAL_CODE"] || company.crmCompany?.Company_Postal_Code)}
-                    {renderField(MapPin, "Distrito", company["Distrito"] || company.crmCompany?.District)}
-                    {renderField(MapPin, "Cidade", company["Cidade"] || company.crmCompany?.Company_City)}
+                    {renderField(MapPin, "Morada", company["Morada"] || crmCompany?.Company_Address)}
+                    {renderField(MapPin, "Código Postal", company["STAND_POSTAL_CODE"] || crmCompany?.Company_Postal_Code)}
+                    {renderField(MapPin, "Distrito", company["Distrito"] || crmCompany?.District)}
+                    {renderField(MapPin, "Cidade", company["Cidade"] || crmCompany?.Company_City)}
                   </AccordionContent>
                 </AccordionItem>
 
@@ -323,8 +343,8 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(User, "Pessoa de Contacto (CRM)", company.crmCompany?.Company_Contact_Person)}
-                    {renderField(Briefcase, "Supervisor (CRM)", company.crmCompany?.Supervisor)}
+                    {renderField(User, "Pessoa de Contacto (CRM)", crmCompany?.Company_Contact_Person)}
+                    {renderField(Briefcase, "Supervisor (CRM)", crmCompany?.Supervisor)}
                     {renderField(User, "AM Antigo", company["AM_OLD"])}
                     {renderField(User, "AM Atual", company["AM"])}
                     {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
@@ -339,9 +359,9 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Package, "Stock STV", company["Stock STV"] || company.crmCompany?.Stock_STV)}
-                    {renderField(Package, "Stock na Empresa", company["Stock na empresa"] || company.crmCompany?.Company_Stock)}
-                    {renderField(Info, "API Info", company["API"] || company.crmCompany?.Company_API_Info)}
+                    {renderField(Package, "Stock STV", company["Stock STV"] || crmCompany?.Stock_STV)}
+                    {renderField(Package, "Stock na Empresa", company["Stock na empresa"] || crmCompany?.Company_Stock)}
+                    {renderField(Info, "API Info", company["API"] || crmCompany?.Company_API_Info)}
                   </AccordionContent>
                 </AccordionItem>
 
@@ -353,19 +373,19 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Wallet, "Plafond", company.crmCompany?.Plafond)}
-                    {renderField(Package, "Último Plano", company["Plano Indicado"] || company.crmCompany?.Last_Plan)}
-                    {renderField(DollarSign, "Preço do Plano", company.crmCompany?.Plan_Price)}
-                    {renderField(Calendar, "Expiração do Plano", company.crmCompany?.Plan_Expiration_Date)}
-                    {renderField(CheckCircle, "Plano Ativo", company.crmCompany?.Plan_Active)}
-                    {renderField(Repeat, "Renovação Automática", company.crmCompany?.Plan_Auto_Renewal)}
-                    {renderField(TrendingUp, "Bumps Atuais", company.crmCompany?.Current_Bumps)}
-                    {renderField(TrendingUp, "Bumps Totais", company.crmCompany?.Total_Bumps)}
+                    {renderField(Wallet, "Plafond", crmCompany?.Plafond)}
+                    {renderField(Package, "Último Plano", company["Plano Indicado"] || crmCompany?.Last_Plan)}
+                    {renderField(DollarSign, "Preço do Plano", crmCompany?.Plan_Price)}
+                    {renderField(Calendar, "Expiração do Plano", crmCompany?.Plan_Expiration_Date)}
+                    {renderField(CheckCircle, "Plano Ativo", crmCompany?.Plan_Active)}
+                    {renderField(Repeat, "Renovação Automática", crmCompany?.Plan_Auto_Renewal)}
+                    {renderField(TrendingUp, "Bumps Atuais", crmCompany?.Current_Bumps)}
+                    {renderField(TrendingUp, "Bumps Totais", crmCompany?.Total_Bumps)}
                     {renderField(Banknote, "Mediador de Crédito", company["Mediador de credito"])}
                     {renderField(LinkIcon, "Link Banco de Portugal", company["Link do Banco de Portugal"])}
                     {renderField(ShieldCheck, "Financeiras com Acordo", company["Financeiras com acordo"])}
-                    {renderField(Car, "Simulador Financiamento", company.crmCompany?.Financing_Simulator_On)}
-                    {renderField(Car, "Cor do Simulador", company.crmCompany?.Simulator_Color)}
+                    {renderField(Car, "Simulador Financiamento", crmCompany?.Financing_Simulator_On)}
+                    {renderField(Car, "Cor do Simulador", crmCompany?.Simulator_Color)}
                   </AccordionContent>
                 </AccordionItem>
 
@@ -397,8 +417,8 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(CheckCircle, "Parceiro Credibom (CRM)", company.crmCompany?.Is_CRB_Partner)}
-                    {renderField(CheckCircle, "Parceiro APDCA (CRM)", company.crmCompany?.Is_APDCA_Partner)}
+                    {renderField(CheckCircle, "Parceiro Credibom (CRM)", crmCompany?.Is_CRB_Partner)}
+                    {renderField(CheckCircle, "Parceiro APDCA (CRM)", crmCompany?.Is_APDCA_Partner)}
                     {renderField(ShieldCheck, "Quer CT", company["Quer CT"])}
                     {renderField(ShieldCheck, "Quer ser Parceiro Credibom (Adicional)", company["Quer ser parceiro Credibom"])}
                     {renderField(Info, "Autobiz", company["Autobiz"])}
@@ -413,8 +433,8 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Calendar, "Data de Criação (CRM)", company.crmCompany?.Creation_Date)}
-                    {renderField(Clock, "Último Login (CRM)", company.crmCompany?.Last_Login_Date)}
+                    {renderField(Calendar, "Data de Criação (CRM)", crmCompany?.Creation_Date)}
+                    {renderField(Clock, "Último Login (CRM)", crmCompany?.Last_Login_Date)}
                     {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
                   </AccordionContent>
                 </AccordionItem>
@@ -425,9 +445,9 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
               </p>
             </TabsContent>
             <TabsContent value="stands" className="mt-4">
-              {company.crmCompany && company.crmCompany.stands && company.crmCompany.stands.length > 0 ? (
+              {crmCompany && crmCompany.stands && crmCompany.stands.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {company.crmCompany.stands.map((stand) => (
+                  {crmCompany.stands.map((stand) => (
                     <StandCard key={stand.Stand_ID} stand={stand} />
                   ))}
                 </div>
