@@ -522,3 +522,85 @@ export async function fetchCompanyByEmail(userId: string, email: string): Promis
     stands: [] // Stands are not fetched by this function
   };
 }
+
+/**
+ * Fetches companies from the main CRM that do not have corresponding additional data entries.
+ */
+export async function fetchCompaniesMissingAdditionalData(userId: string): Promise<Company[]> {
+  const { data, error } = await supabase
+    .from('companies')
+    .select(`
+      *,
+      company_additional_excel_data!left(
+        id
+      )
+    `)
+    .eq('user_id', userId)
+    .is('company_additional_excel_data.id', null);
+
+  if (error) {
+    console.error('Error fetching companies missing additional data:', error);
+    throw new Error(error.message);
+  }
+
+  // Filter out the joined `company_additional_excel_data` and map to Company type
+  const missingCompanies: Company[] = data
+    .filter(item => item.company_additional_excel_data.length === 0) // Ensure no additional data
+    .map(item => ({
+      Company_id: item.company_id,
+      Company_Name: item.company_name,
+      NIF: item.nif,
+      Company_Email: item.company_email,
+      Company_Contact_Person: item.company_contact_person,
+      Website: item.website,
+      Plafond: item.plafond,
+      Supervisor: item.supervisor,
+      Is_CRB_Partner: item.is_crb_partner,
+      Is_APDCA_Partner: item.is_apdca_partner,
+      Creation_Date: item.creation_date,
+      Last_Login_Date: item.last_login_date,
+      Financing_Simulator_On: item.financing_simulator_on,
+      Simulator_Color: item.simulator_color,
+      Last_Plan: item.last_plan,
+      Plan_Price: item.plan_price,
+      Plan_Expiration_Date: item.plan_expiration_date,
+      Plan_Active: item.plan_active,
+      Plan_Auto_Renewal: item.plan_auto_renewal,
+      Current_Bumps: item.current_bumps,
+      Total_Bumps: item.total_bumps,
+      Commercial_Name: item.commercial_name,
+      Company_Postal_Code: item.company_postal_code,
+      District: item.district,
+      Company_City: item.company_city,
+      Company_Address: item.company_address,
+      AM_Old: item.am_old,
+      AM_Current: item.am_current,
+      Stock_STV: item.stock_stv,
+      Company_API_Info: item.company_api_info,
+      Company_Stock: item.company_stock,
+      Logo_URL: item.logo_url,
+      Classification: item.classification,
+      Imported_Percentage: item.imported_percentage,
+      Vehicle_Source: item.vehicle_source,
+      Competition: item.competition,
+      Social_Media_Investment: item.social_media_investment,
+      Portal_Investment: item.portal_investment,
+      B2B_Market: item.b2b_market,
+      Uses_CRM: item.uses_crm,
+      CRM_Software: item.crm_software,
+      Recommended_Plan: item.recommended_plan,
+      Credit_Mediator: item.credit_mediator,
+      Bank_Of_Portugal_Link: item.bank_of_portugal_link,
+      Financing_Agreements: item.financing_agreements,
+      Last_Visit_Date: item.last_visit_date,
+      Company_Group: item.company_group,
+      Represented_Brands: item.represented_brands,
+      Company_Type: item.company_type,
+      Wants_CT: item.wants_ct,
+      Wants_CRB_Partner: item.wants_crb_partner,
+      Autobiz_Info: item.autobiz_info,
+      stands: [] // Stands are not fetched by this function
+    }));
+
+  return missingCompanies;
+}
