@@ -219,7 +219,7 @@ export interface Product {
   user_id: string;
   categoria?: string | null;
   produto: string;
-  unidade?: string | null;
+  unidade?: number | null; // Changed to number for calculation
   preco_unitario?: number | null;
   preco_total?: number | null;
   created_at?: string;

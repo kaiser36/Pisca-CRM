@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input'; // Corrected: changed '=' to 'from'
+import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,24 +24,24 @@ interface ProductCreateFormProps {
 const formSchema = z.object({
   categoria: z.string().nullable().optional(),
   produto: z.string().min(1, "Nome do Produto é obrigatório"),
-  unidade: z.string().nullable().optional(),
+  unidade: z.preprocess( // Changed to number
+    (val) => (val === "" ? null : Number(val)),
+    z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
+  ),
   preco_unitario: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().min(0, "Não pode ser negativo").nullable().optional()
   ),
-  preco_total: z.preprocess(
-    (val) => (val === "" ? null : Number(val)),
-    z.number().min(0, "Não pode ser negativo").nullable().optional()
-  ),
+  preco_total: z.number().nullable().optional(), // preco_total is now derived
 });
 
 type FormData = z.infer<typeof formSchema>;
 
-// Define a discriminated union type for form fields
 interface FieldBase {
   name: keyof FormData;
   label: string;
   required?: boolean;
+  readOnly?: boolean; // Added readOnly prop
 }
 
 interface TextField extends FieldBase {
@@ -82,11 +82,21 @@ const ProductCreateForm: React.FC<ProductCreateFormProps> = ({ onSave, onCancel 
     defaultValues: {
       categoria: '',
       produto: '',
-      unidade: '',
+      unidade: 0, // Default to 0 for number type
       preco_unitario: 0,
       preco_total: 0,
     },
   });
+
+  const { watch, setValue } = form;
+  const unidade = watch("unidade");
+  const preco_unitario = watch("preco_unitario");
+
+  // Effect to calculate preco_total
+  useEffect(() => {
+    const calculatedTotal = (unidade || 0) * (preco_unitario || 0);
+    setValue("preco_total", calculatedTotal);
+  }, [unidade, preco_unitario, setValue]);
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
@@ -101,8 +111,8 @@ const ProductCreateForm: React.FC<ProductCreateFormProps> = ({ onSave, onCancel 
         categoria: values.categoria || null,
         produto: values.produto,
         unidade: values.unidade || null,
-        preco_unitario: values.preco_unitario || 0,
-        preco_total: values.preco_total || 0,
+        preco_unitario: values.preco_unitario || null,
+        preco_total: values.preco_total || null, // Use the calculated value
       };
 
       await insertProduct(newProduct);
@@ -119,9 +129,9 @@ const ProductCreateForm: React.FC<ProductCreateFormProps> = ({ onSave, onCancel 
   const fields: FormFieldConfig[] = [
     { name: "categoria", label: "Categoria", type: "select", options: ["Extras", "Planos"] },
     { name: "produto", label: "Produto", type: "text", required: true },
-    { name: "unidade", label: "Unidade", type: "text" },
+    { name: "unidade", label: "Unidade", type: "number" }, // Changed to number
     { name: "preco_unitario", label: "Preço Unitário", type: "number" },
-    { name: "preco_total", label: "Preço Total", type: "number" },
+    { name: "preco_total", label: "Preço Total", type: "number", readOnly: true }, // Made read-only
   ];
 
   return (
@@ -166,6 +176,7 @@ const ProductCreateForm: React.FC<ProductCreateFormProps> = ({ onSave, onCancel 
                             formField.onChange(e.target.value);
                           }
                         }}
+                        readOnly={field.readOnly} // Apply readOnly prop
                       />
                     )}
                   </FormControl>
