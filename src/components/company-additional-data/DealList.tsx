@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Calendar, DollarSign, Tag, Info, MessageSquareText, Clock, TrendingUp, Handshake } from 'lucide-react';
+import { Terminal, Calendar, DollarSign, Tag, Info, MessageSquareText, Clock, TrendingUp, Handshake, Search, FileText, CheckCircle, XCircle } from 'lucide-react'; // Import new icons
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,53 @@ const DEAL_STATUSES = [
   "Closed Won",
   "Closed Lost",
 ];
+
+// Mapeamento de estilos para cada status
+const DEAL_STATUS_STYLES: {
+  [key: string]: {
+    icon: React.ElementType;
+    textColor: string;
+    bgColor: string;
+    borderColor: string;
+  };
+} = {
+  "Prospecting": {
+    icon: Tag,
+    textColor: "text-blue-700",
+    bgColor: "bg-blue-50",
+    borderColor: "border-blue-200",
+  },
+  "Qualification": {
+    icon: Search,
+    textColor: "text-purple-700",
+    bgColor: "bg-purple-50",
+    borderColor: "border-purple-200",
+  },
+  "Proposal": {
+    icon: FileText,
+    textColor: "text-indigo-700",
+    bgColor: "bg-indigo-50",
+    borderColor: "border-indigo-200",
+  },
+  "Negotiation": {
+    icon: Handshake,
+    textColor: "text-yellow-700",
+    bgColor: "bg-yellow-50",
+    borderColor: "border-yellow-200",
+  },
+  "Closed Won": {
+    icon: CheckCircle,
+    textColor: "text-green-700",
+    bgColor: "bg-green-50",
+    borderColor: "border-green-200",
+  },
+  "Closed Lost": {
+    icon: XCircle,
+    textColor: "text-red-700",
+    bgColor: "bg-red-50",
+    borderColor: "border-red-200",
+  },
+};
 
 const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
   const [deals, setDeals] = useState<Negocio[]>([]);
@@ -160,22 +207,32 @@ const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
       ) : (
         <ScrollArea className="flex-1 pb-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-2">
-            {DEAL_STATUSES.map(status => (
-              <div key={status} className="flex flex-col bg-muted/40 rounded-lg p-3 shadow-inner border border-muted-foreground/10">
-                <h4 className="font-semibold text-lg mb-3 flex items-center text-primary">
-                  <Handshake className="mr-2 h-5 w-5" /> {status} ({dealsByStatus[status]?.length || 0})
-                </h4>
-                <ScrollArea className="flex-1 max-h-[calc(100vh-250px)]"> {/* Adjust max-height as needed */}
-                  <div className="space-y-3 pr-2">
-                    {dealsByStatus[status]?.length === 0 ? (
-                      <p className="text-muted-foreground text-sm text-center py-4">Nenhum negócio neste status.</p>
-                    ) : (
-                      dealsByStatus[status]?.map(renderDealCard)
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
-            ))}
+            {DEAL_STATUSES.map(status => {
+              const { icon: StatusIcon, textColor, bgColor, borderColor } = DEAL_STATUS_STYLES[status] || DEAL_STATUS_STYLES["Prospecting"]; // Fallback to Prospecting
+              return (
+                <div
+                  key={status}
+                  className={cn(
+                    "flex flex-col rounded-lg p-3 shadow-inner border",
+                    bgColor,
+                    borderColor
+                  )}
+                >
+                  <h4 className={cn("font-semibold text-lg mb-3 flex items-center", textColor)}>
+                    <StatusIcon className="mr-2 h-5 w-5" /> {status} ({dealsByStatus[status]?.length || 0})
+                  </h4>
+                  <ScrollArea className="flex-1 max-h-[calc(100vh-250px)]"> {/* Adjust max-height as needed */}
+                    <div className="space-y-3 pr-2">
+                      {dealsByStatus[status]?.length === 0 ? (
+                        <p className="text-muted-foreground text-sm text-center py-4">Nenhum negócio neste status.</p>
+                      ) : (
+                        dealsByStatus[status]?.map(renderDealCard)
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+              );
+            })}
           </div>
         </ScrollArea>
       )}
