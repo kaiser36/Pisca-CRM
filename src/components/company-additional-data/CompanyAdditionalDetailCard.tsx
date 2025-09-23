@@ -115,8 +115,8 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     alerts.push("O plano da empresa expirou!");
   }
 
-  // 2. Se o plano ativo estiver não
-  if (crmCompany?.Plan_Active === false) {
+  // 2. Se o plano ativo estiver não (incluindo null/undefined)
+  if (!crmCompany?.Plan_Active) { // This condition now covers false, null, and undefined
     alerts.push("O plano da empresa não está ativo!");
   }
 
