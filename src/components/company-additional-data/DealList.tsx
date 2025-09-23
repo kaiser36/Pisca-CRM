@@ -245,20 +245,36 @@ const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
               <span className="font-medium">Produto:</span> <span className="ml-1 text-foreground">{deal.product_name}</span>
             </div>
           )}
-          {deal.product_category && ( // NEW: Display product category
+          {deal.product_category && (
             <div className="flex items-center text-xs">
               <Tag className="mr-1 h-3 w-3 text-muted-foreground" />
               <span className="font-medium">Categoria:</span> <span className="ml-1 text-foreground">{deal.product_category}</span>
             </div>
           )}
-          <div className="flex items-center text-xs">
-            <DollarSign className="mr-1 h-3 w-3 text-muted-foreground" />
-            <span className="font-medium">Valor:</span> <span className="ml-1 text-foreground">{displayValue(deal.deal_value, '', ` ${deal.currency || 'EUR'}`)}</span>
-          </div>
-          {deal.product_total_price !== null && deal.product_total_price !== undefined && ( // NEW: Display product total price
+          {deal.product_quantity !== null && deal.product_quantity !== undefined && (
+            <div className="flex items-center text-xs">
+              <Info className="mr-1 h-3 w-3 text-muted-foreground" />
+              <span className="font-medium">Quantidade:</span> <span className="ml-1 text-foreground">{deal.product_quantity}</span>
+            </div>
+          )}
+          {deal.deal_value !== null && deal.deal_value !== undefined && (
             <div className="flex items-center text-xs">
               <DollarSign className="mr-1 h-3 w-3 text-muted-foreground" />
-              <span className="font-medium">Preço Total Produto:</span> <span className="ml-1 text-foreground">{displayValue(deal.product_total_price, '', ` ${deal.currency || 'EUR'}`)}</span>
+              <span className="font-medium">Valor (Pré-Desconto):</span> <span className="ml-1 text-foreground">{displayValue(deal.deal_value, '', ` ${deal.currency || 'EUR'}`)}</span>
+            </div>
+          )}
+          {deal.discount_type !== 'none' && deal.discount_value !== null && deal.discount_value !== undefined && (
+            <div className="flex items-center text-xs">
+              <Tag className="mr-1 h-3 w-3 text-muted-foreground" />
+              <span className="font-medium">Desconto ({deal.discount_type === 'percentage' ? '%' : '€'}):</span> <span className="ml-1 text-foreground">
+                {deal.discount_type === 'percentage' ? `${deal.discount_value}%` : `${deal.discount_value?.toFixed(2)} €`}
+              </span>
+            </div>
+          )}
+          {deal.final_deal_value !== null && deal.final_deal_value !== undefined && (
+            <div className="flex items-center text-xs font-bold text-green-700">
+              <DollarSign className="mr-1 h-3 w-3 text-green-700" />
+              <span className="font-medium">Valor Final:</span> <span className="ml-1">{displayValue(deal.final_deal_value, '', ` ${deal.currency || 'EUR'}`)}</span>
             </div>
           )}
           {deal.expected_close_date && (

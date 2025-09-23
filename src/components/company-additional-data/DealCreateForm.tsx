@@ -31,7 +31,7 @@ const formSchema = z.object({
   commercial_name: z.string().nullable().optional(), // Added for display, not for submission
   deal_name: z.string().min(1, "Nome do Negócio é obrigatório"),
   deal_status: z.string().nullable().optional(),
-  deal_value: z.preprocess(
+  deal_value: z.preprocess( // This will be the calculated value before discount
     (val) => (val === "" ? null : Number(val)),
     z.number().min(0, "Não pode ser negativo").nullable().optional()
   ),
@@ -40,11 +40,20 @@ const formSchema = z.object({
   stage: z.string().nullable().optional(),
   priority: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
-  product_category: z.string().nullable().optional(), // NEW: For filtering products
-  product_id: z.string().nullable().optional(), // NEW: Product ID
-  product_total_price: z.preprocess( // NEW: For display
+  product_category: z.string().nullable().optional(), // For filtering products
+  product_id: z.string().nullable().optional(), // Product ID
+  product_quantity: z.preprocess( // NEW: Product quantity
     (val) => (val === "" ? null : Number(val)),
-    z.number().nullable().optional()
+    z.number().int("Deve ser um número inteiro").min(1, "A quantidade deve ser pelo menos 1").nullable().optional()
+  ),
+  discount_type: z.enum(['none', 'percentage', 'amount']).default('none'), // NEW: Discount type
+  discount_value: z.preprocess( // NEW: Discount value
+    (val) => (val === "" ? null : Number(val)),
+    z.number().min(0, "O desconto não pode ser negativo").nullable().optional()
+  ),
+  final_deal_value: z.preprocess( // NEW: Final calculated value after discount
+    (val) => (val === "" ? null : Number(val)),
+    z.number().min(0, "O valor final não pode ser negativo").nullable().optional()
   ),
 });
 
@@ -104,15 +113,21 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
       stage: '',
       priority: 'Medium',
       notes: '',
-      product_category: '', // Default empty
+      product_category: '',
       product_id: '',
-      product_total_price: 0, // Default 0
+      product_quantity: 1, // Default quantity
+      discount_type: 'none', // Default discount type
+      discount_value: 0, // Default discount value
+      final_deal_value: 0, // Default final value
     },
   });
 
   const { watch, setValue } = form;
   const selectedCategory = watch("product_category");
   const selectedProductId = watch("product_id");
+  const productQuantity = watch("product_quantity");
+  const discountType = watch("discount_type");
+  const discountValue = watch("discount_value");
 
   // Effect to filter products based on selected category
   useEffect(() => {
@@ -126,21 +141,26 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
       const currentProduct = allProducts.find(p => p.id === selectedProductId);
       if (!currentProduct || (selectedCategory && currentProduct.categoria !== selectedCategory)) {
         setValue("product_id", '');
-        setValue("product_total_price", 0);
+        setValue("deal_value", 0); // Reset calculated value
+        setValue("final_deal_value", 0); // Reset final value
       }
     }
   }, [selectedCategory, allProducts, selectedProductId, setValue]);
 
-  // Effect to update product_total_price when product_id changes
+  // Effect to calculate deal_value and final_deal_value
   useEffect(() => {
     const product = allProducts.find(p => p.id === selectedProductId);
-    if (product) {
-      setValue("product_total_price", product.preco_total || 0);
-      setValue("product_category", product.categoria || ''); // Also set category if product is selected directly
-    } else {
-      setValue("product_total_price", 0);
+    const baseProductValue = (product?.preco_total || 0) * (productQuantity || 0);
+    setValue("deal_value", baseProductValue); // Value before discount
+
+    let finalValue = baseProductValue;
+    if (discountType === 'percentage' && discountValue !== null) {
+      finalValue = baseProductValue * (1 - (discountValue / 100));
+    } else if (discountType === 'amount' && discountValue !== null) {
+      finalValue = baseProductValue - discountValue;
     }
-  }, [selectedProductId, allProducts, setValue]);
+    setValue("final_deal_value", Math.max(0, finalValue)); // Ensure final value is not negative
+  }, [selectedProductId, productQuantity, discountType, discountValue, allProducts, setValue]);
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
@@ -155,13 +175,17 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
         company_excel_id: companyExcelId,
         deal_name: values.deal_name,
         deal_status: values.deal_status || 'Prospecting',
-        deal_value: values.deal_value || 0,
+        deal_value: values.deal_value || 0, // Value before discount
         currency: values.currency || 'EUR',
         expected_close_date: values.expected_close_date ? values.expected_close_date.toISOString() : null,
         stage: values.stage || null,
         priority: values.priority || 'Medium',
         notes: values.notes || null,
         product_id: values.product_id || null,
+        product_quantity: values.product_quantity || null,
+        discount_type: values.discount_type || null,
+        discount_value: values.discount_value || null,
+        final_deal_value: values.final_deal_value || null, // Final value after discount
       };
 
       await insertDeal(newDeal);
@@ -181,14 +205,17 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
     { name: "commercial_name", label: "Nome Comercial da Empresa", type: "text", readOnly: true },
     { name: "deal_name", label: "Nome do Negócio", type: "text", required: true },
     { name: "deal_status", label: "Status", type: "select", options: ["Prospecting", "Qualification", "Proposal", "Negotiation", "Closed Won", "Closed Lost"] },
-    { name: "deal_value", label: "Valor do Negócio", type: "number" },
     { name: "currency", label: "Moeda", type: "select", options: ["EUR", "USD", "GBP"] },
     { name: "expected_close_date", label: "Data de Fecho Esperada", type: "date" },
     { name: "stage", label: "Etapa", type: "text" },
     { name: "priority", label: "Prioridade", type: "select", options: ["Low", "Medium", "High"] },
-    { name: "product_category", label: "Categoria do Produto", type: "select", options: productCategories }, // NEW: Category Select
-    { name: "product_id", label: "Produto", type: "select", options: filteredProducts.map(p => ({ value: p.id!, label: p.produto })) }, // Filtered products
-    { name: "product_total_price", label: "Preço Total do Produto", type: "number", readOnly: true }, // NEW: Display total price
+    { name: "product_category", label: "Categoria do Produto", type: "select", options: productCategories },
+    { name: "product_id", label: "Produto", type: "select", options: filteredProducts.map(p => ({ value: p.id!, label: p.produto })) },
+    { name: "product_quantity", label: "Quantidade do Produto", type: "number" },
+    { name: "deal_value", label: "Valor do Negócio (Pré-Desconto)", type: "number", readOnly: true }, // Pre-discount value
+    { name: "discount_type", label: "Tipo de Desconto", type: "select", options: [{ value: 'none', label: 'Nenhum' }, { value: 'percentage', label: 'Percentagem' }, { value: 'amount', label: 'Valor Fixo' }] },
+    { name: "discount_value", label: "Valor do Desconto", type: "number", conditional: (val: FormData) => val.discount_type !== 'none' },
+    { name: "final_deal_value", label: "Valor Final do Negócio", type: "number", readOnly: true }, // Post-discount value
     { name: "notes", label: "Notas", type: "textarea", colSpan: 2 },
   ];
 
@@ -199,82 +226,91 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
           A criar negócio para a empresa com ID Excel: <span className="font-semibold">{companyExcelId}</span>
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {fields.map((field) => (
-            <FormField
-              key={field.name}
-              control={form.control}
-              name={field.name as keyof FormData}
-              render={({ field: formField }) => (
-                <FormItem className={field.colSpan === 2 ? "md:col-span-2" : ""}>
-                  <FormLabel>{field.label} {field.required && <span className="text-red-500">*</span>}</FormLabel>
-                  <FormControl>
-                    {field.type === "date" ? (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !formField.value && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {formField.value ? format(formField.value as Date, "PPP") : <span>Selecione uma data</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={formField.value as Date}
-                            onSelect={formField.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    ) : field.type === "textarea" ? (
-                      <Textarea
-                        {...formField}
-                        value={formField.value as string || ''}
-                        onChange={formField.onChange}
-                      />
-                    ) : field.type === "select" ? (
-                      <Select onValueChange={(value) => {
-                        formField.onChange(value);
-                        if (field.name === "product_category") {
-                          setValue("product_id", ''); // Reset product when category changes
-                          setValue("product_total_price", 0);
-                        }
-                      }} defaultValue={formField.value as string}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {field.options?.map((option: any) => (
-                            <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input
-                        type={field.type}
-                        {...formField}
-                        value={formField.value as string | number || ''}
-                        onChange={(e) => {
-                          if (field.type === "number") {
-                            formField.onChange(e.target.value === '' ? null : Number(e.target.value));
-                          } else {
-                            formField.onChange(e.target.value);
+          {fields.map((field) => {
+            // Conditionally render discount_value field
+            if (field.conditional && !field.conditional(form.getValues())) {
+              return null;
+            }
+            return (
+              <FormField
+                key={field.name}
+                control={form.control}
+                name={field.name as keyof FormData}
+                render={({ field: formField }) => (
+                  <FormItem className={field.colSpan === 2 ? "md:col-span-2" : ""}>
+                    <FormLabel>{field.label} {field.required && <span className="text-red-500">*</span>}</FormLabel>
+                    <FormControl>
+                      {field.type === "date" ? (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !formField.value && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {formField.value ? format(formField.value as Date, "PPP") : <span>Selecione uma data</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={formField.value as Date}
+                              onSelect={formField.onChange}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      ) : field.type === "textarea" ? (
+                        <Textarea
+                          {...formField}
+                          value={formField.value as string || ''}
+                          onChange={formField.onChange}
+                        />
+                      ) : field.type === "select" ? (
+                        <Select onValueChange={(value) => {
+                          formField.onChange(value);
+                          if (field.name === "product_category") {
+                            setValue("product_id", ''); // Reset product when category changes
+                            setValue("deal_value", 0);
+                            setValue("final_deal_value", 0);
+                          } else if (field.name === "discount_type" && value === 'none') {
+                            setValue("discount_value", 0); // Reset discount value if type is 'none'
                           }
-                        }}
-                        readOnly={field.readOnly}
-                      />
-                    )}
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          ))}
+                        }} defaultValue={formField.value as string}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {field.options?.map((option: any) => (
+                              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          type={field.type}
+                          {...formField}
+                          value={formField.value as string | number || ''}
+                          onChange={(e) => {
+                            if (field.type === "number") {
+                              formField.onChange(e.target.value === '' ? null : Number(e.target.value));
+                            } else {
+                              formField.onChange(e.target.value);
+                            }
+                          }}
+                          readOnly={field.readOnly}
+                        />
+                      )}
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            );
+          })}
         </div>
         <div className="flex justify-end space-x-2 mt-6">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
