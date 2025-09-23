@@ -4,7 +4,9 @@ import React from 'react';
 import Layout from '@/components/layout/Layout';
 import ExcelUploadCard from '@/components/settings/ExcelUploadCard';
 import AdditionalExcelUploadCard from '@/components/settings/AdditionalExcelUploadCard';
-import AccountContactExcelTemplateCard from '@/components/settings/AccountContactExcelTemplateCard'; // Import the new component
+import AccountContactExcelTemplateCard from '@/components/settings/AccountContactExcelTemplateCard';
+import CrmDataExcelTemplateCard from '@/components/settings/CrmDataExcelTemplateCard'; // New import
+import AdditionalCompanyDataExcelTemplateCard from '@/components/settings/AdditionalCompanyDataExcelTemplateCard'; // New import
 
 const Settings: React.FC = () => {
   return (
@@ -14,7 +16,9 @@ const Settings: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ExcelUploadCard />
           <AdditionalExcelUploadCard />
-          <AccountContactExcelTemplateCard /> {/* Add the new template card here */}
+          <AccountContactExcelTemplateCard />
+          <CrmDataExcelTemplateCard /> {/* Add the new CRM data template card here */}
+          <AdditionalCompanyDataExcelTemplateCard /> {/* Add the new additional company data template card here */}
         </div>
       </div>
     </Layout>
