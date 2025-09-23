@@ -55,7 +55,13 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
       const product = allProducts.find(p => p.id === initialProductId);
       if (product) {
         setValue(`deal_products.${index}.product_category`, product.categoria || '');
+      } else {
+        // If initialProductId is provided but product not found (e.g., deleted), reset category
+        setValue(`deal_products.${index}.product_category`, '');
       }
+    } else {
+      // Ensure category is reset if no initial product
+      setValue(`deal_products.${index}.product_category`, '');
     }
   }, [initialProductId, initialQuantity, initialDiscountType, initialDiscountValue, index, setValue, allProducts]);
 
@@ -109,9 +115,13 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
             <SelectValue placeholder="Selecione a categoria" />
           </SelectTrigger>
           <SelectContent>
-            {productCategories.map(option => (
-              <SelectItem key={option} value={option}>{option}</SelectItem>
-            ))}
+            {productCategories.length === 0 ? (
+              <SelectItem value="no-categories" disabled>Nenhuma categoria disponível</SelectItem>
+            ) : (
+              productCategories.map(option => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
       </div>
