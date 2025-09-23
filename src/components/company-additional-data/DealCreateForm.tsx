@@ -70,10 +70,9 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commercialName, onSave, onCancel }) => {
-  console.log("[DealCreateForm] Re-render");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [allProducts, setAllProducts] = useState<Product[]>([]); // Changed to useState
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -98,7 +97,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
       if (!userId) return;
       try {
         const fetchedProducts = await fetchProducts(userId);
-        setAllProducts(fetchedProducts); // Update state
+        setAllProducts(fetchedProducts);
         console.log("[DealCreateForm] Products loaded into state:", fetchedProducts);
       } catch (err: any) {
         console.error("Erro ao carregar produtos:", err);
@@ -109,7 +108,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
     if (userId) {
       loadProducts();
     }
-  }, [userId]); // Dependency array: userId
+  }, [userId]);
 
   const formMethods = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -137,22 +136,23 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
     name: "deal_products",
   });
 
+  const dealProducts = watch("deal_products"); // Watch the entire array
   const discountType = watch("discount_type");
   const discountValue = watch("discount_value");
   
-  // Watch all total_price_at_deal_time fields explicitly
-  const allProductTotals = fields.map((field, index) => watch(`deal_products.${index}.total_price_at_deal_time`));
-
   // Effect to calculate deal_value and final_deal_value
   useEffect(() => {
     console.log("[DealCreateForm] Parent useEffect triggered for deal calculation.");
-    console.log("[DealCreateForm] Current allProductTotals for calculation:", allProductTotals);
 
-    const calculatedBaseDealValue = allProductTotals.reduce((sum, total) => {
-      return sum + (total || 0);
+    const calculatedBaseDealValue = dealProducts.reduce((sum, product) => {
+      return sum + (product.total_price_at_deal_time || 0);
     }, 0);
-    setValue("deal_value", calculatedBaseDealValue, { shouldDirty: true, shouldValidate: true });
-    console.log("[DealCreateForm] Calculated Base Deal Value:", calculatedBaseDealValue);
+
+    // Only update if the value is actually different
+    if (formMethods.getValues("deal_value") !== calculatedBaseDealValue) {
+      setValue("deal_value", calculatedBaseDealValue, { shouldDirty: true, shouldValidate: true });
+      console.log("[DealCreateForm] Calculated Base Deal Value:", calculatedBaseDealValue);
+    }
 
     let finalValue = calculatedBaseDealValue;
     if (discountType === 'percentage' && discountValue !== null) {
@@ -160,9 +160,14 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
     } else if (discountType === 'amount' && discountValue !== null) {
       finalValue = calculatedBaseDealValue - discountValue;
     }
-    setValue("final_deal_value", Math.max(0, finalValue), { shouldDirty: true, shouldValidate: true });
-    console.log("[DealCreateForm] Calculated Final Deal Value:", Math.max(0, finalValue));
-  }, [allProductTotals, discountType, discountValue, setValue]); // Depend on allProductTotals
+    finalValue = Math.max(0, finalValue);
+
+    // Only update if the value is actually different
+    if (formMethods.getValues("final_deal_value") !== finalValue) {
+      setValue("final_deal_value", finalValue, { shouldDirty: true, shouldValidate: true });
+      console.log("[DealCreateForm] Calculated Final Deal Value:", finalValue);
+    }
+  }, [dealProducts, discountType, discountValue, setValue, formMethods]); // Depend on dealProducts, discountType, discountValue, setValue, and formMethods
 
   const handleAddProduct = () => {
     append({ product_id: '', quantity: 1, unit_price_at_deal_time: 0, total_price_at_deal_time: 0, product_name: '', product_category: '', discount_type: 'none', discount_value: 0 });
@@ -175,7 +180,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
     }
 
     if (Object.keys(errors).length > 0) {
-      console.error("Form validation errors:", errors); // Add this line
+      console.error("Form validation errors:", errors);
       showError("Por favor, corrija os erros no formulário.");
       return;
     }
@@ -318,7 +323,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
             <DealProductFormItem
               key={item.id}
               index={index}
-              allProducts={allProducts} // Pass the state variable
+              allProducts={allProducts}
               onRemove={remove}
               initialProductId={item.product_id}
               initialQuantity={item.quantity}
