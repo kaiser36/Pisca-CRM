@@ -214,6 +214,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                   </DialogHeader>
                   <DealCreateForm
                     companyExcelId={company.excel_company_id}
+                    commercialName={company["Nome Comercial"] || company.crmCompany?.Commercial_Name} // Pass commercial name
                     onSave={() => setIsCreateDealDialogOpen(false)}
                     onCancel={() => setIsCreateDealDialogOpen(false)}
                   />

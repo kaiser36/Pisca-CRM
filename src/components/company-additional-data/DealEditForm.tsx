@@ -27,6 +27,7 @@ interface DealEditFormProps {
 }
 
 const formSchema = z.object({
+  commercial_name: z.string().nullable().optional(), // Added for display, not for submission
   deal_name: z.string().min(1, "Nome do Negócio é obrigatório"),
   deal_status: z.string().nullable().optional(),
   deal_value: z.preprocess(
@@ -67,6 +68,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      commercial_name: deal.commercial_name || '', // Set default from prop
       deal_name: deal.deal_name || '',
       deal_status: deal.deal_status || 'Prospecting',
       deal_value: deal.deal_value || 0,
@@ -86,7 +88,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
 
     setIsSubmitting(true);
     try {
-      const updatedDeal: Partial<Omit<Negocio, 'id' | 'created_at' | 'user_id'>> = {
+      const updatedDeal: Partial<Omit<Negocio, 'id' | 'created_at' | 'user_id' | 'commercial_name'>> = {
         deal_name: values.deal_name,
         deal_status: values.deal_status || 'Prospecting',
         deal_value: values.deal_value || 0,
@@ -109,6 +111,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
   };
 
   const fields = [
+    { name: "commercial_name", label: "Nome Comercial da Empresa", type: "text", readOnly: true }, // Read-only field
     { name: "deal_name", label: "Nome do Negócio", type: "text", required: true },
     { name: "deal_status", label: "Status", type: "select", options: ["Prospecting", "Qualification", "Proposal", "Negotiation", "Closed Won", "Closed Lost"] },
     { name: "deal_value", label: "Valor do Negócio", type: "number" },
@@ -187,6 +190,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
                             formField.onChange(e.target.value);
                           }
                         }}
+                        readOnly={field.readOnly} // Apply readOnly prop
                       />
                     )}
                   </FormControl>

@@ -22,11 +22,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 interface DealCreateFormProps {
   companyExcelId: string;
+  commercialName?: string | null; // New prop for commercial name
   onSave: () => void;
   onCancel: () => void;
 }
 
 const formSchema = z.object({
+  commercial_name: z.string().nullable().optional(), // Added for display, not for submission
   deal_name: z.string().min(1, "Nome do Negócio é obrigatório"),
   deal_status: z.string().nullable().optional(),
   deal_value: z.preprocess(
@@ -42,7 +44,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, onSave, onCancel }) => {
+const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commercialName, onSave, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -67,6 +69,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, onSave,
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      commercial_name: commercialName || '', // Set default from prop
       deal_name: '',
       deal_status: 'Prospecting',
       deal_value: 0,
@@ -86,7 +89,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, onSave,
 
     setIsSubmitting(true);
     try {
-      const newDeal: Omit<Negocio, 'id' | 'created_at' | 'updated_at'> = {
+      const newDeal: Omit<Negocio, 'id' | 'created_at' | 'updated_at' | 'commercial_name'> = {
         user_id: userId,
         company_excel_id: companyExcelId,
         deal_name: values.deal_name,
@@ -111,6 +114,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, onSave,
   };
 
   const fields = [
+    { name: "commercial_name", label: "Nome Comercial da Empresa", type: "text", readOnly: true }, // Read-only field
     { name: "deal_name", label: "Nome do Negócio", type: "text", required: true },
     { name: "deal_status", label: "Status", type: "select", options: ["Prospecting", "Qualification", "Proposal", "Negotiation", "Closed Won", "Closed Lost"] },
     { name: "deal_value", label: "Valor do Negócio", type: "number" },
@@ -189,6 +193,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, onSave,
                             formField.onChange(e.target.value);
                           }
                         }}
+                        readOnly={field.readOnly} // Apply readOnly prop
                       />
                     )}
                   </FormControl>
