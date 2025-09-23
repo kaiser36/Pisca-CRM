@@ -83,7 +83,8 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
     setCurrentProduct(product || null);
 
     let calculatedUnitPrice = product?.preco_unitario || 0;
-    let baseProductLineTotal = (product?.preco_total || 0) * (quantity || 0);
+    // CORREÇÃO AQUI: Usar preco_unitario em vez de preco_total para o cálculo base
+    let baseProductLineTotal = (product?.preco_unitario || 0) * (quantity || 0);
     let discountedProductLineTotal = baseProductLineTotal;
 
     if (discountType === 'percentage' && discountValue !== null) {
@@ -104,7 +105,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
     }
     
     console.log(`[DealProductFormItem ${index}] Calculated total price: ${discountedProductLineTotal}`);
-  }, [selectedProductId, quantity, discountType, discountValue, allProducts, index, setValue]); // Removed 'watch' from dependencies
+  }, [selectedProductId, quantity, discountType, discountValue, allProducts, index, setValue]);
 
   const productCategories = Array.from(new Set(allProducts.map(p => p.categoria).filter((cat): cat is string => cat !== null && cat.trim() !== '')));
   console.log(`[DealProductFormItem ${index}] Available product categories:`, productCategories);
@@ -166,7 +167,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
           type="number"
           min="1"
           value={quantity || 1}
-          onChange={(e) => setValue(`deal_products.${index}.quantity`, Number(e.target.value), { shouldDirty: true, shouldValidate: true })}
+          onChange={(e) => setValue(`deal_products.${index}.quantity`, Number(e.target.value) || 0, { shouldDirty: true, shouldValidate: true })}
           disabled={!selectedProductId}
         />
       </div>
@@ -197,7 +198,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
           type="number"
           min="0"
           value={discountValue || 0}
-          onChange={(e) => setValue(`deal_products.${index}.discount_value`, Number(e.target.value), { shouldDirty: true, shouldValidate: true })}
+          onChange={(e) => setValue(`deal_products.${index}.discount_value`, Number(e.target.value) || 0, { shouldDirty: true, shouldValidate: true })}
           disabled={!selectedProductId || discountType === 'none'}
         />
       </div>

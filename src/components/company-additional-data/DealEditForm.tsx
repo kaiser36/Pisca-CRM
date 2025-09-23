@@ -140,11 +140,14 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
 
   // Effect to calculate deal_value and final_deal_value
   useEffect(() => {
-    // deal_value é a soma de total_price_at_deal_time de cada produto, que já inclui descontos individuais
+    console.log("[DealEditForm] Parent useEffect triggered for deal calculation.");
+    console.log("[DealEditForm] Current dealProducts for calculation:", dealProducts);
+
     const calculatedBaseDealValue = dealProducts.reduce((sum, item) => {
       return sum + (item.total_price_at_deal_time || 0);
     }, 0);
-    setValue("deal_value", calculatedBaseDealValue);
+    setValue("deal_value", calculatedBaseDealValue, { shouldDirty: true, shouldValidate: true });
+    console.log("[DealEditForm] Calculated Base Deal Value:", calculatedBaseDealValue);
 
     let finalValue = calculatedBaseDealValue;
     if (discountType === 'percentage' && discountValue !== null) {
@@ -152,14 +155,13 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
     } else if (discountType === 'amount' && discountValue !== null) {
       finalValue = calculatedBaseDealValue - discountValue;
     }
-    setValue("final_deal_value", Math.max(0, finalValue));
+    setValue("final_deal_value", Math.max(0, finalValue), { shouldDirty: true, shouldValidate: true });
+    console.log("[DealEditForm] Calculated Final Deal Value:", Math.max(0, finalValue));
   }, [dealProducts, discountType, discountValue, setValue]);
 
   const handleAddProduct = () => {
     append({ product_id: '', quantity: 1, unit_price_at_deal_time: 0, total_price_at_deal_time: 0, product_name: '', product_category: '', discount_type: 'none', discount_value: 0 });
   };
-
-  // REMOVIDO: handleProductItemChange function
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
@@ -265,15 +267,15 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
                           setValue("discount_value", 0);
                         }
                       }} defaultValue={formField.value as string}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {field.options?.map((option: any) => (
-                            <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                          <SelectTrigger>
+                            <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {field.options?.map((option: any) => (
+                              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                     ) : (
                       <Input
                         type={field.type}
@@ -305,7 +307,6 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
               index={index}
               allProducts={allProducts}
               onRemove={remove}
-              // onProductChange={handleProductItemChange} // REMOVIDO
               initialProductId={item.product_id}
               initialQuantity={item.quantity}
               initialDiscountType={item.discount_type}
@@ -321,7 +322,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
         <h3 className="text-lg font-semibold mt-6 mb-3">Resumo e Desconto Geral</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {discountFields.map((field) => {
-            if (field.conditional && !formMethods.getValues().deal_products.length) { // Apenas mostra campos de desconto se houver produtos
+            if (field.conditional && !formMethods.getValues().deal_products.length) {
               return null;
             }
             if (field.conditional && !field.conditional(formMethods.getValues())) {
