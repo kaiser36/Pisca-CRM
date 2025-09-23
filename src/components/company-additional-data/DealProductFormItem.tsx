@@ -36,7 +36,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
   // Watch individual fields for this product item
   const selectedProductId = watch(`deal_products.${index}.product_id`);
   const quantity = watch(`deal_products.${index}.quantity`);
-  const productCategory = watch(`deal_products.${index}.product_category`);
+  const productCategory = watch(`deal_products.${index}.product_category`); // Watch category for filtering
   const discountType = watch(`deal_products.${index}.discount_type`); // NEW
   const discountValue = watch(`deal_products.${index}.discount_value`); // NEW
 
@@ -49,7 +49,15 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
     setValue(`deal_products.${index}.quantity`, initialQuantity || 1);
     setValue(`deal_products.${index}.discount_type`, initialDiscountType || 'none'); // NEW
     setValue(`deal_products.${index}.discount_value`, initialDiscountValue || 0); // NEW
-  }, [initialProductId, initialQuantity, initialDiscountType, initialDiscountValue, index, setValue]);
+
+    // Set initial product category if initialProductId is provided
+    if (initialProductId) {
+      const product = allProducts.find(p => p.id === initialProductId);
+      if (product) {
+        setValue(`deal_products.${index}.product_category`, product.categoria || '');
+      }
+    }
+  }, [initialProductId, initialQuantity, initialDiscountType, initialDiscountValue, index, setValue, allProducts]);
 
   // Filter products by category
   useEffect(() => {
