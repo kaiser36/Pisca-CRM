@@ -4,7 +4,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2, UserCog, Info, Users } from 'lucide-react'; // Added Users icon for Accounts
+import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2, UserCog, Info, Users } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -20,13 +20,13 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
+  const isPathActive = (pathPrefix: string) => location.pathname.startsWith(pathPrefix);
 
-  // Controlar o estado do Accordion para que fique aberto se uma rota filha estiver ativa
   const [accordionValue, setAccordionValue] = React.useState<string | undefined>(undefined);
 
   React.useEffect(() => {
-    if (location.pathname.startsWith('/settings') || location.pathname.startsWith('/accounts') || location.pathname.startsWith('/am-view')) {
-      setAccordionValue('settings-accordion'); // Um valor único para este item do acordeão
+    if (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view')) {
+      setAccordionValue('settings-accordion');
     } else {
       setAccordionValue(undefined);
     }
@@ -52,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             className={cn(
               "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               isCollapsed ? "px-2" : "px-4",
-              isActive('/') && "bg-sidebar-accent text-sidebar-accent-foreground"
+              isActive('/') && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
             )}
           >
             <Home className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
@@ -65,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             className={cn(
               "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               isCollapsed ? "px-2" : "px-4",
-              isActive('/crm') && "bg-sidebar-accent text-sidebar-accent-foreground"
+              isActive('/crm') && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
             )}
           >
             <Building className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
@@ -78,7 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             className={cn(
               "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               isCollapsed ? "px-2" : "px-4",
-              isActive('/company-additional-data') && "bg-sidebar-accent text-sidebar-accent-foreground"
+              isActive('/company-additional-data') && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
             )}
           >
             <Building2 className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
@@ -91,7 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             <AccordionTrigger className={cn(
               "flex items-center w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground py-2 px-4 rounded-md transition-colors",
               isCollapsed ? "px-2" : "px-4",
-              (location.pathname.startsWith('/settings') || location.pathname.startsWith('/accounts') || location.pathname.startsWith('/am-view')) && "bg-sidebar-accent text-sidebar-accent-foreground"
+              (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view')) && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
             )}>
               <Settings className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
               {!isCollapsed && "Configurações"}
@@ -121,7 +121,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                     isActive('/accounts') && "bg-sidebar-accent text-sidebar-accent-foreground"
                   )}
                 >
-                  <Users className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} /> {/* Changed icon to Users */}
+                  <Users className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
                   {!isCollapsed && "Contas"}
                 </Button>
               </Link>

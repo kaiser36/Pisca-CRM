@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Calendar, User, Mail, Tag, FileText, LinkIcon, DollarSign, Building, Clock, Info, ShieldCheck, Car, Package, Repeat, TrendingUp, Banknote, Factory, Users } from 'lucide-react';
+import { Terminal, Calendar, User, Mail, Tag, FileText, LinkIcon, DollarSign, Building, Clock, Info, ShieldCheck, Package, Repeat, TrendingUp, Banknote, Factory, Users } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 
@@ -88,7 +88,7 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
   }
 
   const renderField = (Icon: React.ElementType, label: string, value: string | number | boolean | string[] | null | undefined) => {
-    if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '') || (Array.isArray(value) && value.length === 0)) return null;
+    if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '') || (Array.isArray(value) && value.length === 0) || (typeof value === 'number' && value === 0 && !label.includes('Valor'))) return null;
 
     let displayValue: React.ReactNode = value;
     if (typeof value === 'boolean') {
@@ -124,7 +124,7 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
     return (
       <div className="flex items-center text-sm">
         <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
-        <span className="font-medium">{label}:</span> <span className="ml-1">{displayValue}</span>
+        <span className="font-medium">{label}:</span> <span className="ml-1 text-foreground">{displayValue}</span>
       </div>
     );
   };
@@ -133,13 +133,13 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
     <ScrollArea className="h-full w-full pr-4">
       <div className="space-y-4">
         {easyvistas.length === 0 ? (
-          <p className="text-muted-foreground text-center">Nenhum registo Easyvista encontrado para esta empresa.</p>
+          <p className="text-muted-foreground text-center py-4">Nenhum registo Easyvista encontrado para esta empresa.</p>
         ) : (
           easyvistas.map((easyvista) => (
-            <Card key={easyvista.id} className="w-full">
-              <CardHeader>
-                <CardTitle className="text-lg">{easyvista["Titulo"] || 'Easyvista sem Título'}</CardTitle>
-                <CardDescription>EV_ID: {easyvista["EV_ID"]}</CardDescription>
+            <Card key={easyvista.id} className="w-full shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold">{easyvista["Titulo"] || 'Easyvista sem Título'}</CardTitle>
+                <CardDescription className="text-muted-foreground">EV_ID: {easyvista["EV_ID"]}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -167,16 +167,16 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
                 </div>
                 {easyvista["Descrição"] && (
                   <>
-                    <Separator className="my-2" />
+                    <Separator className="my-3" />
                     <div className="flex items-start text-sm">
                       <FileText className="mr-2 h-4 w-4 text-muted-foreground mt-1" />
-                      <span className="font-medium">Descrição:</span> <span className="ml-1 flex-1">{easyvista["Descrição"]}</span>
+                      <span className="font-medium">Descrição:</span> <span className="ml-1 flex-1 text-foreground">{easyvista["Descrição"]}</span>
                     </div>
                   </>
                 )}
                 {easyvista["Anexos"] && easyvista["Anexos"].length > 0 && (
                   <>
-                    <Separator className="my-2" />
+                    <Separator className="my-3" />
                     <div className="flex items-start text-sm">
                       <LinkIcon className="mr-2 h-4 w-4 text-muted-foreground mt-1" />
                       <span className="font-medium">Anexos:</span> <span className="ml-1 flex-1">{renderField(LinkIcon, "Anexos", easyvista["Anexos"])}</span>

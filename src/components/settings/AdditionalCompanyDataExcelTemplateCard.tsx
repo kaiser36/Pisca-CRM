@@ -23,10 +23,10 @@ const AdditionalCompanyDataExcelTemplateCard: React.FC = () => {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Modelo de Dados Adicionais da Empresa</CardTitle>
-        <CardDescription>
+    <Card className="w-full max-w-md shadow-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-semibold">Modelo de Dados Adicionais da Empresa</CardTitle>
+        <CardDescription className="text-muted-foreground">
           Descarregue um modelo CSV para carregar informações adicionais das empresas.
           A coluna "excel_company_id" é obrigatória e deve corresponder a um `company_id` existente na tabela `companies`.
         </CardDescription>

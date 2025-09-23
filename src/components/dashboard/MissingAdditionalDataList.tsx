@@ -63,7 +63,7 @@ const MissingAdditionalDataList: React.FC = () => {
 
   if (isLoading) {
     return (
-      <Card className="w-full">
+      <Card className="w-full shadow-sm">
         <CardHeader>
           <CardTitle>Empresas sem Dados Adicionais</CardTitle>
           <CardDescription>A carregar...</CardDescription>
@@ -79,7 +79,7 @@ const MissingAdditionalDataList: React.FC = () => {
 
   if (error) {
     return (
-      <Card className="w-full">
+      <Card className="w-full shadow-sm">
         <CardHeader>
           <CardTitle>Empresas sem Dados Adicionais</CardTitle>
         </CardHeader>
@@ -95,26 +95,26 @@ const MissingAdditionalDataList: React.FC = () => {
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center">
+    <Card className="w-full shadow-md">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center text-lg font-semibold">
           <Info className="mr-2 h-5 w-5 text-blue-500" />
           Empresas sem Dados Adicionais ({companies.length})
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-muted-foreground">
           Estas empresas existem no seu CRM principal, mas não têm dados adicionais carregados.
         </CardDescription>
       </CardHeader>
       <CardContent>
         {companies.length === 0 ? (
-          <p className="text-muted-foreground text-center">Todas as empresas do CRM têm dados adicionais.</p>
+          <p className="text-muted-foreground text-center py-4">Todas as empresas do CRM têm dados adicionais.</p>
         ) : (
           <ScrollArea className="h-[300px] w-full pr-4">
             <div className="space-y-3">
               {companies.map((company) => (
-                <div key={company.Company_id} className="flex items-center justify-between p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                <div key={company.Company_id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-md bg-background hover:bg-muted/50 transition-colors shadow-sm">
                   <div>
-                    <p className="font-medium flex items-center">
+                    <p className="font-medium flex items-center text-foreground">
                       <Building className="mr-2 h-4 w-4 text-muted-foreground" />
                       {company.Company_Name}
                     </p>
@@ -123,7 +123,7 @@ const MissingAdditionalDataList: React.FC = () => {
                       {company.Company_Email}
                     </p>
                   </div>
-                  <Link to={`/company-additional-data?companyId=${company.Company_id}`}>
+                  <Link to={`/company-additional-data?companyId=${company.Company_id}`} className="mt-2 sm:mt-0">
                     <Button variant="outline" size="sm">
                       Adicionar Dados
                     </Button>

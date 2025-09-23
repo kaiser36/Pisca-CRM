@@ -43,10 +43,10 @@ const ExcelUploadCard: React.FC = () => {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Carregar Dados CRM</CardTitle>
-        <CardDescription>Atualize as informações das empresas carregando um novo ficheiro Excel.</CardDescription>
+    <Card className="w-full max-w-md shadow-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-semibold">Carregar Dados CRM</CardTitle>
+        <CardDescription className="text-muted-foreground">Atualize as informações das empresas carregando um novo ficheiro Excel.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <Input type="file" accept=".xlsx, .xls" onChange={handleFileChange} />

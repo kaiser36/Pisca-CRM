@@ -11,7 +11,7 @@ const AccountContactExcelTemplateCard: React.FC = () => {
     const csvContent = generateAccountContactCsvTemplate();
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    if (link.download !== undefined) { // Feature detection for download attribute
+    if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
       link.setAttribute('download', 'modelo_contactos_empresa.csv');
@@ -23,10 +23,10 @@ const AccountContactExcelTemplateCard: React.FC = () => {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Modelo de Contactos de Empresas</CardTitle>
-        <CardDescription>
+    <Card className="w-full max-w-md shadow-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-semibold">Modelo de Contactos de Empresas</CardTitle>
+        <CardDescription className="text-muted-foreground">
           Descarregue um modelo CSV para a tabela de contactos de empresas.
           A coluna "ID da Empresa Excel" é obrigatória e deve corresponder a um `company_id` existente na tabela `companies`.
         </CardDescription>

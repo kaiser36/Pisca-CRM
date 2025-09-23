@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Upload, Loader2 } from 'lucide-react';
 import { parseGenericExcel } from '@/lib/general-excel-parser';
-import { upsertCompanyAdditionalExcelData } from '@/integrations/supabase/utils'; // Updated import
+import { upsertCompanyAdditionalExcelData } from '@/integrations/supabase/utils';
 import { showSuccess, showError } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
 import { CompanyAdditionalExcelData } from '@/types/crm';
@@ -56,13 +56,12 @@ const AdditionalExcelUploadCard: React.FC = () => {
     try {
       const parsedData = await parseGenericExcel(selectedFile);
       
-      // Map parsed data to CompanyAdditionalExcelData interface
       const dataToUpsert: CompanyAdditionalExcelData[] = parsedData.map((row: Record<string, any>) => {
         const excelCompanyId = String(row['excel_company_id'] || row['Company_id'] || '');
-        console.log(`Processing excel_company_id: ${excelCompanyId}`); // Log the ID being processed
+        console.log(`Processing excel_company_id: ${excelCompanyId}`);
         return {
           user_id: userId,
-          excel_company_id: excelCompanyId, // Adjust key names as per your Excel structure
+          excel_company_id: excelCompanyId,
           "Nome Comercial": row['Nome Comercial'] || row['Commercial_Name'] || null,
           "Email da empresa": row['Email da empresa'] || row['Company_Email'] || null,
           "STAND_POSTAL_CODE": row['STAND_POSTAL_CODE'] || row['Company_Postal_Code'] || null,
@@ -111,10 +110,10 @@ const AdditionalExcelUploadCard: React.FC = () => {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Carregar Dados Adicionais de Empresas</CardTitle>
-        <CardDescription>
+    <Card className="w-full max-w-md shadow-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-semibold">Carregar Dados Adicionais de Empresas</CardTitle>
+        <CardDescription className="text-muted-foreground">
           Carregue um ficheiro Excel com informações adicionais para as empresas.
           A coluna 'excel_company_id' (ou 'Company_id') é usada para identificar a empresa.
         </CardDescription>

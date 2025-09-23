@@ -11,7 +11,7 @@ import AdditionalCompanyDataExcelTemplateCard from './AdditionalCompanyDataExcel
 const SettingsTabs: React.FC = () => {
   return (
     <Tabs defaultValue="upload-data" className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
+      <TabsList className="grid w-full grid-cols-2 h-10"> {/* Adjusted height */}
         <TabsTrigger value="upload-data">Carregar Dados</TabsTrigger>
         <TabsTrigger value="templates">Modelos</TabsTrigger>
       </TabsList>

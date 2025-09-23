@@ -5,20 +5,20 @@ import { CompanyAdditionalExcelData } from '@/types/crm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, ShieldX, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye } from 'lucide-react'; // Added Eye icon
+import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CompanyAdditionalEditForm from './CompanyAdditionalEditForm';
 import StandCard from '@/components/crm/StandCard';
 import AccountContactCreateForm from './AccountContactCreateForm';
 import AccountContactList from './AccountContactList';
-import EasyvistaCreateForm from './EasyvistaCreateForm'; // New import
-import EasyvistaList from './EasyvistaList'; // New import
+import EasyvistaCreateForm from './EasyvistaCreateForm';
+import EasyvistaList from './EasyvistaList';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface CompanyAdditionalDetailCardProps {
   company: CompanyAdditionalExcelData | null;
-  onDataUpdated: () => void; // Callback to refresh data in parent
+  onDataUpdated: () => void;
 }
 
 const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = ({ company, onDataUpdated }) => {
@@ -28,14 +28,14 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
   if (!company) {
     return (
-      <div className="flex items-center justify-center h-full text-muted-foreground">
+      <div className="flex items-center justify-center h-full text-muted-foreground p-4 rounded-lg border bg-card">
         Selecione uma empresa para ver os detalhes adicionais.
       </div>
     );
   }
 
   const renderField = (Icon: React.ElementType, label: string, value: string | number | boolean | null | undefined) => {
-    if (value === null || value === undefined || value === '') return null;
+    if (value === null || value === undefined || value === '' || (typeof value === 'number' && value === 0 && !label.includes('Plafond') && !label.includes('Preço') && !label.includes('Bumps') && !label.includes('Investimento') && !label.includes('Stock') && !label.includes('Percentagem'))) return null;
 
     let displayValue: React.ReactNode = value;
     if (typeof value === 'boolean') {
@@ -61,18 +61,18 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     return (
       <div className="flex items-center text-sm">
         <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
-        <span className="font-medium">{label}:</span> <span className="ml-1">{displayValue}</span>
+        <span className="font-medium">{label}:</span> <span className="ml-1 text-foreground">{displayValue}</span>
       </div>
     );
   };
 
   return (
     <ScrollArea className="h-full w-full pr-4">
-      <Card className="w-full">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl">{company["Nome Comercial"] || "N/A"}</CardTitle>
-            <div className="flex space-x-2">
+      <Card className="w-full shadow-md">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <CardTitle className="text-2xl font-bold">{company["Nome Comercial"] || "N/A"}</CardTitle>
+            <div className="flex flex-wrap gap-2">
               <Dialog open={isCreateContactDialogOpen} onOpenChange={setIsCreateContactDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -126,7 +126,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                     company={company}
                     onSave={() => {
                       setIsEditDialogOpen(false);
-                      onDataUpdated(); // Trigger data refresh
+                      onDataUpdated();
                     }}
                     onCancel={() => setIsEditDialogOpen(false)}
                   />
@@ -134,20 +134,20 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
               </Dialog>
             </div>
           </div>
-          <CardDescription>ID Excel: {company.excel_company_id}</CardDescription>
+          <CardDescription className="text-muted-foreground">ID Excel: {company.excel_company_id}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6"> {/* Increased spacing */}
           <Tabs defaultValue="details">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-10"> {/* Adjusted grid for tabs */}
               <TabsTrigger value="details">Detalhes</TabsTrigger>
               <TabsTrigger value="stands">Stands</TabsTrigger>
               <TabsTrigger value="contacts">Contactos</TabsTrigger>
-              <TabsTrigger value="easyvistas">Easyvistas</TabsTrigger> {/* New Tab */}
+              <TabsTrigger value="easyvistas">Easyvistas</TabsTrigger>
             </TabsList>
-            <TabsContent value="details" className="mt-4">
+            <TabsContent value="details" className="mt-4 space-y-6"> {/* Increased spacing */}
               {company.crmCompany && (
                 <>
-                  <h3 className="text-lg font-semibold">Informações do CRM Principal</h3>
+                  <h3 className="text-lg font-semibold text-primary">Informações do CRM Principal</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField(Building, "Nome da Empresa (CRM)", company.crmCompany.Company_Name)}
                     {renderField(Landmark, "NIF (CRM)", company.crmCompany.NIF)}
@@ -173,7 +173,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </>
               )}
 
-              <h3 className="text-lg font-semibold">Dados Adicionais do Excel</h3>
+              <h3 className="text-lg font-semibold text-primary">Dados Adicionais do Excel</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {renderField(Building, "Nome Comercial", company["Nome Comercial"])}
                 {renderField(Mail, "Email da empresa", company["Email da empresa"])}
@@ -222,17 +222,17 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-center">Nenhum stand associado encontrado no CRM principal.</p>
+                <p className="text-muted-foreground text-center py-4">Nenhum stand associado encontrado no CRM principal.</p>
               )}
             </TabsContent>
             <TabsContent value="contacts" className="mt-4">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
                 <MessageSquareMore className="mr-2 h-5 w-5" /> Histórico de Contactos
               </h3>
               <AccountContactList companyExcelId={company.excel_company_id} />
             </TabsContent>
-            <TabsContent value="easyvistas" className="mt-4"> {/* New TabsContent */}
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
+            <TabsContent value="easyvistas" className="mt-4">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
                 <Eye className="mr-2 h-5 w-5" /> Registos Easyvista
               </h3>
               <EasyvistaList companyExcelId={company.excel_company_id} />

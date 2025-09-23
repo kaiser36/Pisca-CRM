@@ -4,11 +4,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Loader2, Building, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, Building } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
-import { Company } from '@/types/crm';
-import { Separator } from '@/components/ui/separator'; // Adicionado: Importação do Separator
+import { Separator } from '@/components/ui/separator';
 
 interface CompanyOverviewDashboardProps {
   // Pode adicionar props se precisar de passar dados ou callbacks do pai
@@ -57,24 +56,21 @@ const CompanyOverviewDashboard: React.FC<CompanyOverviewDashboardProps> = () => 
     try {
       let query = supabase
         .from('companies')
-        .select('id, plan_active, is_crb_partner, am_current', { count: 'exact' }) // Selecionar colunas necessárias para filtros e contagem
+        .select('id, plan_active, is_crb_partner, am_current', { count: 'exact' })
         .eq('user_id', userId);
 
-      // Aplicar filtro de Estado do Plano
       if (planStatusFilter === 'active') {
         query = query.eq('plan_active', true);
       } else if (planStatusFilter === 'inactive') {
         query = query.eq('plan_active', false);
       }
 
-      // Aplicar filtro de Parceiro Credibom
       if (credibomPartnerFilter === 'yes') {
         query = query.eq('is_crb_partner', true);
       } else if (credibomPartnerFilter === 'no') {
         query = query.eq('is_crb_partner', false);
       }
 
-      // Aplicar filtro de Account (AM)
       if (accountAMFilter !== 'all') {
         query = query.eq('am_current', accountAMFilter);
       }
@@ -88,7 +84,6 @@ const CompanyOverviewDashboard: React.FC<CompanyOverviewDashboardProps> = () => 
 
       setTotalCompanies(count || 0);
 
-      // Fetch unique AMs for the filter dropdown
       const { data: amsData, error: amsError } = await supabase
         .from('companies')
         .select('am_current')
@@ -118,23 +113,22 @@ const CompanyOverviewDashboard: React.FC<CompanyOverviewDashboardProps> = () => 
   }, [userId, fetchCompanies]);
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center">
+    <Card className="w-full shadow-md">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center text-lg font-semibold">
           <Building className="mr-2 h-5 w-5 text-blue-500" />
           Número Total de Empresas
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-muted-foreground">
           Visão geral e filtragem das empresas no seu CRM.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6"> {/* Increased spacing */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Filtro de Estado do Plano */}
           <div className="flex flex-col space-y-1">
-            <Label htmlFor="plan-status-filter">Estado do Plano</Label>
+            <Label htmlFor="plan-status-filter" className="text-sm font-medium">Estado do Plano</Label>
             <Select value={planStatusFilter} onValueChange={setPlanStatusFilter} disabled={isLoading}>
-              <SelectTrigger id="plan-status-filter">
+              <SelectTrigger id="plan-status-filter" className="h-9">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
@@ -145,11 +139,10 @@ const CompanyOverviewDashboard: React.FC<CompanyOverviewDashboardProps> = () => 
             </Select>
           </div>
 
-          {/* Filtro de Parceiro Credibom */}
           <div className="flex flex-col space-y-1">
-            <Label htmlFor="credibom-partner-filter">Parceiro Credibom</Label>
+            <Label htmlFor="credibom-partner-filter" className="text-sm font-medium">Parceiro Credibom</Label>
             <Select value={credibomPartnerFilter} onValueChange={setCredibomPartnerFilter} disabled={isLoading}>
-              <SelectTrigger id="credibom-partner-filter">
+              <SelectTrigger id="credibom-partner-filter" className="h-9">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
@@ -160,11 +153,10 @@ const CompanyOverviewDashboard: React.FC<CompanyOverviewDashboardProps> = () => 
             </Select>
           </div>
 
-          {/* Filtro de Account (AM) */}
           <div className="flex flex-col space-y-1">
-            <Label htmlFor="account-am-filter">Account (AM)</Label>
+            <Label htmlFor="account-am-filter" className="text-sm font-medium">Account (AM)</Label>
             <Select value={accountAMFilter} onValueChange={setAccountAMFilter} disabled={isLoading}>
-              <SelectTrigger id="account-am-filter">
+              <SelectTrigger id="account-am-filter" className="h-9">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
@@ -188,8 +180,8 @@ const CompanyOverviewDashboard: React.FC<CompanyOverviewDashboardProps> = () => 
             {error}
           </div>
         ) : (
-          <div className="text-center">
-            <p className="text-5xl font-bold text-primary">{totalCompanies}</p>
+          <div className="text-center py-4">
+            <p className="text-6xl font-extrabold text-primary">{totalCompanies}</p>
             <p className="text-lg text-muted-foreground mt-2">Empresas Encontradas</p>
           </div>
         )}

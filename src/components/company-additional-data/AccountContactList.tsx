@@ -88,7 +88,7 @@ const AccountContactList: React.FC<AccountContactListProps> = ({ companyExcelId 
   }
 
   const renderField = (Icon: React.ElementType, label: string, value: string | number | boolean | null | undefined) => {
-    if (value === null || value === undefined || value === '') return null;
+    if (value === null || value === undefined || value === '' || (typeof value === 'number' && value === 0)) return null;
 
     let displayValue: React.ReactNode = value;
     if (typeof value === 'boolean') {
@@ -114,7 +114,7 @@ const AccountContactList: React.FC<AccountContactListProps> = ({ companyExcelId 
     return (
       <div className="flex items-center text-sm">
         <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
-        <span className="font-medium">{label}:</span> <span className="ml-1">{displayValue}</span>
+        <span className="font-medium">{label}:</span> <span className="ml-1 text-foreground">{displayValue}</span>
       </div>
     );
   };
@@ -123,13 +123,13 @@ const AccountContactList: React.FC<AccountContactListProps> = ({ companyExcelId 
     <ScrollArea className="h-full w-full pr-4">
       <div className="space-y-4">
         {contacts.length === 0 ? (
-          <p className="text-muted-foreground text-center">Nenhum contacto encontrado para esta empresa.</p>
+          <p className="text-muted-foreground text-center py-4">Nenhum contacto encontrado para esta empresa.</p>
         ) : (
           contacts.map((contact) => (
-            <Card key={contact.id} className="w-full">
-              <CardHeader>
-                <CardTitle className="text-lg">{contact.subject || 'Contacto sem Assunto'}</CardTitle>
-                <CardDescription>ID Excel da Empresa: {contact.company_excel_id}</CardDescription>
+            <Card key={contact.id} className="w-full shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold">{contact.subject || 'Contacto sem Assunto'}</CardTitle>
+                <CardDescription className="text-muted-foreground">ID Excel da Empresa: {contact.company_excel_id}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -154,19 +154,19 @@ const AccountContactList: React.FC<AccountContactListProps> = ({ companyExcelId 
                 </div>
                 {contact.report_text && (
                   <>
-                    <Separator className="my-2" />
+                    <Separator className="my-3" />
                     <div className="flex items-start text-sm">
                       <FileText className="mr-2 h-4 w-4 text-muted-foreground mt-1" />
-                      <span className="font-medium">Relatório:</span> <span className="ml-1 flex-1">{contact.report_text}</span>
+                      <span className="font-medium">Relatório:</span> <span className="ml-1 flex-1 text-foreground">{contact.report_text}</span>
                     </div>
                   </>
                 )}
                 {contact.email_body && (
                   <>
-                    <Separator className="my-2" />
+                    <Separator className="my-3" />
                     <div className="flex items-start text-sm">
                       <Mail className="mr-2 h-4 w-4 text-muted-foreground mt-1" />
-                      <span className="font-medium">Corpo do Email:</span> <span className="ml-1 flex-1">{contact.email_body}</span>
+                      <span className="font-medium">Corpo do Email:</span> <span className="ml-1 flex-1 text-foreground">{contact.email_body}</span>
                     </div>
                   </>
                 )}

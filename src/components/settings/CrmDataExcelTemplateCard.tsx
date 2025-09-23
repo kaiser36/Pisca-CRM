@@ -23,10 +23,10 @@ const CrmDataExcelTemplateCard: React.FC = () => {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Modelo de Dados CRM</CardTitle>
-        <CardDescription>
+    <Card className="w-full max-w-md shadow-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-semibold">Modelo de Dados CRM</CardTitle>
+        <CardDescription className="text-muted-foreground">
           Descarregue um modelo CSV para carregar os dados principais das empresas e stands.
           Cada linha deve conter os dados de uma empresa e um dos seus stands.
         </CardDescription>

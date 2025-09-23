@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { fetchAccounts } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { Account } from '@/types/crm';

@@ -46,7 +46,7 @@ const AccountTable: React.FC<AccountTableProps> = ({ accounts, isLoading, error,
 
   if (isLoading) {
     return (
-      <Card className="w-full">
+      <Card className="w-full shadow-sm">
         <CardHeader>
           <CardTitle>Contas de AM</CardTitle>
           <CardDescription>A carregar dados das contas...</CardDescription>
@@ -60,7 +60,7 @@ const AccountTable: React.FC<AccountTableProps> = ({ accounts, isLoading, error,
 
   if (error) {
     return (
-      <Card className="w-full">
+      <Card className="w-full shadow-sm">
         <CardHeader>
           <CardTitle>Contas de AM</CardTitle>
         </CardHeader>
@@ -77,67 +77,68 @@ const AccountTable: React.FC<AccountTableProps> = ({ accounts, isLoading, error,
 
   if (accounts.length === 0) {
     return (
-      <Card className="w-full">
+      <Card className="w-full shadow-sm">
         <CardHeader>
           <CardTitle>Contas de AM</CardTitle>
           <CardDescription>Nenhuma conta de AM encontrada.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground text-center">Não há dados de contas de AM para exibir.</p>
+          <p className="text-muted-foreground text-center py-4">Não há dados de contas de AM para exibir.</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Contas de AM</CardTitle>
-        <CardDescription>Lista de todas as contas de Account Managers.</CardDescription>
+    <Card className="w-full shadow-md">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-semibold">Contas de AM</CardTitle>
+        <CardDescription className="text-muted-foreground">Lista de todas as contas de Account Managers.</CardDescription>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[500px] w-full">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome da Conta</TableHead>
-                <TableHead>AM</TableHead>
+                <TableHead className="w-[150px]">Nome da Conta</TableHead>
+                <TableHead className="w-[100px]">AM</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead>Distrito</TableHead>
-                <TableHead>Função</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead className="w-[120px]">Telefone</TableHead>
+                <TableHead className="w-[120px]">Distrito</TableHead>
+                <TableHead className="w-[100px]">Função</TableHead>
+                <TableHead className="text-right w-[100px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {accounts.map((account) => (
                 <TableRow key={account.id}>
-                  <TableCell className="font-medium flex items-center">
+                  <TableCell className="font-medium flex items-center py-3">
                     <User className="mr-2 h-4 w-4 text-muted-foreground" />
                     {account.account_name || 'N/A'}
                   </TableCell>
-                  <TableCell>{account.am || 'N/A'}</TableCell>
-                  <TableCell className="flex items-center">
+                  <TableCell className="py-3">{account.am || 'N/A'}</TableCell>
+                  <TableCell className="flex items-center py-3">
                     <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
                     {account.email || 'N/A'}
                   </TableCell>
-                  <TableCell className="flex items-center">
+                  <TableCell className="flex items-center py-3">
                     <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
                     {account.phone_number || 'N/A'}
                   </TableCell>
-                  <TableCell className="flex items-center">
+                  <TableCell className="flex items-center py-3">
                     <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
                     {account.district || 'N/A'}
                   </TableCell>
-                  <TableCell className="flex items-center">
+                  <TableCell className="flex items-center py-3">
                     <Briefcase className="mr-2 h-4 w-4 text-muted-foreground" />
                     {account.role || 'N/A'}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right py-3">
                     <div className="flex justify-end space-x-2">
                       <Button
                         variant="outline"
-                        size="sm"
+                        size="icon"
+                        className="h-8 w-8"
                         onClick={() => {
                           setSelectedAccount(account);
                           setIsEditDialogOpen(true);
@@ -147,7 +148,7 @@ const AccountTable: React.FC<AccountTableProps> = ({ accounts, isLoading, error,
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm">
+                          <Button variant="destructive" size="icon" className="h-8 w-8">
                             <Trash className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>

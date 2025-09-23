@@ -1,7 +1,7 @@
 import React from 'react';
 import { Stand } from '@/types/crm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Phone, Mail, User, Building, Megaphone, Code, Upload, Archive, Save, TrendingUp, Tag, MessageSquareText, Clock, XOctagon, DollarSign } from 'lucide-react'; // Added MessageSquareText, Clock, XOctagon, DollarSign icons
+import { MapPin, Phone, Mail, User, Building, Megaphone, Code, Upload, Archive, Save, TrendingUp, Tag, MessageSquareText, Clock, XOctagon, DollarSign } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 interface StandCardProps {
@@ -9,84 +9,43 @@ interface StandCardProps {
 }
 
 const StandCard: React.FC<StandCardProps> = ({ stand }) => {
+  const renderDetail = (Icon: React.ElementType, label: string, value: string | number | null | undefined) => {
+    if (value === null || value === undefined || value === '' || value === 0) return null;
+    return (
+      <div className="flex items-center text-sm">
+        <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
+        <span className="font-medium">{label}:</span> <span className="ml-1 text-foreground">{value}</span>
+      </div>
+    );
+  };
+
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-lg">{stand.Stand_ID}</CardTitle>
+    <Card className="w-full shadow-sm hover:shadow-md transition-shadow">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-semibold">{stand.Stand_ID}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
-        <div className="flex items-center">
-          <Building className="mr-2 h-4 w-4 text-muted-foreground" />
-          <span>{stand.Company_Name}</span>
-        </div>
-        <div className="flex items-center">
-          <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
-          <span>{stand.Address}, {stand.Postal_Code} {stand.City}</span>
-        </div>
-        <div className="flex items-center">
-          <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
-          <span>{stand.Phone}</span>
-        </div>
-        <div className="flex items-center">
-          <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
-          <span>{stand.Email}</span>
-        </div>
-        <div className="flex items-center">
-          <User className="mr-2 h-4 w-4 text-muted-foreground" />
-          <span>{stand.Contact_Person}</span>
-        </div>
-        <div className="flex items-center">
-          <Tag className="mr-2 h-4 w-4 text-muted-foreground" />
-          <span>Tipo: {stand.Tipo}</span>
-        </div>
-        {stand.Whatsapp && (
-          <div className="flex items-center">
-            <MessageSquareText className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>WhatsApp: {stand.Whatsapp}</span>
-          </div>
-        )}
-        <Separator className="my-2" />
-        <div className="grid grid-cols-2 gap-2">
-          <div className="flex items-center">
-            <Megaphone className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Anúncios: {stand.Anuncios}</span>
-          </div>
-          <div className="flex items-center">
-            <Code className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>API: {stand.API}</span>
-          </div>
-          <div className="flex items-center">
-            <Upload className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Publicados: {stand.Publicados}</span>
-          </div>
-          <div className="flex items-center">
-            <Archive className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Arquivados: {stand.Arquivados}</span>
-          </div>
-          <div className="flex items-center">
-            <Save className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Guardados: {stand.Guardados}</span>
-          </div>
-          <div className="flex items-center">
-            <TrendingUp className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Δ Mês Passado: {stand.Delta_Publicados_Last_Day_Month}</span>
-          </div>
-          <div className="flex items-center">
-            <MessageSquareText className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Leads Recebidas: {stand.Leads_Recebidas}</span>
-          </div>
-          <div className="flex items-center">
-            <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Leads Pendentes: {stand.Leads_Pendentes}</span>
-          </div>
-          <div className="flex items-center">
-            <XOctagon className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Leads Expiradas: {stand.Leads_Expiradas}</span>
-          </div>
-          <div className="flex items-center">
-            <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Leads Financiadas: {stand.Leads_Financiadas}</span>
-          </div>
+        {renderDetail(Building, "Empresa", stand.Company_Name)}
+        {renderDetail(MapPin, "Morada", `${stand.Address}, ${stand.Postal_Code} ${stand.City}`)}
+        {renderDetail(Phone, "Telefone", stand.Phone)}
+        {renderDetail(Mail, "Email", stand.Email)}
+        {renderDetail(User, "Pessoa de Contacto", stand.Contact_Person)}
+        {renderDetail(Tag, "Tipo", stand.Tipo)}
+        {renderDetail(MessageSquareText, "WhatsApp", stand.Whatsapp)}
+        
+        <Separator className="my-3" />
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {renderDetail(Megaphone, "Anúncios", stand.Anuncios)}
+          {renderDetail(Code, "API", stand.API)}
+          {renderDetail(Upload, "Publicados", stand.Publicados)}
+          {renderDetail(Archive, "Arquivados", stand.Arquivados)}
+          {renderDetail(Save, "Guardados", stand.Guardados)}
+          {renderDetail(TrendingUp, "Δ Mês Passado", stand.Delta_Publicados_Last_Day_Month)}
+          {renderDetail(MessageSquareText, "Leads Recebidas", stand.Leads_Recebidas)}
+          {renderDetail(Clock, "Leads Pendentes", stand.Leads_Pendentes)}
+          {renderDetail(XOctagon, "Leads Expiradas", stand.Leads_Expiradas)}
+          {renderDetail(DollarSign, "Leads Financiadas", stand.Leads_Financiadas)}
         </div>
       </CardContent>
     </Card>

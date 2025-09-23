@@ -18,7 +18,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { useDebounce } from '@/hooks/use-debounce';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CompanyAdditionalCreateForm from '@/components/company-additional-data/CompanyAdditionalCreateForm';
-import { useLocation } from 'react-router-dom'; // Import useLocation
+import { useLocation } from 'react-router-dom';
 
 const CompanyAdditionalData: React.FC = () => {
   const [companies, setCompanies] = useState<CompanyAdditionalExcelData[]>([]);
@@ -32,14 +32,12 @@ const CompanyAdditionalData: React.FC = () => {
   const isMobile = useIsMobile();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  const location = useLocation(); // Initialize useLocation
+  const location = useLocation();
 
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(25);
   const [totalCompanies, setTotalCompanies] = useState(0);
 
-  // Determine if a search is actively happening (after debounce, before results)
   const isSearching = isLoading && searchTerm !== '';
 
   useEffect(() => {
@@ -75,7 +73,7 @@ const CompanyAdditionalData: React.FC = () => {
 
       const excelCompanyIds = additionalData.map(company => company.excel_company_id);
 
-      const crmCompanies = await fetchCompaniesByExcelCompanyIds(userId, excelCompanyIds); 
+      const crmCompanies = await fetchCompaniesByExcelCompanyIds(userId, excelCompanyIds);
       const crmCompaniesMap = new Map<string, Company>();
       crmCompanies.forEach(company => {
         crmCompaniesMap.set(company.Company_id, company);
@@ -89,7 +87,6 @@ const CompanyAdditionalData: React.FC = () => {
       setCompanies(augmentedCompanies);
       console.log(`CompanyAdditionalData: Set ${augmentedCompanies.length} companies into state.`);
 
-      // Check for companyId in URL and select it
       const params = new URLSearchParams(location.search);
       const companyIdFromUrl = params.get('companyId');
       if (companyIdFromUrl && !selectedCompanyId) {
@@ -106,7 +103,7 @@ const CompanyAdditionalData: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, currentPage, pageSize, debouncedSearchTerm, location.search, selectedCompanyId]); // Added location.search and selectedCompanyId to dependencies
+  }, [userId, currentPage, pageSize, debouncedSearchTerm, location.search, selectedCompanyId]);
 
   useEffect(() => {
     if (userId) {
@@ -176,7 +173,7 @@ const CompanyAdditionalData: React.FC = () => {
 
   return (
     <Layout>
-      <div className="h-full flex flex-col">
+      <div className="h-full flex flex-col p-6"> {/* Added p-6 for consistent padding */}
         {isMobile ? (
           selectedCompanyId ? (
             <div className="flex flex-col h-full">

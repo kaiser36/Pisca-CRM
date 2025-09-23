@@ -76,7 +76,7 @@ const CRM: React.FC = () => {
 
   return (
     <Layout>
-      <div className="h-full flex flex-col">
+      <div className="h-full flex flex-col p-6"> {/* Added p-6 for consistent padding */}
         {isMobile ? (
           // Mobile View
           selectedCompanyId ? (
