@@ -4,8 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { CompanyAdditionalExcelData, Company as CrmCompanyType } from '@/types/crm'; // Renamed Company to CrmCompanyType to avoid conflict
-import { upsertCompanyAdditionalExcelData, fetchCompanyByEmail } from '@/integrations/supabase/utils';
+import { CompanyAdditionalExcelData, Company as CrmCompanyType, Account } from '@/types/crm'; // Renamed Company to CrmCompanyType to avoid conflict, imported Account
+import { upsertCompanyAdditionalExcelData, fetchCompanyByEmail, fetchAccounts } from '@/integrations/supabase/utils'; // Imported fetchAccounts
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -16,6 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useDebounce } from '@/hooks/use-debounce'; // Import useDebounce
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Import Select components
 
 interface CompanyAdditionalCreateFormProps {
   onSave: () => void;
@@ -32,7 +33,7 @@ const formSchema = z.object({
   "Cidade": z.string().nullable().optional(),
   "Morada": z.string().nullable().optional(),
   "AM_OLD": z.string().nullable().optional(),
-  "AM": z.string().nullable().optional(),
+  "AM": z.string().nullable().optional(), // This will be a select field
   "Stock STV": z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
@@ -83,6 +84,7 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
   const [generatedExcelCompanyId, setGeneratedExcelCompanyId] = useState<string | null>(null);
   const [isProvisional, setIsProvisional] = useState(false);
   const [isLookingUpEmail, setIsLookingUpEmail] = useState(false);
+  const [accounts, setAccounts] = useState<Account[]>([]); // State for accounts
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -144,6 +146,26 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
     return () => subscription.unsubscribe();
   }, []);
 
+  // Fetch accounts for the AM select field
+  useEffect(() => {
+    const loadAccounts = async () => {
+      if (!userId) return;
+      try {
+        const fetchedAccounts = await fetchAccounts(userId);
+        // Filter out null/empty AMs and get unique values
+        const uniqueAMs = Array.from(new Set(fetchedAccounts.map(acc => acc.am).filter((am): am is string => am !== null && am.trim() !== '')));
+        setAccounts(fetchedAccounts.filter(acc => acc.am !== null && acc.am.trim() !== ''));
+      } catch (err: any) {
+        console.error("Erro ao carregar contas de AM:", err);
+        showError(err.message || "Falha ao carregar a lista de AMs.");
+      }
+    };
+
+    if (userId) {
+      loadAccounts();
+    }
+  }, [userId]);
+
   const generateProvisionalId = useCallback(() => {
     const timestamp = Date.now();
     return `P-${timestamp}`;
@@ -204,7 +226,7 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
         "Cidade": values["Cidade"],
         "Morada": values["Morada"],
         "AM_OLD": values["AM_OLD"],
-        "AM": values["AM"],
+        "AM": values["AM"], // Use selected AM
         "Stock STV": values["Stock STV"],
         "API": values["API"],
         "Site": values["Site"],
@@ -252,7 +274,7 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
     { name: "Cidade", label: "Cidade", type: "text" },
     { name: "Morada", label: "Morada", type: "text" },
     { name: "AM_OLD", label: "AM Antigo", type: "text" },
-    { name: "AM", label: "AM Atual", type: "text" },
+    { name: "AM", label: "AM Atual", type: "select", options: accounts.map(acc => acc.am).filter((am): am is string => am !== null && am.trim() !== '') }, // Changed to select
     { name: "Stock STV", label: "Stock STV", type: "number" },
     { name: "API", label: "API", type: "text" },
     { name: "Site", label: "Site", type: "url" },
@@ -327,6 +349,17 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
                         value={formField.value as string || ''}
                         onChange={formField.onChange}
                       />
+                    ) : field.type === "select" ? (
+                      <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {field.options?.map(option => (
+                            <SelectItem key={option} value={option}>{option}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     ) : (
                       <Input
                         type={field.type}
@@ -352,7 +385,7 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting || !userId || !generatedExcelCompanyId}>
+          <Button type="submit" disabled={isSubmitting || !userId || !form.formState.isValid}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
