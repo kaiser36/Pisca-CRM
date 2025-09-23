@@ -3,12 +3,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Loader2, Building, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
-import { Company } from '@/types/crm'; // Importar o tipo Company
+import { Company } from '@/types/crm';
+import { Separator } from '@/components/ui/separator'; // Adicionado: Importação do Separator
 
 interface CompanyOverviewDashboardProps {
   // Pode adicionar props se precisar de passar dados ou callbacks do pai
