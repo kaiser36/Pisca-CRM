@@ -124,6 +124,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
             <SelectValue placeholder="Selecione a categoria" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="" disabled>Selecione a categoria</SelectItem> {/* Adicionado para garantir o placeholder */}
             {productCategories.length === 0 ? (
               <SelectItem value="no-categories" disabled>Nenhuma categoria disponível</SelectItem>
             ) : (
