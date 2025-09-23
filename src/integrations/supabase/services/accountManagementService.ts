@@ -22,3 +22,53 @@ export async function fetchAccounts(userId: string): Promise<Account[]> {
 
   return data as Account[];
 }
+
+/**
+ * Inserts a new account into the accounts table.
+ */
+export async function insertAccount(account: Omit<Account, 'id' | 'created_at'>): Promise<Account> {
+  const { data, error } = await supabase
+    .from('accounts')
+    .insert(account)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error inserting account:', error);
+    throw new Error(error.message);
+  }
+  return data as Account;
+}
+
+/**
+ * Updates an existing account in the accounts table.
+ */
+export async function updateAccount(id: string, account: Partial<Omit<Account, 'id' | 'created_at' | 'user_id'>>): Promise<Account> {
+  const { data, error } = await supabase
+    .from('accounts')
+    .update(account)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error(`Error updating account with id ${id}:`, error);
+    throw new Error(error.message);
+  }
+  return data as Account;
+}
+
+/**
+ * Deletes an account from the accounts table.
+ */
+export async function deleteAccount(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('accounts')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error(`Error deleting account with id ${id}:`, error);
+    throw new Error(error.message);
+  }
+}

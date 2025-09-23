@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Account } from '@/types/crm';
 import {
   Table,
@@ -12,17 +12,38 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, User, Mail, Phone, MapPin, Briefcase } from 'lucide-react';
+import { Loader2, User, Mail, Phone, MapPin, Briefcase, Edit, Trash } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import AccountEditForm from './AccountEditForm';
+import { deleteAccount } from '@/integrations/supabase/utils';
+import { showError, showSuccess } from '@/utils/toast';
 
 interface AccountTableProps {
   accounts: Account[];
   isLoading: boolean;
   error: string | null;
+  onAccountChanged: () => void; // Callback to refresh data
 }
 
-const AccountTable: React.FC<AccountTableProps> = ({ accounts, isLoading, error }) => {
+const AccountTable: React.FC<AccountTableProps> = ({ accounts, isLoading, error, onAccountChanged }) => {
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+
+  const handleDelete = async (accountId: string) => {
+    try {
+      await deleteAccount(accountId);
+      showSuccess("Conta eliminada com sucesso!");
+      onAccountChanged();
+    } catch (err: any) {
+      console.error("Erro ao eliminar conta:", err);
+      showError(err.message || "Falha ao eliminar a conta.");
+    }
+  };
+
   if (isLoading) {
     return (
       <Card className="w-full">
@@ -85,6 +106,7 @@ const AccountTable: React.FC<AccountTableProps> = ({ accounts, isLoading, error 
                 <TableHead>Telefone</TableHead>
                 <TableHead>Distrito</TableHead>
                 <TableHead>Função</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -111,12 +133,65 @@ const AccountTable: React.FC<AccountTableProps> = ({ accounts, isLoading, error 
                     <Briefcase className="mr-2 h-4 w-4 text-muted-foreground" />
                     {account.role || 'N/A'}
                   </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedAccount(account);
+                          setIsEditDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm">
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Tem a certeza?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta ação não pode ser desfeita. Isto irá eliminar permanentemente a conta de AM "{account.account_name}".
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(account.id)}>
+                              Eliminar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </ScrollArea>
       </CardContent>
+
+      {selectedAccount && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Editar Conta de AM</DialogTitle>
+            </DialogHeader>
+            <AccountEditForm
+              account={selectedAccount}
+              onSave={() => {
+                setIsEditDialogOpen(false);
+                onAccountChanged();
+              }}
+              onCancel={() => setIsEditDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </Card>
   );
 };
