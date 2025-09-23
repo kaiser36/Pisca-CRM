@@ -7,7 +7,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import CRM from "./pages/CRM";
 import Settings from "./pages/Settings";
-import CompanyAdditionalData from "./pages/CompanyAdditionalData"; // New import
+import CompanyAdditionalData from "./pages/CompanyAdditionalData";
+import Accounts from "./pages/Accounts"; // New import
 import { CrmDataProvider } from "@/context/CrmDataContext";
 
 const queryClient = new QueryClient();
@@ -22,8 +23,9 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/crm" element={<CRM />} />
-            <Route path="/company-additional-data" element={<CompanyAdditionalData />} /> {/* New Route */}
+            <Route path="/company-additional-data" element={<CompanyAdditionalData />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/accounts" element={<Accounts />} /> {/* New Route */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

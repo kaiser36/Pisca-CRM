@@ -4,7 +4,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
+import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2, UserCog } from 'lucide-react'; // Added UserCog icon
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -72,6 +72,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           >
             <Settings className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
             {!isCollapsed && "Configurações"}
+          </Button>
+        </Link>
+        <Link to="/accounts">
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              isCollapsed ? "px-2" : "px-4",
+              "pl-8" // Indent for submenu
+            )}
+          >
+            <UserCog className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
+            {!isCollapsed && "Contas"}
           </Button>
         </Link>
       </nav>
