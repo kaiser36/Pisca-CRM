@@ -11,37 +11,31 @@ export async function fetchCompaniesMissingAdditionalData(userId: string): Promi
     throw new Error("User ID is required to fetch missing additional data.");
   }
 
-  // Step 1: Fetch all emails from company_additional_excel_data for the current user
-  const { data: additionalEmailsData, error: additionalEmailsError } = await supabase
-    .from('company_additional_excel_data')
-    .select('"Email da empresa"')
-    .eq('user_id', userId);
+  // Call the PostgreSQL function to get the IDs of companies missing additional data
+  const { data: companyIdsData, error: rpcError } = await supabase.rpc('get_companies_missing_additional_data', { p_user_id: userId });
 
-  if (additionalEmailsError) {
-    console.error('Error fetching additional company emails:', additionalEmailsError);
-    throw new Error(additionalEmailsError.message);
+  if (rpcError) {
+    console.error('Error calling RPC function get_companies_missing_additional_data:', rpcError);
+    throw new Error(rpcError.message);
   }
 
-  const existingAdditionalEmails = additionalEmailsData
-    .map(row => row['Email da empresa'])
-    .filter((email): email is string => typeof email === 'string' && email.length > 0);
+  // The RPC function returns an array of objects, each with a key matching the function name.
+  // We need to extract the UUIDs from these objects.
+  const missingCompanyDbIds = companyIdsData.map((row: { get_companies_missing_additional_data: string }) => row.get_companies_missing_additional_data);
 
-  // Step 2: Fetch companies from the main 'companies' table that are NOT in the list of existing additional emails
-  let query = supabase
+  if (missingCompanyDbIds.length === 0) {
+    return []; // No companies missing additional data
+  }
+
+  // Now fetch the full company details for these IDs
+  const { data: companiesData, error: companiesError } = await supabase
     .from('companies')
     .select('*')
-    .eq('user_id', userId);
-
-  if (existingAdditionalEmails.length > 0) {
-    query = query.not('company_email', 'in', existingAdditionalEmails);
-  }
-  // If existingAdditionalEmails is empty, it means no additional data exists, so all companies are "missing"
-  // The query will naturally return all companies for the user in this case.
-
-  const { data: companiesData, error: companiesError } = await query;
+    .in('id', missingCompanyDbIds)
+    .eq('user_id', userId); // Add user_id filter for extra security and RLS
 
   if (companiesError) {
-    console.error('Error fetching companies missing additional data:', companiesError);
+    console.error('Error fetching companies details:', companiesError);
     throw new Error(companiesError.message);
   }
 
@@ -99,6 +93,6 @@ export async function fetchCompaniesMissingAdditionalData(userId: string): Promi
     Wants_CT: company.wants_ct,
     Wants_CRB_Partner: company.wants_crb_partner,
     Autobiz_Info: company.autobiz_info,
-    stands: [] // Stands are not fetched by this function
+    stands: []
   }));
 }
