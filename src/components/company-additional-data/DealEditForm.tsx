@@ -31,9 +31,14 @@ const dealProductSchema = z.object({
   product_id: z.string().min(1, "Produto é obrigatório"),
   quantity: z.number().int("Deve ser um número inteiro").min(1, "A quantidade deve ser pelo menos 1"),
   unit_price_at_deal_time: z.number().nullable().optional(),
-  total_price_at_deal_time: z.number().nullable().optional(),
+  total_price_at_deal_time: z.number().nullable().optional(), // This will be the discounted total for the line item
   product_name: z.string().nullable().optional(),
   product_category: z.string().nullable().optional(),
+  discount_type: z.enum(['none', 'percentage', 'amount']).default('none'), // NEW
+  discount_value: z.preprocess( // NEW
+    (val) => (val === "" ? null : Number(val)),
+    z.number().min(0, "O desconto não pode ser negativo").nullable().optional()
+  ),
 });
 
 const formSchema = z.object({
@@ -49,7 +54,7 @@ const formSchema = z.object({
   stage: z.string().nullable().optional(),
   priority: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
-  deal_products: z.array(dealProductSchema).min(1, "Pelo menos um produto é obrigatório para o negócio."), // NEW: Array of products
+  deal_products: z.array(dealProductSchema).min(1, "Pelo menos um produto é obrigatório para o negócio."),
   discount_type: z.enum(['none', 'percentage', 'amount']).default('none'),
   discount_value: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
@@ -135,9 +140,9 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
 
   // Effect to calculate deal_value and final_deal_value
   useEffect(() => {
+    // deal_value is the sum of total_price_at_deal_time from each product, which already includes individual product discounts
     const calculatedBaseDealValue = dealProducts.reduce((sum, item) => {
-      const product = allProducts.find(p => p.id === item.product_id);
-      return sum + ((product?.preco_total || 0) * (item.quantity || 0));
+      return sum + (item.total_price_at_deal_time || 0);
     }, 0);
     setValue("deal_value", calculatedBaseDealValue);
 
@@ -148,26 +153,19 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
       finalValue = calculatedBaseDealValue - discountValue;
     }
     setValue("final_deal_value", Math.max(0, finalValue));
-  }, [dealProducts, discountType, discountValue, allProducts, setValue]);
+  }, [dealProducts, discountType, discountValue, setValue]);
 
   const handleAddProduct = () => {
-    append({ product_id: '', quantity: 1, unit_price_at_deal_time: 0, total_price_at_deal_time: 0, product_name: '', product_category: '' });
+    append({ product_id: '', quantity: 1, unit_price_at_deal_time: 0, total_price_at_deal_time: 0, product_name: '', product_category: '', discount_type: 'none', discount_value: 0 });
   };
 
   const handleProductItemChange = useCallback((index: number, productId: string | null, quantity: number) => {
-    const product = allProducts.find(p => p.id === productId);
-    if (product) {
-      setValue(`deal_products.${index}.unit_price_at_deal_time`, product.preco_unitario || 0);
-      setValue(`deal_products.${index}.total_price_at_deal_time`, (product.preco_total || 0) * quantity);
-      setValue(`deal_products.${index}.product_name`, product.produto);
-      setValue(`deal_products.${index}.product_category`, product.categoria);
-    } else {
-      setValue(`deal_products.${index}.unit_price_at_deal_time`, 0);
-      setValue(`deal_products.${index}.total_price_at_deal_time`, 0);
-      setValue(`deal_products.${index}.product_name`, '');
-      setValue(`deal_products.${index}.product_category`, '');
-    }
-  }, [allProducts, setValue]);
+    // This callback is primarily to trigger re-calculation in the parent form
+    // The actual product-specific calculations are now handled within DealProductFormItem
+    // We just need to ensure the parent's watched `deal_products` array updates
+    const updatedDealProducts = formMethods.getValues().deal_products;
+    setValue('deal_products', updatedDealProducts, { shouldValidate: true, shouldDirty: true });
+  }, [formMethods, setValue]);
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
@@ -215,9 +213,9 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
   ];
 
   const discountFields = [
-    { name: "deal_value", label: "Valor do Negócio (Pré-Desconto)", type: "number", readOnly: true },
-    { name: "discount_type", label: "Tipo de Desconto", type: "select", options: [{ value: 'none', label: 'Nenhum' }, { value: 'percentage', label: 'Percentagem' }, { value: 'amount', label: 'Valor Fixo' }] },
-    { name: "discount_value", label: "Valor do Desconto", type: "number", conditional: (val: FormData) => val.discount_type !== 'none' },
+    { name: "deal_value", label: "Valor do Negócio (Pré-Desconto Geral)", type: "number", readOnly: true },
+    { name: "discount_type", label: "Tipo de Desconto Geral", type: "select", options: [{ value: 'none', label: 'Nenhum' }, { value: 'percentage', label: 'Percentagem' }, { value: 'amount', label: 'Valor Fixo' }] },
+    { name: "discount_value", label: "Valor do Desconto Geral", type: "number", conditional: (val: FormData) => val.discount_type !== 'none' },
     { name: "final_deal_value", label: "Valor Final do Negócio", type: "number", readOnly: true },
   ];
 
@@ -311,6 +309,8 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
               onProductChange={handleProductItemChange}
               initialProductId={item.product_id}
               initialQuantity={item.quantity}
+              initialDiscountType={item.discount_type}
+              initialDiscountValue={item.discount_value}
             />
           ))}
           <Button type="button" variant="outline" onClick={handleAddProduct} className="w-full">
@@ -319,7 +319,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
           {errors.deal_products && <p className="text-sm font-medium text-destructive mt-2">{errors.deal_products.message}</p>}
         </div>
 
-        <h3 className="text-lg font-semibold mt-6 mb-3">Resumo e Desconto</h3>
+        <h3 className="text-lg font-semibold mt-6 mb-3">Resumo e Desconto Geral</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {discountFields.map((field) => {
             if (field.conditional && !formMethods.getValues().deal_products.length) { // Only show discount fields if there are products

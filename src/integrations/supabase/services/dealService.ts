@@ -27,6 +27,8 @@ export async function insertDeal(deal: Omit<Negocio, 'id' | 'created_at' | 'upda
       quantity: dp.quantity,
       unit_price_at_deal_time: dp.unit_price_at_deal_time,
       total_price_at_deal_time: dp.total_price_at_deal_time,
+      discount_type: dp.discount_type, // NEW
+      discount_value: dp.discount_value, // NEW
     }));
 
     const { error: dealProductsError } = await supabase
@@ -77,7 +79,6 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
 
   if (additionalError) {
     console.error('Error fetching additional company data:', additionalError);
-    // Don't throw, just log and proceed without this data if it fails
   }
 
   const additionalNamesMap = new Map<string, string>();
@@ -96,7 +97,6 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
 
   if (companiesError) {
     console.error('Error fetching companies data:', companiesError);
-    // Don't throw, just log and proceed without this data if it fails
   }
 
   const companyNamesMap = new Map<string, string>();
@@ -119,12 +119,12 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
 
   const productIds = Array.from(new Set(dealProductsData.map(dp => dp.product_id).filter((id): id is string => id !== null && id !== undefined)));
 
-  // 5. Fetch product details (name, category) for all unique product IDs
-  let productDetailsMap = new Map<string, { produto: string; categoria: string | null }>();
+  // 5. Fetch product details (name, category, unit price, total price from product table) for all unique product IDs
+  let productDetailsMap = new Map<string, { produto: string; categoria: string | null; preco_unitario: number | null; preco_total: number | null }>();
   if (productIds.length > 0) {
     const { data: productsData, error: productsError } = await supabase
       .from('produtos')
-      .select('id, produto, categoria')
+      .select('id, produto, categoria, preco_unitario, preco_total')
       .in('id', productIds);
 
     if (productsError) {
@@ -132,7 +132,12 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
     } else {
       productsData?.forEach(p => {
         if (p.id && p.produto) {
-          productDetailsMap.set(p.id, { produto: p.produto, categoria: p.categoria });
+          productDetailsMap.set(p.id, {
+            produto: p.produto,
+            categoria: p.categoria,
+            preco_unitario: p.preco_unitario,
+            preco_total: p.preco_total,
+          });
         }
       });
     }
@@ -146,17 +151,31 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
       .filter(dp => dp.deal_id === deal.id)
       .map(dp => {
         const productDetail = dp.product_id ? productDetailsMap.get(dp.product_id) : null;
+        
+        // Calculate individual product's total price after its own discount
+        let baseProductLineTotal = (productDetail?.preco_total || 0) * (dp.quantity || 0);
+        let discountedProductLineTotal = baseProductLineTotal;
+
+        if (dp.discount_type === 'percentage' && dp.discount_value !== null) {
+          discountedProductLineTotal = baseProductLineTotal * (1 - (dp.discount_value / 100));
+        } else if (dp.discount_type === 'amount' && dp.discount_value !== null) {
+          discountedProductLineTotal = baseProductLineTotal - dp.discount_value;
+        }
+        discountedProductLineTotal = Math.max(0, discountedProductLineTotal); // Ensure not negative
+
         return {
           ...dp,
           product_name: productDetail?.produto || null,
           product_category: productDetail?.categoria || null,
+          unit_price_at_deal_time: productDetail?.preco_unitario || 0, // Ensure unit price is set
+          total_price_at_deal_time: discountedProductLineTotal, // This is the discounted total for the line item
         } as DealProduct;
       });
 
-    // Calculate deal_value (sum of all total_price_at_deal_time)
+    // Calculate deal_value (sum of all total_price_at_deal_time from deal_products, which are already individually discounted)
     const calculatedDealValue = associatedDealProducts.reduce((sum, dp) => sum + (dp.total_price_at_deal_time || 0), 0);
 
-    // Calculate final_deal_value based on discount
+    // Calculate final_deal_value based on overall deal discount
     let calculatedFinalDealValue = calculatedDealValue;
     if (deal.discount_type === 'percentage' && deal.discount_value !== null) {
       calculatedFinalDealValue = calculatedDealValue * (1 - (deal.discount_value / 100));
@@ -169,8 +188,8 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
       ...deal,
       commercial_name: commercialName,
       deal_products: associatedDealProducts,
-      deal_value: calculatedDealValue, // Override with calculated value
-      final_deal_value: calculatedFinalDealValue, // Override with calculated value
+      deal_value: calculatedDealValue, // Override with calculated value (sum of individually discounted products)
+      final_deal_value: calculatedFinalDealValue, // Override with calculated value (after overall deal discount)
     } as Negocio;
   });
 
@@ -216,6 +235,8 @@ export async function updateDeal(id: string, deal: Partial<Omit<Negocio, 'id' | 
         quantity: dp.quantity,
         unit_price_at_deal_time: dp.unit_price_at_deal_time,
         total_price_at_deal_time: dp.total_price_at_deal_time,
+        discount_type: dp.discount_type, // NEW
+        discount_value: dp.discount_value, // NEW
       }));
 
       const { error: insertError } = await supabase

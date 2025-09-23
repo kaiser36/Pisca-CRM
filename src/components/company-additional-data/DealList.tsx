@@ -247,7 +247,13 @@ const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
               </p>
               {deal.deal_products.map((dp: DealProduct, idx: number) => (
                 <div key={idx} className="ml-4 text-xs text-muted-foreground">
-                  - {dp.product_name} ({dp.quantity}x) - {displayValue(dp.total_price_at_deal_time, '', ` ${deal.currency || 'EUR'}`)}
+                  - {dp.product_name} ({dp.quantity}x)
+                  {dp.discount_type !== 'none' && dp.discount_value !== null && dp.discount_value !== undefined && (
+                    <span className="ml-1 text-orange-600">
+                      (Desc. {dp.discount_type === 'percentage' ? `${dp.discount_value}%` : `${dp.discount_value?.toFixed(2)} €`})
+                    </span>
+                  )}
+                  <span className="ml-1 font-semibold">{displayValue(dp.total_price_at_deal_time, '', ` ${deal.currency || 'EUR'}`)}</span>
                 </div>
               ))}
             </div>
@@ -256,13 +262,13 @@ const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
           {deal.deal_value !== null && deal.deal_value !== undefined && (
             <div className="flex items-center text-xs">
               <DollarSign className="mr-1 h-3 w-3 text-muted-foreground" />
-              <span className="font-medium">Valor (Pré-Desconto):</span> <span className="ml-1 text-foreground">{displayValue(deal.deal_value, '', ` ${deal.currency || 'EUR'}`)}</span>
+              <span className="font-medium">Valor (Pré-Desc. Geral):</span> <span className="ml-1 text-foreground">{displayValue(deal.deal_value, '', ` ${deal.currency || 'EUR'}`)}</span>
             </div>
           )}
           {deal.discount_type !== 'none' && deal.discount_value !== null && deal.discount_value !== undefined && (
             <div className="flex items-center text-xs">
               <Tag className="mr-1 h-3 w-3 text-muted-foreground" />
-              <span className="font-medium">Desconto ({deal.discount_type === 'percentage' ? '%' : '€'}):</span> <span className="ml-1 text-foreground">
+              <span className="font-medium">Desconto Geral ({deal.discount_type === 'percentage' ? '%' : '€'}):</span> <span className="ml-1 text-foreground">
                 {deal.discount_type === 'percentage' ? `${deal.discount_value}%` : `${deal.discount_value?.toFixed(2)} €`}
               </span>
             </div>
