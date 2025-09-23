@@ -5,7 +5,7 @@ import { CompanyAdditionalExcelData } from '@/types/crm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing } from 'lucide-react';
+import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CompanyAdditionalEditForm from './CompanyAdditionalEditForm';
@@ -14,6 +14,8 @@ import AccountContactCreateForm from './AccountContactCreateForm';
 import AccountContactList from './AccountContactList';
 import EasyvistaCreateForm from './EasyvistaCreateForm';
 import EasyvistaList from './EasyvistaList';
+import DealCreateForm from './DealCreateForm'; // New import
+import DealList from './DealList'; // New import
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Accordion,
@@ -35,6 +37,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateContactDialogOpen, setIsCreateContactDialogOpen] = useState(false);
   const [isCreateEasyvistaDialogOpen, setIsCreateEasyvistaDialogOpen] = useState(false);
+  const [isCreateDealDialogOpen, setIsCreateDealDialogOpen] = useState(false); // New state for Deal dialog
 
   if (!company) {
     return (
@@ -199,6 +202,24 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </DialogContent>
               </Dialog>
 
+              <Dialog open={isCreateDealDialogOpen} onOpenChange={setIsCreateDealDialogOpen}> {/* New Deal Dialog */}
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Handshake className="mr-2 h-4 w-4" /> Novo Negócio
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Criar Novo Negócio</DialogTitle>
+                  </DialogHeader>
+                  <DealCreateForm
+                    companyExcelId={company.excel_company_id}
+                    onSave={() => setIsCreateDealDialogOpen(false)}
+                    onCancel={() => setIsCreateDealDialogOpen(false)}
+                  />
+                </DialogContent>
+              </Dialog>
+
               <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -308,6 +329,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
               <TabsTrigger value="stands">Stands</TabsTrigger>
               <TabsTrigger value="contacts">Contactos</TabsTrigger>
               <TabsTrigger value="easyvistas">Easyvistas</TabsTrigger>
+              <TabsTrigger value="deals">Negócios</TabsTrigger> {/* New Tab */}
             </TabsList>
             <TabsContent value="details" className="mt-4 space-y-6"> {/* Increased spacing */}
               <Accordion type="multiple" className="w-full space-y-4">
@@ -477,6 +499,12 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 <Eye className="mr-2 h-5 w-5" /> Registos Easyvista
               </h3>
               <EasyvistaList companyExcelId={company.excel_company_id} />
+            </TabsContent>
+            <TabsContent value="deals" className="mt-4"> {/* New Deals Tab Content */}
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+                <Handshake className="mr-2 h-5 w-5" /> Negócios
+              </h3>
+              <DealList companyExcelId={company.excel_company_id} />
             </TabsContent>
           </Tabs>
         </CardContent>

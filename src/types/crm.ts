@@ -196,3 +196,19 @@ export interface Account {
   credibom_email: string | null;
   role: string | null;
 }
+
+export interface Negocio {
+  id?: string;
+  user_id: string;
+  company_excel_id: string;
+  deal_name: string;
+  deal_status?: string | null;
+  deal_value?: number | null;
+  currency?: string | null;
+  expected_close_date?: string | null; // ISO string for timestamp
+  stage?: string | null;
+  priority?: string | null;
+  notes?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
