@@ -137,15 +137,17 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
 
   const discountType = watch("discount_type");
   const discountValue = watch("discount_value");
-  const dealProducts = watch("deal_products");
+  
+  // Watch all total_price_at_deal_time fields explicitly
+  const allProductTotals = fields.map((field, index) => watch(`deal_products.${index}.total_price_at_deal_time`));
 
   // Effect to calculate deal_value and final_deal_value
   useEffect(() => {
     console.log("[DealCreateForm] Parent useEffect triggered for deal calculation.");
-    console.log("[DealCreateForm] Current dealProducts for calculation:", dealProducts);
+    console.log("[DealCreateForm] Current allProductTotals for calculation:", allProductTotals);
 
-    const calculatedBaseDealValue = dealProducts.reduce((sum, item) => {
-      return sum + (item.total_price_at_deal_time || 0);
+    const calculatedBaseDealValue = allProductTotals.reduce((sum, total) => {
+      return sum + (total || 0);
     }, 0);
     setValue("deal_value", calculatedBaseDealValue, { shouldDirty: true, shouldValidate: true });
     console.log("[DealCreateForm] Calculated Base Deal Value:", calculatedBaseDealValue);
@@ -158,7 +160,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
     }
     setValue("final_deal_value", Math.max(0, finalValue), { shouldDirty: true, shouldValidate: true });
     console.log("[DealCreateForm] Calculated Final Deal Value:", Math.max(0, finalValue));
-  }, [dealProducts, discountType, discountValue, setValue]);
+  }, [allProductTotals, discountType, discountValue, setValue]); // Depend on allProductTotals
 
   const handleAddProduct = () => {
     append({ product_id: '', quantity: 1, unit_price_at_deal_time: 0, total_price_at_deal_time: 0, product_name: '', product_category: '', discount_type: 'none', discount_value: 0 });
