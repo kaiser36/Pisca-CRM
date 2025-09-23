@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -71,7 +71,7 @@ type FormData = z.infer<typeof formSchema>;
 const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const allProductsRef = useRef<Product[]>([]); // Use useRef for allProducts
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -96,7 +96,8 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
       if (!userId) return;
       try {
         const fetchedProducts = await fetchProducts(userId);
-        setAllProducts(fetchedProducts);
+        allProductsRef.current = fetchedProducts; // Update the ref's current value
+        console.log("[DealEditForm] Products loaded into ref:", allProductsRef.current);
       } catch (err: any) {
         console.error("Erro ao carregar produtos:", err);
         showError(err.message || "Falha ao carregar a lista de produtos.");
@@ -106,7 +107,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
     if (userId) {
       loadProducts();
     }
-  }, [userId]);
+  }, [userId]); // Dependency array: userId
 
   const formMethods = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -307,7 +308,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
             <DealProductFormItem
               key={item.id}
               index={index}
-              allProducts={allProducts}
+              allProducts={allProductsRef.current} // Pass the ref's current value
               onRemove={remove}
               initialProductId={item.product_id}
               initialQuantity={item.quantity}
