@@ -4,7 +4,7 @@ import { Negocio } from '@/types/crm';
 /**
  * Inserts a new deal into the negocios table.
  */
-export async function insertDeal(deal: Omit<Negocio, 'id' | 'created_at' | 'updated_at' | 'commercial_name'>): Promise<Negocio> {
+export async function insertDeal(deal: Omit<Negocio, 'id' | 'created_at' | 'updated_at' | 'commercial_name' | 'product_name'>): Promise<Negocio> {
   const { data, error } = await supabase
     .from('negocios')
     .insert(deal)
@@ -20,7 +20,7 @@ export async function insertDeal(deal: Omit<Negocio, 'id' | 'created_at' | 'upda
 
 /**
  * Fetches all deals for a given company_excel_id and user_id,
- * manually joining commercial names from related tables.
+ * manually joining commercial names and product names from related tables.
  */
 export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId: string): Promise<Negocio[]> {
   // 1. Fetch deals from the 'negocios' table
@@ -42,6 +42,7 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
 
   // 2. Get unique company_excel_ids from the fetched deals
   const uniqueExcelCompanyIds = Array.from(new Set(dealsData.map(deal => deal.company_excel_id)));
+  const uniqueProductIds = Array.from(new Set(dealsData.map(deal => deal.product_id).filter((id): id is string => id !== null && id !== undefined)));
 
   // 3. Fetch commercial names from 'company_additional_excel_data'
   const { data: additionalData, error: additionalError } = await supabase
@@ -81,12 +82,34 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
     }
   });
 
-  // 5. Map the fetched deals and add the commercial_name based on priority
+  // 5. Fetch product names from 'produtos' table
+  let productNamesMap = new Map<string, string>();
+  if (uniqueProductIds.length > 0) {
+    const { data: productsData, error: productsError } = await supabase
+      .from('produtos')
+      .select('id, produto')
+      .eq('user_id', userId)
+      .in('id', uniqueProductIds);
+
+    if (productsError) {
+      console.error('Error fetching products data:', productsError);
+    } else {
+      productsData?.forEach(row => {
+        if (row.id && row.produto) {
+          productNamesMap.set(row.id, row.produto);
+        }
+      });
+    }
+  }
+
+  // 6. Map the fetched deals and add the commercial_name and product_name based on priority
   return dealsData.map(deal => {
     const commercialName = additionalNamesMap.get(deal.company_excel_id) || companyNamesMap.get(deal.company_excel_id) || null;
+    const productName = deal.product_id ? productNamesMap.get(deal.product_id) : null;
     return {
       ...deal,
       commercial_name: commercialName,
+      product_name: productName,
     } as Negocio;
   });
 }
@@ -94,7 +117,7 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
 /**
  * Updates an existing deal in the negocios table.
  */
-export async function updateDeal(id: string, deal: Partial<Omit<Negocio, 'id' | 'created_at' | 'user_id' | 'commercial_name'>>): Promise<Negocio> {
+export async function updateDeal(id: string, deal: Partial<Omit<Negocio, 'id' | 'created_at' | 'user_id' | 'commercial_name' | 'product_name'>>): Promise<Negocio> {
   const { data, error } = await supabase
     .from('negocios')
     .update({ ...deal, updated_at: new Date().toISOString() }) // Update updated_at timestamp

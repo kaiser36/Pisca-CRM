@@ -210,6 +210,8 @@ export interface Negocio {
   stage?: string | null;
   priority?: string | null;
   notes?: string | null;
+  product_id?: string | null; // NEW: Link to the product
+  product_name?: string | null; // NEW: For display purposes
   created_at?: string;
   updated_at?: string;
 }

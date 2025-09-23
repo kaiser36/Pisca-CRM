@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Negocio } from '@/types/crm';
-import { insertDeal } from '@/integrations/supabase/utils';
+import { Negocio, Product } from '@/types/crm'; // Import Product type
+import { insertDeal, fetchProducts } from '@/integrations/supabase/utils'; // Import fetchProducts
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -40,6 +40,7 @@ const formSchema = z.object({
   stage: z.string().nullable().optional(),
   priority: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
+  product_id: z.string().nullable().optional(), // NEW: Product ID
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -47,6 +48,7 @@ type FormData = z.infer<typeof formSchema>;
 const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commercialName, onSave, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [products, setProducts] = useState<Product[]>([]); // State to store products
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -66,6 +68,24 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
     return () => subscription.unsubscribe();
   }, []);
 
+  // Fetch products when userId is available
+  useEffect(() => {
+    const loadProducts = async () => {
+      if (!userId) return;
+      try {
+        const fetchedProducts = await fetchProducts(userId);
+        setProducts(fetchedProducts);
+      } catch (err: any) {
+        console.error("Erro ao carregar produtos:", err);
+        showError(err.message || "Falha ao carregar a lista de produtos.");
+      }
+    };
+
+    if (userId) {
+      loadProducts();
+    }
+  }, [userId]);
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -78,6 +98,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
       stage: '',
       priority: 'Medium',
       notes: '',
+      product_id: '', // NEW: Default product_id
     },
   });
 
@@ -89,7 +110,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
 
     setIsSubmitting(true);
     try {
-      const newDeal: Omit<Negocio, 'id' | 'created_at' | 'updated_at' | 'commercial_name'> = {
+      const newDeal: Omit<Negocio, 'id' | 'created_at' | 'updated_at' | 'commercial_name' | 'product_name'> = {
         user_id: userId,
         company_excel_id: companyExcelId,
         deal_name: values.deal_name,
@@ -100,6 +121,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
         stage: values.stage || null,
         priority: values.priority || 'Medium',
         notes: values.notes || null,
+        product_id: values.product_id || null, // NEW: Include product_id
       };
 
       await insertDeal(newDeal);
@@ -122,6 +144,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
     { name: "expected_close_date", label: "Data de Fecho Esperada", type: "date" },
     { name: "stage", label: "Etapa", type: "text" },
     { name: "priority", label: "Prioridade", type: "select", options: ["Low", "Medium", "High"] },
+    { name: "product_id", label: "Produto", type: "select", options: products.map(p => ({ value: p.id!, label: p.produto })) }, // NEW: Product Select
     { name: "notes", label: "Notas", type: "textarea", colSpan: 2 },
   ];
 
@@ -176,8 +199,8 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
                           <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
                         </SelectTrigger>
                         <SelectContent>
-                          {field.options?.map(option => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
+                          {field.options?.map((option: any) => ( // Adjusted type for options
+                            <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>

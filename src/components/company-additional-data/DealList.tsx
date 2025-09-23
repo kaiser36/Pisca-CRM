@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Calendar, DollarSign, Tag, Info, MessageSquareText, Clock, TrendingUp, Handshake, Search, FileText, CheckCircle, XCircle, MoreHorizontal, Edit, Trash, ArrowLeft, ArrowRight, Building } from 'lucide-react'; // Added Building icon
+import { Terminal, Calendar, DollarSign, Tag, Info, MessageSquareText, Clock, TrendingUp, Handshake, Search, FileText, CheckCircle, XCircle, MoreHorizontal, Edit, Trash, ArrowLeft, ArrowRight, Building, Package } from 'lucide-react'; // Added Package icon
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -239,6 +239,12 @@ const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
             <Building className="mr-1 h-3 w-3 text-muted-foreground" />
             <span className="font-medium">Empresa:</span> <span className="ml-1 text-foreground">{deal.commercial_name || 'N/A'}</span>
           </div>
+          {deal.product_name && ( // NEW: Display product name
+            <div className="flex items-center text-xs">
+              <Package className="mr-1 h-3 w-3 text-muted-foreground" />
+              <span className="font-medium">Produto:</span> <span className="ml-1 text-foreground">{deal.product_name}</span>
+            </div>
+          )}
           <div className="flex items-center text-xs">
             <DollarSign className="mr-1 h-3 w-3 text-muted-foreground" />
             <span className="font-medium">Valor:</span> <span className="ml-1 text-foreground">{displayValue(deal.deal_value, '', ` ${deal.currency || 'EUR'}`)}</span>
