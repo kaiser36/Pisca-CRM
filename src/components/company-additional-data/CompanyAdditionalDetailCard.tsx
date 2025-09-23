@@ -5,7 +5,7 @@ import { CompanyAdditionalExcelData } from '@/types/crm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet } from 'lucide-react';
+import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CompanyAdditionalEditForm from './CompanyAdditionalEditForm';
@@ -22,6 +22,9 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { isPast, parseISO, differenceInMonths, differenceInDays } from 'date-fns';
 
 interface CompanyAdditionalDetailCardProps {
   company: CompanyAdditionalExcelData | null;
@@ -47,13 +50,9 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     let displayValue: React.ReactNode = value;
     if (typeof value === 'boolean') {
       displayValue = value ? (
-        <span className="flex items-center text-green-600">
-          <CheckCircle className="mr-1 h-4 w-4" /> Sim
-        </span>
+        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Sim</Badge>
       ) : (
-        <span className="flex items-center text-red-600">
-          <XCircle className="mr-1 h-4 w-4" /> Não
-        </span>
+        <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Não</Badge>
       );
     } else if (typeof value === 'number') {
       displayValue = value.toLocaleString('pt-PT');
@@ -63,6 +62,17 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
           {String(value)}
         </a>
       );
+    } else if (label.includes('Data')) {
+      try {
+        const date = parseISO(String(value));
+        if (!isNaN(date.getTime())) {
+          displayValue = date.toLocaleDateString('pt-PT', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        } else {
+          displayValue = String(value);
+        }
+      } catch {
+        displayValue = String(value);
+      }
     }
 
     return (
@@ -75,6 +85,42 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
   const companyDisplayName = company["Nome Comercial"] || company.crmCompany?.Company_Name || "Empresa Desconhecida";
   const firstLetter = companyDisplayName.charAt(0).toUpperCase();
+
+  // Utility functions for date comparisons
+  const isVisitOld = (dateString: string): boolean => {
+    try {
+      const date = parseISO(dateString);
+      return differenceInMonths(new Date(), date) >= 3;
+    } catch {
+      return false;
+    }
+  };
+
+  const isLoginOld = (dateString: string): boolean => {
+    try {
+      const date = parseISO(dateString);
+      return differenceInDays(new Date(), date) >= 7;
+    } catch {
+      return false;
+    }
+  };
+
+  // Alert logic
+  const alerts: string[] = [];
+  const planExpirationDate = company.crmCompany?.Plan_Expiration_Date || null;
+  if (planExpirationDate && isPast(parseISO(planExpirationDate))) {
+    alerts.push("O plano da empresa expirou!");
+  }
+
+  const lastVisitDate = company["Data ultima visita"] || company.crmCompany?.Last_Visit_Date || null;
+  if (lastVisitDate && isVisitOld(lastVisitDate)) {
+    alerts.push("A última visita foi há mais de 3 meses.");
+  }
+
+  const lastLoginDate = company.crmCompany?.Last_Login_Date || null;
+  if (lastLoginDate && isLoginOld(lastLoginDate)) {
+    alerts.push("O último login foi há mais de uma semana.");
+  }
 
   return (
     <ScrollArea className="h-full w-full pr-4">
@@ -166,6 +212,64 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
             </div>
           </Card>
           {/* End Main Overview Card */}
+
+          {/* New Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Pisca Card */}
+            <Card className="p-4 shadow-subtle border-l-4 border-blue-200 bg-blue-50">
+              <CardTitle className="text-lg font-semibold mb-3 flex items-center text-blue-800">
+                <Package className="mr-2 h-5 w-5" /> Pisca
+              </CardTitle>
+              <div className="space-y-2">
+                {renderField(Package, "Último Plano", company["Plano Indicado"] || company.crmCompany?.Last_Plan)}
+                {renderField(CheckCircle, "Plano Ativo", company.crmCompany?.Plan_Active)}
+                {renderField(Calendar, "Expiração do Plano", company.crmCompany?.Plan_Expiration_Date)}
+                {renderField(Repeat, "Renovação Automática", company.crmCompany?.Plan_Auto_Renewal)}
+                {renderField(TrendingUp, "Bumps Totais", company.crmCompany?.Total_Bumps)}
+                {renderField(TrendingUp, "Bumps Atuais", company.crmCompany?.Current_Bumps)}
+              </div>
+            </Card>
+
+            {/* Resumo Card */}
+            <Card className="p-4 shadow-subtle border-l-4 border-green-200 bg-green-50">
+              <CardTitle className="text-lg font-semibold mb-3 flex items-center text-green-800">
+                <Info className="mr-2 h-5 w-5" /> Resumo
+              </CardTitle>
+              <div className="space-y-2">
+                {renderField(Tag, "Classificação", company["Classificação"])}
+                {renderField(CheckCircle, "Parceiro Credibom", company.crmCompany?.Is_CRB_Partner)}
+                {renderField(Car, "Simulador Financiamento", company.crmCompany?.Financing_Simulator_On)}
+                {renderField(Clock, "Último Login", company.crmCompany?.Last_Login_Date)}
+                {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
+                {renderField(Wallet, "Plafond", company.crmCompany?.Plafond)}
+              </div>
+            </Card>
+
+            {/* Alertas Card */}
+            <Card className={`p-4 shadow-subtle border-l-4 ${alerts.length > 0 ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50'}`}>
+              <CardTitle className={`text-lg font-semibold mb-3 flex items-center ${alerts.length > 0 ? 'text-red-800' : 'text-yellow-800'}`}>
+                <BellRing className="mr-2 h-5 w-5" /> Alertas
+              </CardTitle>
+              <div className="space-y-2">
+                {alerts.length === 0 ? (
+                  <Alert className="bg-transparent border-none p-0 text-yellow-800">
+                    <AlertDescription className="flex items-center">
+                      <CheckCircle className="mr-2 h-4 w-4" /> Sem alertas pendentes.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  alerts.map((alert, index) => (
+                    <Alert key={index} variant="destructive" className="bg-red-100 border-red-200 text-red-800 p-2">
+                      <AlertDescription className="flex items-center">
+                        <Info className="mr-2 h-4 w-4" /> {alert}
+                      </AlertDescription>
+                    </Alert>
+                  ))
+                )}
+              </div>
+            </Card>
+          </div>
+          {/* End New Overview Cards */}
 
           <Tabs defaultValue="details">
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-10"> {/* Adjusted grid for tabs */}
