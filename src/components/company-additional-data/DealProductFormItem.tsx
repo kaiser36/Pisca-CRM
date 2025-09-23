@@ -29,7 +29,6 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
   initialDiscountType,
   initialDiscountValue,
 }) => {
-  console.log(`[DealProductFormItem ${index}] Re-render`);
   const { watch, setValue, formState: { errors } } = useFormContext(); // Get errors from context
 
   const selectedProductId = watch(`deal_products.${index}.product_id`);

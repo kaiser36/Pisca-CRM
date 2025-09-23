@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -73,7 +73,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
   console.log("[DealCreateForm] Re-render");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const allProductsRef = useRef<Product[]>([]); // Use useRef for allProducts
+  const [allProducts, setAllProducts] = useState<Product[]>([]); // Changed to useState
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -98,8 +98,8 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
       if (!userId) return;
       try {
         const fetchedProducts = await fetchProducts(userId);
-        allProductsRef.current = fetchedProducts; // Update the ref's current value
-        console.log("[DealCreateForm] Products loaded into ref:", allProductsRef.current);
+        setAllProducts(fetchedProducts); // Update state
+        console.log("[DealCreateForm] Products loaded into state:", fetchedProducts);
       } catch (err: any) {
         console.error("Erro ao carregar produtos:", err);
         showError(err.message || "Falha ao carregar a lista de produtos.");
@@ -318,7 +318,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
             <DealProductFormItem
               key={item.id}
               index={index}
-              allProducts={allProductsRef.current} // Pass the ref's current value
+              allProducts={allProducts} // Pass the state variable
               onRemove={remove}
               initialProductId={item.product_id}
               initialQuantity={item.quantity}
