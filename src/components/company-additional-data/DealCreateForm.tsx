@@ -121,7 +121,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
       stage: '',
       priority: 'Medium',
       notes: '',
-      deal_products: [], // Initialize with an empty array
+      deal_products: [{ product_id: '', quantity: 1, unit_price_at_deal_time: 0, total_price_at_deal_time: 0, product_name: '', product_category: '', discount_type: 'none', discount_value: 0 }], // Initialize with one empty product
       discount_type: 'none',
       discount_value: 0,
       final_deal_value: 0,
