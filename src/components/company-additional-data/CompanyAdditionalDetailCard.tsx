@@ -142,12 +142,19 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     alerts.push("Plano ativo, mas a Renovação Automática está desativada.");
   }
 
+  const isCompanyClosed = company["Classificação"] === "Empresa encerrada";
+
   return (
     <ScrollArea className="h-full w-full pr-4">
       <Card className="w-full shadow-md">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <CardTitle className="text-2xl font-bold">{companyDisplayName}</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-2xl font-bold">{companyDisplayName}</CardTitle>
+              {isCompanyClosed && (
+                <Badge variant="destructive" className="text-sm px-3 py-1">Empresa Encerrada</Badge>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2">
               <Dialog open={isCreateContactDialogOpen} onOpenChange={setIsCreateContactDialogOpen}>
                 <DialogTrigger asChild>
