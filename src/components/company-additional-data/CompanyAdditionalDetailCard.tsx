@@ -142,7 +142,11 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     alerts.push("Plano ativo, mas a Renovação Automática está desativada.");
   }
 
+  // 7. Se a classificação for "Empresa encerrada"
   const isCompanyClosed = company["Classificação"] === "Empresa encerrada";
+  if (isCompanyClosed) {
+    alerts.push("⛔ Empresa encerrada.");
+  }
 
   return (
     <ScrollArea className="h-full w-full pr-4">
