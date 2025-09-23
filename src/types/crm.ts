@@ -182,3 +182,17 @@ export interface Easyvista {
   "ID_Proposta"?: string | null;
   "Account Armatis"?: string | null;
 }
+
+export interface Account {
+  id: string;
+  created_at: string;
+  user_id: string;
+  account_name: string | null;
+  am: string | null;
+  phone_number: string | null;
+  email: string | null;
+  photo_url: string | null;
+  district: string | null;
+  credibom_email: string | null;
+  role: string | null;
+}
