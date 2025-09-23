@@ -338,16 +338,16 @@ export async function upsertCompanies(companies: Company[], userId: string): Pro
       uses_crm: company.Uses_CRM,
       crm_software: company.CRM_Software,
       recommended_plan: company.Recommended_Plan,
-      Credit_Mediator: company.Credit_Mediator,
-      Bank_Of_Portugal_Link: company.Bank_Of_Portugal_Link,
-      Financing_Agreements: company.Financing_Agreements,
-      Last_Visit_Date: company.Last_Visit_Date,
-      Company_Group: company.Company_Group,
-      Represented_Brands: company.Represented_Brands,
-      Company_Type: company.Company_Type,
-      Wants_CT: company.Wants_CT,
-      Wants_CRB_Partner: company.Wants_CRB_Partner,
-      Autobiz_Info: company.Autobiz_Info,
+      credit_mediator: company.Credit_Mediator,
+      bank_of_portugal_link: company.Bank_Of_Portugal_Link,
+      financing_agreements: company.Financing_Agreements,
+      last_visit_date: company.Last_Visit_Date,
+      company_group: company.Company_Group,
+      represented_brands: company.Represented_Brands,
+      company_type: company.Company_Type,
+      wants_ct: company.Wants_CT,
+      wants_crb_partner: company.Wants_CRB_Partner,
+      autobiz_info: company.Autobiz_Info,
     };
 
     if (existingCompany) {
@@ -378,6 +378,71 @@ export async function upsertCompanies(companies: Company[], userId: string): Pro
     }
   }
   return companyDbIdMap;
+}
+
+/**
+ * Updates specific additional company information in the 'companies' table.
+ */
+export async function updateCompanyAdditionalInfo(companyIdExcel: string, data: Partial<Company>, userId: string): Promise<void> {
+  const { data: existingCompany, error: fetchError } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('company_id', companyIdExcel)
+    .eq('user_id', userId)
+    .single();
+
+  if (fetchError) {
+    console.error(`Company with Excel ID ${companyIdExcel} not found or error fetching:`, fetchError);
+    throw new Error(`Company with Excel ID ${companyIdExcel} not found or error fetching: ${fetchError.message}`);
+  }
+
+  const updatePayload: { [key: string]: any } = {};
+  if (data.Commercial_Name !== undefined) updatePayload.commercial_name = data.Commercial_Name;
+  if (data.Company_Postal_Code !== undefined) updatePayload.company_postal_code = data.Company_Postal_Code;
+  if (data.District !== undefined) updatePayload.district = data.District;
+  if (data.Company_City !== undefined) updatePayload.company_city = data.Company_City;
+  if (data.Company_Address !== undefined) updatePayload.company_address = data.Company_Address;
+  if (data.AM_Old !== undefined) updatePayload.am_old = data.AM_Old;
+  if (data.AM_Current !== undefined) updatePayload.am_current = data.AM_Current;
+  if (data.Stock_STV !== undefined) updatePayload.stock_stv = data.Stock_STV;
+  if (data.Company_API_Info !== undefined) updatePayload.company_api_info = data.Company_API_Info;
+  if (data.Company_Stock !== undefined) updatePayload.company_stock = data.Company_Stock;
+  if (data.Logo_URL !== undefined) updatePayload.logo_url = data.Logo_URL;
+  if (data.Classification !== undefined) updatePayload.classification = data.Classification;
+  if (data.Imported_Percentage !== undefined) updatePayload.imported_percentage = data.Imported_Percentage;
+  if (data.Vehicle_Source !== undefined) updatePayload.vehicle_source = data.Vehicle_Source;
+  if (data.Competition !== undefined) updatePayload.competition = data.Competition;
+  if (data.Social_Media_Investment !== undefined) updatePayload.social_media_investment = data.Social_Media_Investment;
+  if (data.Portal_Investment !== undefined) updatePayload.portal_investment = data.Portal_Investment;
+  if (data.B2B_Market !== undefined) updatePayload.b2b_market = data.B2B_Market;
+  if (data.Uses_CRM !== undefined) updatePayload.uses_crm = data.Uses_CRM;
+  if (data.CRM_Software !== undefined) updatePayload.crm_software = data.CRM_Software;
+  if (data.Recommended_Plan !== undefined) updatePayload.recommended_plan = data.Recommended_Plan;
+  if (data.Credit_Mediator !== undefined) updatePayload.credit_mediator = data.Credit_Mediator;
+  if (data.Bank_Of_Portugal_Link !== undefined) updatePayload.bank_of_portugal_link = data.Bank_Of_Portugal_Link;
+  if (data.Financing_Agreements !== undefined) updatePayload.financing_agreements = data.Financing_Agreements;
+  if (data.Last_Visit_Date !== undefined) updatePayload.last_visit_date = data.Last_Visit_Date; // Corrigido aqui
+  if (data.Company_Group !== undefined) updatePayload.company_group = data.Company_Group;
+  if (data.Represented_Brands !== undefined) updatePayload.represented_brands = data.Represented_Brands;
+  if (data.Company_Type !== undefined) updatePayload.company_type = data.Company_Type;
+  if (data.Wants_CT !== undefined) updatePayload.wants_ct = data.Wants_CT;
+  if (data.Wants_CRB_Partner !== undefined) updatePayload.wants_crb_partner = data.Wants_CRB_Partner;
+  if (data.Autobiz_Info !== undefined) updatePayload.autobiz_info = data.Autobiz_Info;
+
+  if (Object.keys(updatePayload).length === 0) {
+    console.warn('No additional company data to update for company:', companyIdExcel);
+    return;
+  }
+
+  const { error } = await supabase
+    .from('companies')
+    .update(updatePayload)
+    .eq('id', existingCompany.id);
+
+  if (error) {
+    console.error('Error updating additional company info:', error);
+    throw new Error(error.message);
+  }
 }
 
 /**
