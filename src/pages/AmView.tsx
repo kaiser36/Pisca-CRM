@@ -3,7 +3,6 @@
 import React from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import MissingAdditionalDataList from "@/components/dashboard/MissingAdditionalDataList";
 
 const AmView: React.FC = () => {
   return (
@@ -20,7 +19,7 @@ const AmView: React.FC = () => {
               <p className="text-muted-foreground">Funcionalidades de gestão de AMs serão adicionadas aqui.</p>
             </CardContent>
           </Card>
-          <MissingAdditionalDataList />
+          {/* MissingAdditionalDataList foi movido para a página Accounts */}
         </div>
       </div>
     </Layout>
