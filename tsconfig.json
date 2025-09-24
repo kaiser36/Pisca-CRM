@@ -12,8 +12,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx", // Crucial for automatic JSX runtime
-    "jsxImportSource": "react", // Specifies the module to import for JSX runtime
+    "jsx": "react-jsx",
 
     /* Linting */
     "strict": true,
@@ -22,10 +21,11 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Path Aliases */
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "vite.config.ts"],
+  "include": ["src", "src/**/*.ts", "src/**/*.tsx"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -1,7 +1,6 @@
 "use client";
 
-import React from 'react';
-import { createContext, useState, useContext, useCallback, useEffect } from 'react';
+import React, { createContext, useState, useContext, useCallback } from 'react';
 import { Company } from '@/types/crm';
 import { showSuccess, showError } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client'; // Import supabase client
@@ -24,7 +23,7 @@ export const CrmDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [userId, setUserId] = useState<string | null>(null); // State to hold the current user's ID
 
   // Effect to get the current user's ID
-  useEffect(() => {
+  React.useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUserId(session.user.id);
@@ -73,7 +72,7 @@ export const CrmDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   // Effect to load initial data when userId becomes available or loadInitialData changes
-  useEffect(() => {
+  React.useEffect(() => {
     if (userId) {
       loadInitialData();
     }
