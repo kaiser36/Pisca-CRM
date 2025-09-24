@@ -5,14 +5,17 @@ import { Stand } from '@/types/crm';
  * Upserts stand data into Supabase.
  */
 export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, string>): Promise<void> {
-  const standsToUpsert = stands.map(stand => {
+  const uniqueStandsMap = new Map<string, any>();
+
+  stands.forEach(stand => {
     const companyDbId = companyDbIdMap.get(stand.Company_id);
     if (!companyDbId) {
       console.warn(`Company DB ID not found for Excel Company_id: ${stand.Company_id}. Skipping stand: ${stand.Stand_ID}`);
-      return null; // Skip this stand if companyDbId is not found
+      return;
     }
 
-    return {
+    const key = `${stand.Stand_ID}-${companyDbId}`; // Unique key for deduplication
+    uniqueStandsMap.set(key, {
       company_db_id: companyDbId,
       stand_id: stand.Stand_ID,
       company_id_excel: stand.Company_id,
@@ -36,8 +39,10 @@ export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, 
       leads_expiradas: stand.Leads_Expiradas,
       leads_financiadas: stand.Leads_Financiadas,
       whatsapp: stand.Whatsapp,
-    };
-  }).filter((s): s is NonNullable<typeof s> => s !== null); // Filter out null stands
+    });
+  });
+
+  const standsToUpsert = Array.from(uniqueStandsMap.values());
 
   if (standsToUpsert.length === 0) {
     return;

@@ -6,82 +6,30 @@ import { CompanyAdditionalExcelData } from '@/types/crm';
  * This function now operates independently of the 'companies' table, as requested.
  */
 export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalExcelData[], userId: string): Promise<void> {
-  for (const row of data) {
-    console.log(`Processing excel_company_id: ${row.excel_company_id} for user: ${userId}`);
+  const uniqueDataMap = new Map<string, CompanyAdditionalExcelData>();
 
-    const { data: existingRecord, error: fetchError } = await supabase
-      .from('company_additional_excel_data')
-      .select('id')
-      .eq('excel_company_id', row.excel_company_id)
-      .eq('user_id', userId)
-      .single();
+  data.forEach(row => {
+    const key = `${row.excel_company_id}-${userId}`; // Unique key for deduplication
+    uniqueDataMap.set(key, {
+      ...row,
+      user_id: userId, // Ensure user_id is correctly set
+      created_at: row.created_at || new Date().toISOString(), // Set created_at if not present
+    });
+  });
 
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means "no rows found"
-      console.error(`Error fetching existing additional company data for excel_company_id ${row.excel_company_id}:`, fetchError);
-      throw new Error(fetchError.message);
-    }
+  const dataToUpsert = Array.from(uniqueDataMap.values());
 
-    const dataToInsertOrUpdate = {
-      user_id: userId,
-      excel_company_id: row.excel_company_id,
-      "Nome Comercial": row["Nome Comercial"],
-      "Email da empresa": row["Email da empresa"],
-      "STAND_POSTAL_CODE": row["STAND_POSTAL_CODE"],
-      "Distrito": row["Distrito"],
-      "Cidade": row["Cidade"],
-      "Morada": row["Morada"],
-      "AM_OLD": row["AM_OLD"],
-      "AM": row["AM"],
-      "Stock STV": row["Stock STV"],
-      "API": row["API"],
-      "Site": row["Site"],
-      "Stock na empresa": row["Stock na empresa"],
-      "Logotipo": row["Logotipo"],
-      "Classificação": row["Classificação"],
-      "Percentagem de Importados": row["Percentagem de Importados"],
-      "Onde compra as viaturas": row["Onde compra as viaturas"],
-      "Concorrencia": row["Concorrencia"],
-      "Investimento redes sociais": row["Investimento redes sociais"],
-      "Investimento em portais": row["Investimento em portais"],
-      "Mercado b2b": row["Mercado b2b"],
-      "Utiliza CRM": row["Utiliza CRM"],
-      "Qual o CRM": row["Qual o CRM"],
-      "Plano Indicado": row["Plano Indicado"],
-      "Mediador de credito": row["Mediador de credito"],
-      "Link do Banco de Portugal": row["Link do Banco de Portugal"],
-      "Financeiras com acordo": row["Financeiras com acordo"],
-      "Data ultima visita": row["Data ultima visita"],
-      "Grupo": row["Grupo"],
-      "Marcas representadas": row["Marcas representadas"],
-      "Tipo de empresa": row["Tipo de empresa"],
-      "Quer CT": row["Quer CT"],
-      "Quer ser parceiro Credibom": row["Quer ser parceiro Credibom"],
-      "Autobiz": row["Autobiz"],
-      created_at: new Date().toISOString(),
-    };
+  if (dataToUpsert.length === 0) {
+    return;
+  }
 
-    if (existingRecord) {
-      console.log(`Updating existing record for excel_company_id: ${row.excel_company_id}, id: ${existingRecord.id}`);
-      // Update existing record
-      const { error } = await supabase
-        .from('company_additional_excel_data')
-        .update(dataToInsertOrUpdate)
-        .eq('id', existingRecord.id);
-      if (error) {
-        console.error(`Error updating additional company data for company_id ${row.excel_company_id}:`, error);
-        throw new Error(error.message);
-      }
-    } else {
-      console.log(`Inserting new record for excel_company_id: ${row.excel_company_id}`);
-      // Insert new record
-      const { error } = await supabase
-        .from('company_additional_excel_data')
-        .insert(dataToInsertOrUpdate);
-      if (error) {
-        console.error(`Error inserting additional company data for company_id ${row.excel_company_id}:`, error);
-        throw new Error(error.message);
-      }
-    }
+  const { error } = await supabase
+    .from('company_additional_excel_data')
+    .upsert(dataToUpsert, { onConflict: 'excel_company_id, user_id' });
+
+  if (error) {
+    console.error('Error upserting additional company data:', error);
+    throw new Error(error.message);
   }
 }
 
