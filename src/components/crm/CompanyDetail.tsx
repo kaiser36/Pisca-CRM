@@ -1,17 +1,11 @@
 import React from 'react';
 import { Company } from '@/types/crm';
 import StandCard from './StandCard';
-import { Separator } from '@/components/ui/separator'; // Keep Separator for now
-import { ScrollArea } from '@/components/ui/scroll-area'; // Keep ScrollArea for now
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Mail, User, Building, Landmark, Globe, Wallet, Briefcase, CheckCircle, XCircle, Calendar, Clock, DollarSign, Package, Repeat, TrendingUp, Car, ArrowLeft } from 'lucide-react';
-
-import MuiCard from '@mui/material/Card'; // Import MUI Card
-import MuiCardContent from '@mui/material/CardContent'; // Import MUI CardContent
-import MuiCardHeader from '@mui/material/CardHeader'; // Import MUI CardHeader
-import Typography from '@mui/material/Typography'; // Import MUI Typography
-import Box from '@mui/material/Box'; // Import MUI Box for layout
-import MuiButton from '@mui/material/Button'; // Import MUI Button
-import IconButton from '@mui/material/IconButton'; // Import MUI IconButton
+import { Button } from '@/components/ui/button';
 
 interface CompanyDetailProps {
   company: Company | null;
@@ -21,22 +15,9 @@ interface CompanyDetailProps {
 const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
   if (!company) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          color: 'text.secondary',
-          p: 2,
-          borderRadius: 1,
-          border: 1,
-          borderColor: 'divider',
-          bgcolor: 'background.paper',
-        }}
-      >
+      <div className="flex items-center justify-center h-full text-muted-foreground p-4 rounded-lg border bg-card">
         Selecione uma empresa para ver os detalhes.
-      </Box>
+      </div>
     );
   }
 
@@ -68,9 +49,9 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
     let displayValue: React.ReactNode = value;
     if (typeof value === 'boolean') {
       displayValue = value ? (
-        <Typography component="span" sx={{ display: 'flex', alignItems: 'center', color: 'success.main' }}>Sim</Typography>
+        <span className="flex items-center text-green-600">Sim</span>
       ) : (
-        <Typography component="span" sx={{ display: 'flex', alignItems: 'center', color: 'error.main' }}>Não</Typography>
+        <span className="flex items-center text-red-600">Não</span>
       );
     } else if (label.includes('Data')) {
       displayValue = formatDateWithTime(String(value));
@@ -85,33 +66,29 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
     }
 
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', fontSize: '0.875rem' }}>
+      <div className="flex items-center text-sm">
         <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
-        <Typography component="span" sx={{ fontWeight: 'medium' }}>{label}:</Typography> <Typography component="span" sx={{ ml: 0.5, color: 'text.primary' }}>{displayValue}</Typography>
-      </Box>
+        <span className="font-medium">{label}:</span> <span className="ml-1 text-foreground">{displayValue}</span>
+      </div>
     );
   };
 
   return (
     <ScrollArea className="h-full w-full pr-4">
-      <MuiCard sx={{ width: '100%', boxShadow: 3 }}>
-        <MuiCardHeader
-          title={
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>{company.Company_Name}</Typography>
-              {onBack && (
-                <IconButton onClick={onBack} sx={{ display: { lg: 'none' } }}>
-                  <ArrowLeft className="h-5 w-5" />
-                </IconButton>
-              )}
-            </Box>
-          }
-          subheader={`ID da Empresa: ${company.Company_id}`}
-          subheaderTypographyProps={{ color: 'text.secondary' }}
-          sx={{ pb: 1.5 }}
-        />
-        <MuiCardContent sx={{ pt: 0, spaceY: 2 }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+      <Card className="w-full shadow-md">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl font-bold">{company.Company_Name}</CardTitle>
+            {onBack && (
+              <Button variant="ghost" size="icon" onClick={onBack} className="lg:hidden">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
+          <CardDescription className="text-muted-foreground">ID da Empresa: {company.Company_id}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {renderDetail(Landmark, "NIF", company.NIF)}
             {renderDetail(Mail, "Email da Empresa", company.Company_Email)}
             {renderDetail(User, "Pessoa de Contacto", company.Company_Contact_Person)}
@@ -131,21 +108,21 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, onBack }) => {
             {renderDetail(Repeat, "Renovação Automática", company.Plan_Auto_Renewal)}
             {renderDetail(TrendingUp, "Bumps Atuais", company.Current_Bumps)}
             {renderDetail(TrendingUp, "Bumps Totais", company.Total_Bumps)}
-          </Box>
+          </div>
           
           {company.stands.length > 0 && (
             <>
               <Separator className="my-4" />
-              <Typography variant="h6" component="h3" sx={{ fontWeight: 'semibold', mb: 2 }}>Pontos de Venda ({company.stands.length})</Typography>
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: '1fr 1fr 1fr' }, gap: 2 }}>
+              <h3 className="text-lg font-semibold mb-4">Pontos de Venda ({company.stands.length})</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {company.stands.map((stand) => (
                   <StandCard key={stand.Stand_ID} stand={stand} />
                 ))}
-              </Box>
+              </div>
             </>
           )}
-        </MuiCardContent>
-      </MuiCard>
+        </CardContent>
+      </Card>
     </ScrollArea>
   );
 };
