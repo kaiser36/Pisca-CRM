@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useCrmData } from '@/context/CrmDataContext';
 import CompanyList from '@/components/crm/CompanyList';
 import CompanyDetail from '@/components/crm/CompanyDetail';
@@ -13,12 +13,12 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 const CRM: React.FC = () => {
   const { companies, isLoading, error } = useCrmData();
-  const [selectedCompanyId, setSelectedCompanyId] = React.useState<string | null>(null);
-  const [isCompanyListCollapsed, setIsCompanyListCollapsed] = React.useState(false);
-  const [searchTerm, setSearchTerm] = React.useState('');
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
+  const [isCompanyListCollapsed, setIsCompanyListCollapsed] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const isMobile = useIsMobile();
 
-  const filteredCompanies = React.useMemo(() => {
+  const filteredCompanies = useMemo(() => {
     if (!searchTerm) {
       return companies;
     }
@@ -29,7 +29,7 @@ const CRM: React.FC = () => {
     );
   }, [companies, searchTerm]);
 
-  const selectedCompany = React.useMemo(() => {
+  const selectedCompany = useMemo(() => {
     return companies.find(company => company.Company_id === selectedCompanyId) || null;
   }, [companies, selectedCompanyId]);
 

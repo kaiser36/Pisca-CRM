@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 // import Header from './Header'; // Removed: Header component was deleted
 import Sidebar from './Sidebar';
 import Footer from './Footer';
@@ -23,10 +23,10 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false); // For mobile drawer
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false); // For desktop sidebar collapse
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // For mobile drawer
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // For desktop sidebar collapse
 
-  React.useEffect(() => {
+  useEffect(() => {
     // On desktop, sidebar is initially not collapsed. On mobile, it's always "collapsed" (closed).
     setIsSidebarCollapsed(isMobile);
   }, [isMobile]);

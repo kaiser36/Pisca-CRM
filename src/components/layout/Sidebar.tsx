@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -22,9 +22,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const isActive = (path: string) => location.pathname === path;
   const isPathActive = (pathPrefix: string) => location.pathname.startsWith(pathPrefix);
 
-  const [accordionValue, setAccordionValue] = React.useState<string | undefined>(undefined);
+  const [accordionValue, setAccordionValue] = useState<string | undefined>(undefined);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view') || isPathActive('/products')) { // Updated to include /products
       setAccordionValue('settings-accordion');
     } else {
