@@ -7,6 +7,7 @@ import AdditionalExcelUploadCard from './AdditionalExcelUploadCard';
 import AccountContactExcelTemplateCard from './AccountContactExcelTemplateCard';
 import CrmDataExcelTemplateCard from './CrmDataExcelTemplateCard';
 import AdditionalCompanyDataExcelTemplateCard from './AdditionalCompanyDataExcelTemplateCard';
+import EmployeeExcelTemplateCard from './EmployeeExcelTemplateCard'; // Import the new component
 
 const SettingsTabs: React.FC = () => {
   return (
@@ -26,6 +27,7 @@ const SettingsTabs: React.FC = () => {
           <CrmDataExcelTemplateCard />
           <AdditionalCompanyDataExcelTemplateCard />
           <AccountContactExcelTemplateCard />
+          <EmployeeExcelTemplateCard /> {/* Add the new template card here */}
         </div>
       </TabsContent>
     </Tabs>
