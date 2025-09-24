@@ -83,8 +83,9 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
     const product = allProducts.find(p => p.id === selectedProductId);
     setCurrentProduct(product || null);
 
-    let calculatedUnitPrice = product?.preco_unitario || 0;
-    let baseProductLineTotal = (product?.preco_unitario || 0) * (quantity || 0);
+    // Use preco_total from the product as the base price per unit for the deal item
+    let calculatedUnitPrice = product?.preco_total || 0; 
+    let baseProductLineTotal = (calculatedUnitPrice || 0) * (quantity || 0);
     let discountedProductLineTotal = baseProductLineTotal;
 
     if (discountType === 'percentage' && discountValue !== null && discountValue !== undefined) {
@@ -94,6 +95,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
     }
     discountedProductLineTotal = Math.max(0, discountedProductLineTotal);
 
+    // We are setting unit_price_at_deal_time to the product's preco_total for consistency in deal_products table
     if (watch(`deal_products.${index}.unit_price_at_deal_time`) !== calculatedUnitPrice) {
       setValue(`deal_products.${index}.unit_price_at_deal_time`, calculatedUnitPrice, { shouldDirty: true, shouldValidate: true });
     }
@@ -218,8 +220,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
       </div>
       {currentProduct && (
         <div className="md:col-span-5 text-sm text-muted-foreground mt-2">
-          <p>Preço Unitário Base: {currentProduct.preco_unitario?.toFixed(2) || '0.00'} €</p>
-          <p>Preço Total Base do Produto: {currentProduct.preco_total?.toFixed(2) || '0.00'} €</p>
+          <p>Preço Base por Unidade (do Catálogo): {currentProduct.preco_total?.toFixed(2) || '0.00'} €</p>
           <p className={cn("font-semibold", discountType !== 'none' ? "text-green-700" : "")}>
             Valor do Item (c/ Desconto): {((watch(`deal_products.${index}.total_price_at_deal_time`) || 0)).toFixed(2)} €
           </p>
