@@ -15,7 +15,12 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         <Button variant="ghost" size="icon" onClick={onToggleSidebar} className="mr-2 lg:hidden">
           <Menu className="h-5 w-5" />
         </Button>
-        <h1 className="text-2xl font-bold tracking-tight">CRM de Clientes Automóveis</h1>
+        <img 
+          src="https://www.piscapisca.pt/assets/img/svg/top-header/pisca-pisca-color.svg" 
+          alt="Pisca CRM Logo" 
+          className="h-8 mr-3" // Adjust height and margin as needed
+        />
+        <h1 className="text-2xl font-bold tracking-tight">Pisca CRM</h1>
       </div>
       {/* Aqui pode adicionar outros elementos do cabeçalho, como um perfil de utilizador ou notificações */}
     </header>
