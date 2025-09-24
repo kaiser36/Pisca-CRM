@@ -1,7 +1,6 @@
 "use client";
 
-import React from 'react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AccountContact } from '@/types/crm';
 import { fetchAccountContactsByCompanyExcelId } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
