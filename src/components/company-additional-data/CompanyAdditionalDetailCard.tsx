@@ -5,7 +5,7 @@ import { CompanyAdditionalExcelData, Negocio } from '@/types/crm'; // Import Neg
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus, Upload, Archive, Save } from 'lucide-react';
+import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus, Upload, Archive, Save, ArrowRight } from 'lucide-react'; // Added ArrowRight
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CompanyAdditionalEditForm from './CompanyAdditionalEditForm';
@@ -351,20 +351,20 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 {renderField(Landmark, "NIF", crmCompany?.NIF)}
                 {renderField(User, "AM Atual", company["AM"] || crmCompany?.AM_Current)}
                 {renderField(Wallet, "Plafond", crmCompany?.Plafond)}
-                {/* New: Aggregated Stand Data */}
-                <div className="flex items-center text-sm">
-                  <Upload className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">Total Publicados:</span> <span className="ml-1 text-foreground">{totalPublicados}</span>
+                {/* Aggregated Stand Data in pipeline format */}
+                <div className="flex items-center text-sm md:col-span-2 flex-wrap gap-x-2">
+                  <span className="font-medium flex items-center">
+                    <Upload className="mr-1 h-4 w-4 text-muted-foreground" /> Publicados: <span className="ml-1 text-foreground">{totalPublicados}</span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium flex items-center">
+                    <Archive className="mr-1 h-4 w-4 text-muted-foreground" /> Arquivados: <span className="ml-1 text-foreground">{totalArquivados}</span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium flex items-center">
+                    <Save className="mr-1 h-4 w-4 text-muted-foreground" /> Guardados: <span className="ml-1 text-foreground">{totalGuardados}</span>
+                  </span>
                 </div>
-                <div className="flex items-center text-sm">
-                  <Archive className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">Total Arquivados:</span> <span className="ml-1 text-foreground">{totalArquivados}</span>
-                </div>
-                <div className="flex items-center text-sm">
-                  <Save className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">Total Guardados:</span> <span className="ml-1 text-foreground">{totalGuardados}</span>
-                </div>
-                {/* End New: Aggregated Stand Data */}
               </div>
             </div>
           </Card>
@@ -372,7 +372,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
           {/* New Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Pisca Card (removed aggregated data) */}
+            {/* Pisca Card */}
             <Card className="p-4 shadow-subtle border-l-4 border-blue-200 bg-blue-50">
               <CardTitle className="text-lg font-semibold mb-3 flex items-center text-blue-800">
                 <Package className="mr-2 h-5 w-5" /> Pisca
