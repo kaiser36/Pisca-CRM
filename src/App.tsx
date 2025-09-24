@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import CRM from "./pages/CRM";
 import Settings from "./pages/Settings";
 import CompanyAdditionalData from "./pages/CompanyAdditionalData";
+import CompanyAdditionalDetailPage from "./pages/CompanyAdditionalDetailPage"; // New import
 import Accounts from "./pages/Accounts";
 import AmView from "./pages/AmView";
 import Products from "./pages/Products";
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/crm" element={<CRM />} />
             <Route path="/company-additional-data" element={<CompanyAdditionalData />} />
+            <Route path="/company-additional-data/:companyExcelId" element={<CompanyAdditionalDetailPage />} /> {/* New route */}
             <Route path="/settings" element={<Settings />} />
             <Route path="/accounts" element={<Accounts />} />
             <Route path="/am-view" element={<AmView />} />

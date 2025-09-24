@@ -8,24 +8,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, ChevronLeft, ChevronRight, ArrowLeft, PlusCircle } from 'lucide-react';
+import { Terminal, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import CompanyAdditionalList from '@/components/company-additional-data/CompanyAdditionalList';
-import CompanyAdditionalDetailCard from '@/components/company-additional-data/CompanyAdditionalDetailCard';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useDebounce } from '@/hooks/use-debounce';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CompanyAdditionalCreateForm from '@/components/company-additional-data/CompanyAdditionalCreateForm';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const CompanyAdditionalData: React.FC = () => {
   const [companies, setCompanies] = useState<CompanyAdditionalExcelData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
-  const [isCompanyListCollapsed, setIsCompanyListCollapsed] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [userId, setUserId] = useState<string | null>(null);
@@ -33,6 +29,7 @@ const CompanyAdditionalData: React.FC = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const location = useLocation();
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(25);
@@ -89,11 +86,9 @@ const CompanyAdditionalData: React.FC = () => {
 
       const params = new URLSearchParams(location.search);
       const companyIdFromUrl = params.get('companyId');
-      if (companyIdFromUrl && !selectedCompanyId) {
-        const foundCompany = augmentedCompanies.find(c => c.excel_company_id === companyIdFromUrl);
-        if (foundCompany) {
-          setSelectedCompanyId(companyIdFromUrl);
-        }
+      if (companyIdFromUrl) {
+        // If a companyId is in the URL, navigate to its detail page
+        navigate(`/company-additional-data/${companyIdFromUrl}`);
       }
 
     } catch (err: any) {
@@ -103,7 +98,7 @@ const CompanyAdditionalData: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, currentPage, pageSize, debouncedSearchTerm, location.search, selectedCompanyId]);
+  }, [userId, currentPage, pageSize, debouncedSearchTerm, location.search, navigate]);
 
   useEffect(() => {
     if (userId) {
@@ -114,19 +109,10 @@ const CompanyAdditionalData: React.FC = () => {
   const handleSearchChange = (term: string) => {
     setSearchTerm(term);
     setCurrentPage(1);
-    setSelectedCompanyId(null);
   };
 
-  const selectedCompany = React.useMemo(() => {
-    return companies.find(company => company.excel_company_id === selectedCompanyId) || null;
-  }, [companies, selectedCompanyId]);
-
-  const toggleCompanyList = () => {
-    setIsCompanyListCollapsed(!isCompanyListCollapsed);
-  };
-
-  const handleBackToCompanyList = () => {
-    setSelectedCompanyId(null);
+  const handleSelectCompany = (companyExcelId: string) => {
+    navigate(`/company-additional-data/${companyExcelId}`); // Navigate to the new detail page
   };
 
   const totalPages = Math.ceil(totalCompanies / pageSize);
@@ -134,7 +120,6 @@ const CompanyAdditionalData: React.FC = () => {
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
-      setSelectedCompanyId(null);
     }
   };
 
@@ -174,153 +159,61 @@ const CompanyAdditionalData: React.FC = () => {
   return (
     <Layout>
       <div className="h-full flex flex-col p-6"> {/* Added p-6 for consistent padding */}
-        {isMobile ? (
-          selectedCompanyId ? (
-            <div className="flex flex-col h-full">
-              <div className="flex items-center mb-4">
-                <Button variant="ghost" size="icon" onClick={handleBackToCompanyList} className="mr-2">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <h2 className="text-xl font-semibold">Detalhes da Empresa Adicional</h2>
-              </div>
-              <CompanyAdditionalDetailCard company={selectedCompany} onDataUpdated={loadCompanies} />
-            </div>
-          ) : (
-            <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Empresas Adicionais ({totalCompanies})</h2>
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" className="ml-2">
-                      <PlusCircle className="mr-2 h-4 w-4" /> Criar
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Criar Nova Empresa Adicional</DialogTitle>
-                    </DialogHeader>
-                    <CompanyAdditionalCreateForm
-                      onSave={() => {
-                        setIsCreateDialogOpen(false);
-                        loadCompanies();
-                      }}
-                      onCancel={() => setIsCreateDialogOpen(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
-              </div>
-              <CompanyAdditionalList
-                companies={companies}
-                onSelectCompany={setSelectedCompanyId}
-                selectedCompanyId={selectedCompanyId}
-                searchTerm={searchTerm}
-                onSearchChange={handleSearchChange}
-                isSearching={isSearching}
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-3xl font-bold">Empresas Adicionais ({totalCompanies})</h1>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="ml-2">
+                <PlusCircle className="mr-2 h-4 w-4" /> Criar
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Criar Nova Empresa Adicional</DialogTitle>
+              </DialogHeader>
+              <CompanyAdditionalCreateForm
+                onSave={() => {
+                  setIsCreateDialogOpen(false);
+                  loadCompanies();
+                }}
+                onCancel={() => setIsCreateDialogOpen(false)}
               />
-              {totalPages > 1 && (
-                <div className="mt-4 flex justify-center">
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious
-                          onClick={() => handlePageChange(currentPage - 1)}
-                          className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
-                        />
-                      </PaginationItem>
-                      <PaginationItem>
-                        <PaginationLink isActive>{currentPage}</PaginationLink>
-                      </PaginationItem>
-                      <PaginationItem>
-                        <PaginationNext
-                          onClick={() => handlePageChange(currentPage + 1)}
-                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : undefined}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                </div>
-              )}
+            </DialogContent>
+          </Dialog>
+        </div>
+        <div className="flex-grow">
+          <CompanyAdditionalList
+            companies={companies}
+            onSelectCompany={handleSelectCompany} // Use the new handler
+            selectedCompanyId={null} // No longer needed to track selected ID in this component
+            searchTerm={searchTerm}
+            onSearchChange={handleSearchChange}
+            isSearching={isSearching}
+          />
+          {totalPages > 1 && (
+            <div className="mt-4 flex justify-center">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
+                    />
+                  </PaginationItem>
+                  <PaginationItem>
+                    <PaginationLink isActive>{currentPage}</PaginationLink>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : undefined}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
-          )
-        ) : (
-          <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className={cn(
-              "flex flex-col h-full transition-all duration-300 ease-in-out",
-              isCompanyListCollapsed ? "w-0 overflow-hidden md:w-auto md:col-span-0" : "md:col-span-1"
-            )}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Empresas Adicionais ({totalCompanies})</h2>
-                <div className="flex items-center">
-                  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm" className="ml-2">
-                        <PlusCircle className="mr-2 h-4 w-4" /> Criar
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Criar Nova Empresa Adicional</DialogTitle>
-                      </DialogHeader>
-                      <CompanyAdditionalCreateForm
-                        onSave={() => {
-                          setIsCreateDialogOpen(false);
-                          loadCompanies();
-                        }}
-                        onCancel={() => setIsCreateDialogOpen(false)}
-                      />
-                    </DialogContent>
-                  </Dialog>
-                  <Button variant="ghost" size="icon" onClick={toggleCompanyList} className="ml-2">
-                    {isCompanyListCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-                  </Button>
-                </div>
-              </div>
-              {!isCompanyListCollapsed && (
-                <>
-                  <CompanyAdditionalList
-                    companies={companies}
-                    onSelectCompany={setSelectedCompanyId}
-                    selectedCompanyId={selectedCompanyId}
-                    searchTerm={searchTerm}
-                    onSearchChange={handleSearchChange}
-                    isSearching={isSearching}
-                  />
-                  {totalPages > 1 && (
-                    <div className="mt-4 flex justify-center">
-                      <Pagination>
-                        <PaginationContent>
-                          <PaginationItem>
-                            <PaginationPrevious
-                              onClick={() => handlePageChange(currentPage - 1)}
-                              className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
-                            />
-                          </PaginationItem>
-                          <PaginationItem>
-                            <PaginationLink isActive>{currentPage}</PaginationLink>
-                          </PaginationItem>
-                          <PaginationItem>
-                            <PaginationNext
-                              onClick={() => handlePageChange(currentPage + 1)}
-                              className={currentPage === totalPages ? "pointer-events-none opacity-50" : undefined}
-                            />
-                          </PaginationItem>
-                        </PaginationContent>
-                      </Pagination>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            <div className={cn(
-              "flex flex-col h-full",
-              isCompanyListCollapsed ? "md:col-span-3" : "md:col-span-2"
-            )}>
-              <h2 className="text-xl font-semibold mb-4">Detalhes da Empresa Adicional</h2>
-              <CompanyAdditionalDetailCard company={selectedCompany} onDataUpdated={loadCompanies} />
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </Layout>
   );

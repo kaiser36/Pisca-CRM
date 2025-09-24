@@ -153,15 +153,6 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     }
   };
 
-  const isLoginOld = (dateString: string): boolean => {
-    try {
-      const date = parseISO(dateString);
-      return differenceInDays(new Date(), date) >= 7;
-    } catch {
-      return false;
-    }
-  };
-
   // Calculate aggregated stand data
   const crmCompany = company.crmCompany;
   const totalPublicados = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Publicados || 0), 0) || 0;
