@@ -89,7 +89,9 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
     const planAutoRenewal = findBooleanValue(row, ['Renovação do plano', 'RenovacaoDoPlano']); // Mapeado para 'Renovação do plano'
     const currentBumps = findNumericValue(row, ['Bumps_atuais', 'Bumps Atuais']) || 0; // Mapeado para 'Bumps_atuais'
     const totalBumps = findNumericValue(row, ['Bumps_totais', 'Bumps Totais']) || 0; // Mapeado para 'Bumps_totais'
-    const companyStandName = findValue(row, ['Stand', 'Stand Name', 'StandName']) || ''; // Prioritize 'Stand'
+    
+    // Extract Stand_Name specifically from the 'Stand' column in Excel
+    const standNameFromExcel = findValue(row, ['Stand']) || '';
 
 
     const stand: Stand = {
@@ -115,7 +117,7 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
       Leads_Expiradas: findNumericValue(row, ['Leads Expiradas', 'LeadsExpiradas']),
       Leads_Financiadas: findNumericValue(row, ['Leads Financiadas', 'LeadsFinanciadas']),
       Whatsapp: findValue(row, ['Whatsapp']) || '',
-      Stand_Name: findValue(row, ['Stand Name', 'StandName', 'Nome do Stand']) || '', // Extract Stand_Name
+      Stand_Name: standNameFromExcel, // Use the value explicitly extracted from 'Stand' column
     };
 
     // Only process if Company_id is not empty
@@ -143,7 +145,7 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
           Plan_Auto_Renewal: planAutoRenewal,
           Current_Bumps: currentBumps,
           Total_Bumps: totalBumps,
-          Stand_Name: companyStandName, // Use the company-level stand name if available
+          Stand_Name: standNameFromExcel, // Also update here for consistency in the Company object
           stands: [],
         });
       }
