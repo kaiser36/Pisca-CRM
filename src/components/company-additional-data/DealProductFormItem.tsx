@@ -42,49 +42,48 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
 
   // Effect 1: Initialize form fields (runs once on mount or when initial props change)
   useEffect(() => {
-    console.log(`[DealProductFormItem ${index}] Effect 1 (init) triggered. initialProductId: ${initialProductId}, initialQuantity: ${initialQuantity}`);
+    // console.log(`[DealProductFormItem ${index}] Effect 1 (init) triggered. initialProductId: ${initialProductId}, initialQuantity: ${initialQuantity}`); // Removed for less console noise
     setValue(`deal_products.${index}.product_id`, initialProductId || '', { shouldDirty: true, shouldValidate: true }); // Ensure empty string for Select
     setValue(`deal_products.${index}.quantity`, initialQuantity || 1, { shouldDirty: true, shouldValidate: true });
     setValue(`deal_products.${index}.discount_type`, initialDiscountType || 'none', { shouldDirty: true, shouldValidate: true });
     setValue(`deal_products.${index}.discount_value`, initialDiscountValue || 0, { shouldDirty: true, shouldValidate: true });
 
     if (initialProductId) {
-      console.log(`[DealProductFormItem ${index}] Searching for initial product with ID: ${initialProductId}`);
+      // console.log(`[DealProductFormItem ${index}] Searching for initial product with ID: ${initialProductId}`); // Removed for less console noise
       const product = allProducts.find(p => p.id === initialProductId);
       if (product) {
         setValue(`deal_products.${index}.product_category`, product.categoria || '', { shouldDirty: true, shouldValidate: true }); // Ensure empty string
-        console.log(`[DealProductFormItem ${index}] Initial product found. Setting category: ${product.categoria}`);
+        // console.log(`[DealProductFormItem ${index}] Initial product found. Setting category: ${product.categoria}`); // Removed for less console noise
       } else {
         setValue(`deal_products.${index}.product_category`, '', { shouldDirty: true, shouldValidate: true }); // Ensure empty string
-        console.log(`[DealProductFormItem ${index}] Initial product ID provided but product not found. Resetting category.`);
+        // console.log(`[DealProductFormItem ${index}] Initial product ID provided but product not found. Resetting category.`); // Removed for less console noise
       }
     } else {
       setValue(`deal_products.${index}.product_category`, '', { shouldDirty: true, shouldValidate: true }); // Ensure empty string
-      console.log(`[DealProductFormItem ${index}] No initial product ID. Resetting category.`);
+      // console.log(`[DealProductFormItem ${index}] No initial product ID. Resetting category.`); // Removed for less console noise
     }
   }, [initialProductId, initialQuantity, initialDiscountType, initialDiscountValue, index, setValue, allProducts]);
 
   // Effect 2: Filter products based on selected category (runs when productCategory or allProducts change)
   useEffect(() => {
-    console.log(`[DealProductFormItem ${index}] Effect 2 (filter) triggered. productCategory: ${productCategory}, All Products Count: ${allProducts.length}`);
+    // console.log(`[DealProductFormItem ${index}] Effect 2 (filter) triggered. productCategory: ${productCategory}, All Products Count: ${allProducts.length}`); // Removed for less console noise
     if (productCategory) {
       const newFilteredProducts = allProducts.filter(p => p.categoria === productCategory);
       setFilteredProducts(newFilteredProducts);
-      console.log(`[DealProductFormItem ${index}] Filtered products count for category ${productCategory}: ${newFilteredProducts.length}`);
+      // console.log(`[DealProductFormItem ${index}] Filtered products count for category ${productCategory}: ${newFilteredProducts.length}`); // Removed for less console noise
     } else {
       setFilteredProducts(allProducts);
-      console.log(`[DealProductFormItem ${index}] No category selected. Showing all products: ${allProducts.length}`);
+      // console.log(`[DealProductFormItem ${index}] No category selected. Showing all products: ${allProducts.length}`); // Removed for less console noise
     }
   }, [productCategory, allProducts, index]);
 
   // Effect 3: Update current product details and calculate total_price_at_deal_time (runs when product selection or quantity/discount changes)
   useEffect(() => {
-    console.log(`[DealProductFormItem ${index}] Effect 3 (calc) triggered. selectedProductId: ${selectedProductId}, quantity: ${quantity}, discountType: ${discountType}, discountValue: ${discountValue}`);
+    // console.log(`[DealProductFormItem ${index}] Effect 3 (calc) triggered. selectedProductId: ${selectedProductId}, quantity: ${quantity}, discountType: ${discountType}, discountValue: ${discountValue}`); // Removed for less console noise
     const product = allProducts.find(p => p.id === selectedProductId);
     setCurrentProduct(product || null);
 
     let calculatedUnitPrice = product?.preco_unitario || 0;
-    // CORREÇÃO AQUI: Usar preco_unitario em vez de preco_total para o cálculo base
     let baseProductLineTotal = (product?.preco_unitario || 0) * (quantity || 0);
     let discountedProductLineTotal = baseProductLineTotal;
 
@@ -110,11 +109,11 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
       setValue(`deal_products.${index}.product_category`, product?.categoria || '', { shouldDirty: true, shouldValidate: true });
     }
     
-    console.log(`[DealProductFormItem ${index}] Calculated total price: ${discountedProductLineTotal}`);
+    // console.log(`[DealProductFormItem ${index}] Calculated total price: ${discountedProductLineTotal}`); // Removed for less console noise
   }, [selectedProductId, quantity, discountType, discountValue, allProducts, index, setValue, watch, trigger]);
 
   const productCategories = Array.from(new Set(allProducts.map(p => p.categoria).filter((cat): cat is string => cat !== null && cat.trim() !== '')));
-  console.log(`[DealProductFormItem ${index}] Available product categories:`, productCategories);
+  // console.log(`[DealProductFormItem ${index}] Available product categories:`, productCategories); // Removed for less console noise
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end border p-4 rounded-md bg-muted/50">
@@ -122,7 +121,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
         <Label htmlFor={`product-category-${index}`}>Categoria</Label>
         <Select
           onValueChange={(value) => {
-            console.log(`[DealProductFormItem ${index}] Category changed to: ${value}`);
+            // console.log(`[DealProductFormItem ${index}] Category changed to: ${value}`); // Removed for less console noise
             setValue(`deal_products.${index}.product_category`, value, { shouldDirty: true, shouldValidate: true });
             setValue(`deal_products.${index}.product_id`, '', { shouldDirty: true, shouldValidate: true }); // Reset product_id when category changes
           }}
@@ -149,7 +148,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
         <Label htmlFor={`product-id-${index}`}>Produto</Label>
         <Select
           onValueChange={(value) => {
-            console.log(`[DealProductFormItem ${index}] Product changed to: ${value}`);
+            // console.log(`[DealProductFormItem ${index}] Product changed to: ${value}`); // Removed for less console noise
             setValue(`deal_products.${index}.product_id`, value, { shouldDirty: true, shouldValidate: true });
           }}
           value={selectedProductId || ''} // Ensure value is a string, not undefined

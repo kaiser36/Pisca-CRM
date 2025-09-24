@@ -98,7 +98,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
       try {
         const fetchedProducts = await fetchProducts(userId);
         setAllProducts(fetchedProducts);
-        console.log("[DealCreateForm] Products loaded into state:", fetchedProducts);
+        // console.log("[DealCreateForm] Products loaded into state:", fetchedProducts); // Removed for less console noise
       } catch (err: any) {
         console.error("Erro ao carregar produtos:", err);
         showError(err.message || "Falha ao carregar a lista de produtos.");
@@ -136,16 +136,19 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
     name: "deal_products",
   });
 
-  const dealProducts = watch("deal_products"); // Watch the entire array
+  // Watch the total_price_at_deal_time for each item in the fields array
+  // This creates an array of numbers that will trigger the effect when any changes
+  const allProductTotals = fields.map((field, index) => watch(`deal_products.${index}.total_price_at_deal_time`));
   const discountType = watch("discount_type");
   const discountValue = watch("discount_value");
   
   // Effect to calculate deal_value and final_deal_value
   useEffect(() => {
     console.log("[DealCreateForm] Parent useEffect triggered for deal calculation.");
+    console.log("[DealCreateForm] Current allProductTotals for calculation:", allProductTotals);
 
-    const calculatedBaseDealValue = dealProducts.reduce((sum, product) => {
-      return sum + (product.total_price_at_deal_time || 0);
+    const calculatedBaseDealValue = allProductTotals.reduce((sum, total) => {
+      return sum + (total || 0);
     }, 0);
 
     // Only update if the value is actually different
@@ -167,7 +170,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
       setValue("final_deal_value", finalValue, { shouldDirty: true, shouldValidate: true });
       console.log("[DealCreateForm] Calculated Final Deal Value:", finalValue);
     }
-  }, [dealProducts, discountType, discountValue, setValue, formMethods]); // Depend on dealProducts, discountType, discountValue, setValue, and formMethods
+  }, [allProductTotals, discountType, discountValue, setValue, formMethods]); // Depend on allProductTotals
 
   const handleAddProduct = () => {
     append({ product_id: '', quantity: 1, unit_price_at_deal_time: 0, total_price_at_deal_time: 0, product_name: '', product_category: '', discount_type: 'none', discount_value: 0 });
@@ -340,7 +343,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
         <h3 className="text-lg font-semibold mt-6 mb-3">Resumo e Desconto Geral</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {discountFields.map((field) => {
-            if (field.conditional && !formMethods.getValues().deal_products.length) {
+            if (field.conditional && !fields.length) { // Use fields.length here
               return null;
             }
             if (field.conditional && !field.conditional(formMethods.getValues())) {
