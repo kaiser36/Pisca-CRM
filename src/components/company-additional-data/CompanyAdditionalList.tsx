@@ -1,9 +1,10 @@
 "use client";
 
 import React from 'react';
+import { useState } from 'react';
 import { CompanyAdditionalExcelData } from '@/types/crm';
 import { ScrollArea } from '@/components/ui/scroll-area'; // Keep ScrollArea for now
-import { Search, Loader2 } from 'lucide-react'; // Keep Lucide icons
+import { Search } from 'lucide-react'; // Keep Lucide icons
 
 import MuiCard from '@mui/material/Card';
 import MuiCardContent from '@mui/material/CardContent';

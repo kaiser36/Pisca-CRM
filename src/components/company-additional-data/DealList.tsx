@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Negocio, DealProduct } from '@/types/crm';
 import { fetchDealsByCompanyExcelId, updateDeal, deleteDeal } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';

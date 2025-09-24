@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useEffect, useState } from 'react';
 import { Easyvista } from '@/types/crm';
 import { fetchEasyvistasByCompanyExcelId } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';

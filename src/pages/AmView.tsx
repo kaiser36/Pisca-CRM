@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/layout/Layout';
 import { fetchAccounts } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';

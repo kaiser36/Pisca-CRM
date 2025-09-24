@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
+import { useState, useEffect } from 'react';
 import { CompanyAdditionalExcelData, Negocio } from '@/types/crm';
 import StandCard from '@/components/crm/StandCard';
 import AccountContactCreateForm from './AccountContactCreateForm';
