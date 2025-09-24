@@ -39,3 +39,51 @@ export async function fetchEasyvistasByCompanyExcelId(userId: string, companyExc
   }
   return data as Easyvista[];
 }
+
+/**
+ * Upserts Easyvista data into the Easyvistas table.
+ */
+export async function upsertEasyvistas(easyvistas: Easyvista[], userId: string): Promise<void> {
+  const dataToUpsert = easyvistas.map(easyvista => ({
+    user_id: userId,
+    company_excel_id: easyvista.company_excel_id,
+    "Nome comercial": easyvista["Nome comercial"] || null,
+    "EV_ID": easyvista["EV_ID"], // EV_ID is required for uniqueness
+    "Data Criação": easyvista["Data Criação"] || new Date().toISOString(),
+    "Status": easyvista["Status"] || null,
+    "Account": easyvista["Account"] || null,
+    "Titulo": easyvista["Titulo"] || null,
+    "Descrição": easyvista["Descrição"] || null,
+    "Anexos": easyvista["Anexos"] || null,
+    "Ultima actualização": easyvista["Ultima actualização"] || new Date().toISOString(),
+    "Tipo de report": easyvista["Tipo de report"] || null,
+    "PV": easyvista["PV"] || false,
+    "Tipo EVS": easyvista["Tipo EVS"] || null,
+    "Urgência": easyvista["Urgência"] || null,
+    "Email Pisca": easyvista["Email Pisca"] || null,
+    "Pass Pisca": easyvista["Pass Pisca"] || null,
+    "Client ID": easyvista["Client ID"] || null,
+    "Client Secret": easyvista["Client Secret"] || null,
+    "Integração": easyvista["Integração"] || null,
+    "NIF da empresa": easyvista["NIF da empresa"] || null,
+    "Campanha": easyvista["Campanha"] || null,
+    "Duração do acordo": easyvista["Duração do acordo"] || null,
+    "Plano do acordo": easyvista["Plano do acordo"] || null,
+    "Valor sem iva": easyvista["Valor sem iva"] || null,
+    "ID_Proposta": easyvista["ID_Proposta"] || null,
+    "Account Armatis": easyvista["Account Armatis"] || null,
+  }));
+
+  if (dataToUpsert.length === 0) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from('Easyvistas')
+    .upsert(dataToUpsert, { onConflict: 'company_excel_id, "EV_ID", user_id' }); // Ensure uniqueness per user and EV_ID
+
+  if (error) {
+    console.error('Error upserting Easyvistas:', error);
+    throw new Error(error.message);
+  }
+}
