@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 // import Header from './Header'; // Removed: Header component was deleted
 import Sidebar from './Sidebar';
 import Footer from './Footer';

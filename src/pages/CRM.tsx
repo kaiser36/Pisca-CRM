@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useCrmData } from '@/context/CrmDataContext';
 import CompanyList from '@/components/crm/CompanyList';
 import CompanyDetail from '@/components/crm/CompanyDetail';
