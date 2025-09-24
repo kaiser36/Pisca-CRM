@@ -1,14 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { CompanyAdditionalExcelData, Negocio } from '@/types/crm'; // Import Negocio type
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { CompanyAdditionalExcelData, Negocio } from '@/types/crm';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus, Upload, Archive, Save, ArrowRight, Download, Hourglass, XCircle as ExpiredIcon } from 'lucide-react'; // Added Download, Hourglass, ExpiredIcon
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import CompanyAdditionalEditForm from './CompanyAdditionalEditForm';
+import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus, Upload, Archive, Save, ArrowRight, Download, Hourglass, XCircle as ExpiredIcon } from 'lucide-react';
 import StandCard from '@/components/crm/StandCard';
 import AccountContactCreateForm from './AccountContactCreateForm';
 import AccountContactList from './AccountContactList';
@@ -16,22 +12,39 @@ import EasyvistaCreateForm from './EasyvistaCreateForm';
 import EasyvistaList from './EasyvistaList';
 import DealCreateForm from './DealCreateForm';
 import DealList from './DealList';
-import EmployeeCreateForm from './EmployeeCreateForm'; // New import
-import EmployeeList from './EmployeeList'; // New import
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import EmployeeCreateForm from './EmployeeCreateForm';
+import EmployeeList from './EmployeeList';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { isPast, parseISO, differenceInMonths, differenceInDays, format } from 'date-fns';
+import { isPast, parseISO, differenceInMonths, format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchDealsByCompanyExcelId } from '@/integrations/supabase/utils';
 import { showError } from '@/utils/toast';
+
+// Material UI Imports
+import MuiCard from '@mui/material/Card';
+import MuiCardContent from '@mui/material/CardContent';
+import MuiCardHeader from '@mui/material/CardHeader';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
+import MuiButton from '@mui/material/Button';
+import MuiAvatar from '@mui/material/Avatar';
+import MuiBadge from '@mui/material/Badge';
+import MuiDialog from '@mui/material/Dialog'; // MUI Dialog
+import MuiDialogTitle from '@mui/material/DialogTitle'; // MUI DialogTitle
+import MuiDialogContent from '@mui/material/DialogContent'; // MUI DialogContent
+import MuiDialogActions from '@mui/material/DialogActions'; // MUI DialogActions
+import MuiTabs from '@mui/material/Tabs'; // MUI Tabs
+import MuiTab from '@mui/material/Tab'; // MUI Tab
+
+// Import CompanyAdditionalEditForm
+import CompanyAdditionalEditForm from './CompanyAdditionalEditForm';
 
 interface CompanyAdditionalDetailCardProps {
   company: CompanyAdditionalExcelData | null;
@@ -43,13 +56,13 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   const [isCreateContactDialogOpen, setIsCreateContactDialogOpen] = useState(false);
   const [isCreateEasyvistaDialogOpen, setIsCreateEasyvistaDialogOpen] = useState(false);
   const [isCreateDealDialogOpen, setIsCreateDealDialogOpen] = useState(false);
-  const [isCreateEmployeeDialogOpen, setIsCreateEmployeeDialogOpen] = useState(false); // New state
+  const [isCreateEmployeeDialogOpen, setIsCreateEmployeeDialogOpen] = useState(false);
   const [deals, setDeals] = useState<Negocio[]>([]);
   const [isDealsLoading, setIsDealsLoading] = useState(true);
   const [dealsError, setDealsError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [selectedTab, setSelectedTab] = useState(0); // State for MUI Tabs
 
-  // Fetch userId on component mount
   React.useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
@@ -68,7 +81,6 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch deals when company or userId changes
   React.useEffect(() => {
     const loadDeals = async () => {
       if (!userId || !company?.excel_company_id) {
@@ -95,9 +107,22 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
   if (!company) {
     return (
-      <div className="flex items-center justify-center h-full text-muted-foreground p-4 rounded-lg border bg-card">
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          color: 'text.secondary',
+          p: 2,
+          borderRadius: 1,
+          border: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
         Selecione uma empresa para ver os detalhes adicionais.
-      </div>
+      </Box>
     );
   }
 
@@ -107,15 +132,15 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     let displayValue: React.ReactNode = value;
     if (typeof value === 'boolean') {
       displayValue = value ? (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Sim</Badge>
+        <MuiBadge sx={{ bgcolor: 'success.light', color: 'success.dark', px: 1, py: 0.5, borderRadius: 1, fontSize: '0.75rem' }}>Sim</MuiBadge>
       ) : (
-        <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Não</Badge>
+        <MuiBadge sx={{ bgcolor: 'error.light', color: 'error.dark', px: 1, py: 0.5, borderRadius: 1, fontSize: '0.75rem' }}>Não</MuiBadge>
       );
     } else if (typeof value === 'number') {
       displayValue = value.toLocaleString('pt-PT');
     } else if (label.includes('Link') || label.includes('Site') || label.includes('Logotipo')) {
       displayValue = (
-        <a href={String(value)} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+        <a href={String(value)} target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2', textDecoration: 'underline' }}>
           {String(value)}
         </a>
       );
@@ -133,17 +158,16 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     }
 
     return (
-      <div className="flex items-center text-sm">
-        <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
-        <span className="font-medium">{label}:</span> <span className="ml-1 text-foreground">{displayValue}</span>
-      </div>
+      <Box sx={{ display: 'flex', alignItems: 'center', fontSize: '0.875rem' }}>
+        <Icon className="mr-2 h-4 w-4" style={{ color: 'text.secondary' }} />
+        <Typography component="span" sx={{ fontWeight: 'medium', color: 'text.primary' }}>{label}:</Typography> <Typography component="span" sx={{ ml: 0.5, color: 'text.secondary' }}>{displayValue}</Typography>
+      </Box>
     );
   };
 
   const companyDisplayName = company["Nome Comercial"] || company.crmCompany?.Company_Name || "Empresa Desconhecida";
   const firstLetter = companyDisplayName.charAt(0).toUpperCase();
 
-  // Utility functions for date comparisons
   const isVisitOld = (dateString: string): boolean => {
     try {
       const date = parseISO(dateString);
@@ -153,50 +177,32 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     }
   };
 
-  const isLoginOld = (dateString: string): boolean => {
-    try {
-      const date = parseISO(dateString);
-      return differenceInDays(new Date(), date) >= 7;
-    } catch {
-      return false;
-    }
-  };
-
-  // Calculate aggregated stand data
   const crmCompany = company.crmCompany;
   const totalPublicados = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Publicados || 0), 0) || 0;
   const totalArquivados = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Arquivados || 0), 0) || 0;
   const totalGuardados = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Guardados || 0), 0) || 0;
 
-  // Calculate aggregated leads data
   const totalLeadsRecebidas = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Leads_Recebidas || 0), 0) || 0;
   const totalLeadsPendentes = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Leads_Pendentes || 0), 0) || 0;
   const totalLeadsExpiradas = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Leads_Expiradas || 0), 0) || 0;
 
-
-  // Alert logic
   const alerts: string[] = [];
   
-
-  // 1. Se o plano estiver expirado
   const planExpirationDate = crmCompany?.Plan_Expiration_Date || null;
   if (planExpirationDate && isPast(parseISO(planExpirationDate))) {
     alerts.push("O plano da empresa expirou!");
   }
 
-  // 2. Se o plano ativo estiver não (incluindo null/undefined)
-  if (!crmCompany?.Plan_Active) { // This condition now covers false, null, and undefined
+  if (!crmCompany?.Plan_Active) {
     alerts.push("O plano da empresa não está ativo!");
   }
 
-  // 3. Se a data da ultima visita for mais de 3 meses
   const lastVisitDate = company["Data ultima visita"] || crmCompany?.Last_Visit_Date || null;
   if (lastVisitDate && isVisitOld(lastVisitDate)) {
     alerts.push("A última visita foi há mais de 3 meses.");
   }
 
-  // 4. Se o ultimo login foi à mais de uma semana atras
-  if (!isDealsLoading && !dealsError) { // Only check deals if loaded successfully
+  if (!isDealsLoading && !dealsError) {
     deals.forEach(deal => {
       if (deal.expected_close_date) {
         try {
@@ -211,17 +217,14 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     });
   }
 
-  // 5. Se ele for Parceiro Credibom e o Simulador Financiamento = Não
   if (crmCompany?.Is_CRB_Partner === true && crmCompany?.Financing_Simulator_On === false) {
     alerts.push("É Parceiro Credibom, mas o Simulador de Financiamento está desativado.");
   }
 
-  // 6. Se ele tiver Plano ativo = Sim e Renovação Automática= Não
   if (crmCompany?.Plan_Active === true && crmCompany?.Plan_Auto_Renewal === false) {
     alerts.push("Plano ativo, mas a Renovação Automática está desativada.");
   }
 
-  // 7. Se a classificação for "Empresa encerrada"
   const isCompanyClosed = company["Classificação"] === "Empresa encerrada";
   if (isCompanyClosed) {
     alerts.push("⛔ Empresa encerrada.");
@@ -229,240 +232,249 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
   return (
     <ScrollArea className="h-full w-full pr-4">
-      <Card className="w-full shadow-md">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-2xl font-bold">{companyDisplayName}</CardTitle>
-              {isCompanyClosed && (
-                <Badge variant="destructive" className="text-sm px-3 py-1">Empresa Encerrada</Badge>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Dialog open={isCreateContactDialogOpen} onOpenChange={(open) => { console.log('Create Contact Dialog open change:', open); setIsCreateContactDialogOpen(open); }}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <PlusCircle className="mr-2 h-4 w-4" /> Novo Contacto
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Adicionar Novo Contacto de Conta</DialogTitle>
-                  </DialogHeader>
-                  <AccountContactCreateForm
-                    companyExcelId={company.excel_company_id}
-                    commercialName={company["Nome Comercial"]}
-                    companyName={company.crmCompany?.Company_Name || company["Nome Comercial"]}
-                    onSave={() => setIsCreateContactDialogOpen(false)}
-                    onCancel={() => setIsCreateContactDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
+      <MuiCard sx={{ width: '100%', boxShadow: 3 }}>
+        <MuiCardHeader
+          title={
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, justifyContent: 'space-between', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>{companyDisplayName}</Typography>
+                {isCompanyClosed && (
+                  <MuiBadge sx={{ bgcolor: 'error.main', color: 'white', px: 1.5, py: 0.5, borderRadius: 1, fontSize: '0.875rem' }}>Empresa Encerrada</MuiBadge>
+                )}
+              </Box>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                <MuiButton variant="outlined" size="small" startIcon={<PlusCircle className="h-4 w-4" />} onClick={() => setIsCreateContactDialogOpen(true)}>
+                  Novo Contacto
+                </MuiButton>
+                <MuiDialog open={isCreateContactDialogOpen} onClose={() => setIsCreateContactDialogOpen(false)}>
+                  <MuiDialogTitle>Adicionar Novo Contacto de Conta</MuiDialogTitle>
+                  <MuiDialogContent>
+                    <AccountContactCreateForm
+                      companyExcelId={company.excel_company_id}
+                      commercialName={company["Nome Comercial"]}
+                      companyName={company.crmCompany?.Company_Name || company["Nome Comercial"]}
+                      onSave={() => setIsCreateContactDialogOpen(false)}
+                      onCancel={() => setIsCreateContactDialogOpen(false)}
+                    />
+                  </MuiDialogContent>
+                </MuiDialog>
 
-              <Dialog open={isCreateEasyvistaDialogOpen} onOpenChange={(open) => { console.log('Create Easyvista Dialog open change:', open); setIsCreateEasyvistaDialogOpen(open); }}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Eye className="mr-2 h-4 w-4" /> Novo Easyvista
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Criar Novo Registo Easyvista</DialogTitle>
-                  </DialogHeader>
-                  <EasyvistaCreateForm
-                    companyExcelId={company.excel_company_id}
-                    commercialName={company["Nome Comercial"]}
-                    onSave={() => setIsCreateEasyvistaDialogOpen(false)}
-                    onCancel={() => setIsCreateEasyvistaDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
+                <MuiButton variant="outlined" size="small" startIcon={<Eye className="h-4 w-4" />} onClick={() => setIsCreateEasyvistaDialogOpen(true)}>
+                  Novo Easyvista
+                </MuiButton>
+                <MuiDialog open={isCreateEasyvistaDialogOpen} onClose={() => setIsCreateEasyvistaDialogOpen(false)}>
+                  <MuiDialogTitle>Criar Novo Registo Easyvista</MuiDialogTitle>
+                  <MuiDialogContent>
+                    <EasyvistaCreateForm
+                      companyExcelId={company.excel_company_id}
+                      commercialName={company["Nome Comercial"]}
+                      onSave={() => setIsCreateEasyvistaDialogOpen(false)}
+                      onCancel={() => setIsCreateEasyvistaDialogOpen(false)}
+                    />
+                  </MuiDialogContent>
+                </MuiDialog>
 
-              <Dialog open={isCreateDealDialogOpen} onOpenChange={(open) => { console.log('Create Deal Dialog open change:', open); setIsCreateDealDialogOpen(open); }}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Handshake className="mr-2 h-4 w-4" /> Novo Negócio
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Criar Novo Negócio</DialogTitle>
-                  </DialogHeader>
-                  <DealCreateForm
-                    companyExcelId={company.excel_company_id}
-                    commercialName={company["Nome Comercial"] || company.crmCompany?.Commercial_Name}
-                    onSave={() => setIsCreateDealDialogOpen(false)}
-                    onCancel={() => setIsCreateDealDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
+                <MuiButton variant="outlined" size="small" startIcon={<Handshake className="h-4 w-4" />} onClick={() => setIsCreateDealDialogOpen(true)}>
+                  Novo Negócio
+                </MuiButton>
+                <MuiDialog open={isCreateDealDialogOpen} onClose={() => setIsCreateDealDialogOpen(false)}>
+                  <MuiDialogTitle>Criar Novo Negócio</MuiDialogTitle>
+                  <MuiDialogContent>
+                    <DealCreateForm
+                      companyExcelId={company.excel_company_id}
+                      commercialName={company["Nome Comercial"] || company.crmCompany?.Commercial_Name}
+                      onSave={() => setIsCreateDealDialogOpen(false)}
+                      onCancel={() => setIsCreateDealDialogOpen(false)}
+                    />
+                  </MuiDialogContent>
+                </MuiDialog>
 
-              <Dialog open={isCreateEmployeeDialogOpen} onOpenChange={setIsCreateEmployeeDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <UserPlus className="mr-2 h-4 w-4" /> Novo Colaborador
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Adicionar Novo Colaborador</DialogTitle>
-                  </DialogHeader>
-                  <EmployeeCreateForm
-                    companyExcelId={company.excel_company_id}
-                    commercialName={company["Nome Comercial"] || company.crmCompany?.Commercial_Name}
-                    onSave={() => setIsCreateEmployeeDialogOpen(false)}
-                    onCancel={() => setIsCreateEmployeeDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
+                <MuiButton variant="outlined" size="small" startIcon={<UserPlus className="h-4 w-4" />} onClick={() => setIsCreateEmployeeDialogOpen(true)}>
+                  Novo Colaborador
+                </MuiButton>
+                <MuiDialog open={isCreateEmployeeDialogOpen} onClose={() => setIsCreateEmployeeDialogOpen(false)}>
+                  <MuiDialogTitle>Adicionar Novo Colaborador</MuiDialogTitle>
+                  <MuiDialogContent>
+                    <EmployeeCreateForm
+                      companyExcelId={company.excel_company_id}
+                      commercialName={company["Nome Comercial"] || company.crmCompany?.Commercial_Name}
+                      onSave={() => setIsCreateEmployeeDialogOpen(false)}
+                      onCancel={() => setIsCreateEmployeeDialogOpen(false)}
+                    />
+                  </MuiDialogContent>
+                </MuiDialog>
 
-              <Dialog open={isEditDialogOpen} onOpenChange={(open) => { console.log('Edit Dialog open change:', open); setIsEditDialogOpen(open); }}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Pencil className="mr-2 h-4 w-4" /> Editar
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Editar Dados Adicionais da Empresa</DialogTitle>
-                  </DialogHeader>
-                  <CompanyAdditionalEditForm
-                    company={company}
-                    onSave={() => {
-                      setIsEditDialogOpen(false);
-                      onDataUpdated();
-                    }}
-                    onCancel={() => setIsEditDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-          <CardDescription className="text-muted-foreground">ID Excel: {company.excel_company_id}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Main Overview Card */}
-          <Card className="p-6 shadow-subtle border-l-4 border-primary">
-            <div className="flex flex-col sm:flex-row items-center space-x-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={company["Logotipo"] || undefined} alt={companyDisplayName} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
+                <MuiButton variant="outlined" size="small" startIcon={<Pencil className="h-4 w-4" />} onClick={() => setIsEditDialogOpen(true)}>
+                  Editar
+                </MuiButton>
+                <MuiDialog open={isEditDialogOpen} onClose={() => setIsEditDialogOpen(false)}>
+                  <MuiDialogTitle>Editar Dados Adicionais da Empresa</MuiDialogTitle>
+                  <MuiDialogContent>
+                    <CompanyAdditionalEditForm
+                      company={company}
+                      onSave={() => {
+                        setIsEditDialogOpen(false);
+                        onDataUpdated();
+                      }}
+                      onCancel={() => setIsEditDialogOpen(false)}
+                    />
+                  </MuiDialogContent>
+                </MuiDialog>
+              </Box>
+            </Box>
+          }
+          subheader={`ID Excel: ${company.excel_company_id}`}
+          subheaderTypographyProps={{ color: 'text.secondary' }}
+          sx={{ pb: 1.5 }}
+        />
+        <MuiCardContent sx={{ pt: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {/* Main Overview Card - Converted to MUI Card */}
+          <MuiCard sx={{ p: 3, boxShadow: 1, borderLeft: 4, borderColor: 'primary.main' }}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} sm="auto">
+                <MuiAvatar
+                  src={company["Logotipo"] || undefined}
+                  alt={companyDisplayName}
+                  sx={{ width: 64, height: 64, bgcolor: 'primary.main', color: 'primary.contrastText', fontSize: '2rem', fontWeight: 'bold' }}
+                >
                   {firstLetter}
-                </AvatarFallback>
-              </Avatar>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 flex-1">
-                {renderField(Mail, "Email", company["Email da empresa"] || crmCompany?.Company_Email)}
-                {renderField(Globe, "Website", company["Site"] || crmCompany?.Website)}
-                {renderField(Landmark, "NIF", crmCompany?.NIF)}
-                {renderField(User, "AM Atual", company["AM"] || crmCompany?.AM_Current)}
-                {/* Aggregated Stand Data - Anúncios Pipeline */}
-                <div className="flex items-center text-sm md:col-span-2 flex-wrap gap-x-2">
-                  <span className="font-medium flex items-center">
-                    <Upload className="mr-1 h-4 w-4 text-muted-foreground" /> Publicados: <span className="ml-1 text-foreground">{totalPublicados}</span>
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium flex items-center">
-                    <Archive className="mr-1 h-4 w-4 text-muted-foreground" /> Arquivados: <span className="ml-1 text-foreground">{totalArquivados}</span>
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium flex items-center">
-                    <Save className="mr-1 h-4 w-4 text-muted-foreground" /> Guardados: <span className="ml-1 text-foreground">{totalGuardados}</span>
-                  </span>
-                </div>
-                {/* Aggregated Stand Data - Leads Pipeline */}
-                <div className="flex items-center text-sm md:col-span-2 flex-wrap gap-x-2 mt-2">
-                  <span className="font-medium flex items-center text-blue-700">
-                    <Download className="mr-1 h-4 w-4 text-blue-700" /> Leads Recebidas: <span className="ml-1">{totalLeadsRecebidas}</span>
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium flex items-center text-orange-700">
-                    <Hourglass className="mr-1 h-4 w-4 text-orange-700" /> Leads Pendentes: <span className="ml-1">{totalLeadsPendentes}</span>
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium flex items-center text-red-700">
-                    <ExpiredIcon className="mr-1 h-4 w-4 text-red-700" /> Leads Expiradas: <span className="ml-1">{totalLeadsExpiradas}</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </Card>
+                </MuiAvatar>
+              </Grid>
+              <Grid item xs={12} sm> {/* Corrected Grid item usage */}
+                <Grid container spacing={1}>
+                  <Grid item xs={12} md={6}> {/* Corrected Grid item usage */}
+                    {renderField(Mail, "Email", company["Email da empresa"] || crmCompany?.Company_Email)}
+                  </Grid>
+                  <Grid item xs={12} md={6}> {/* Corrected Grid item usage */}
+                    {renderField(Globe, "Website", company["Site"] || crmCompany?.Website)}
+                  </Grid>
+                  <Grid item xs={12} md={6}> {/* Corrected Grid item usage */}
+                    {renderField(Landmark, "NIF", crmCompany?.NIF)}
+                  </Grid>
+                  <Grid item xs={12} md={6}> {/* Corrected Grid item usage */}
+                    {renderField(User, "AM Atual", company["AM"] || crmCompany?.AM_Current)}
+                  </Grid>
+                  {/* Aggregated Stand Data - Anúncios Pipeline */}
+                  <Grid item xs={12}> {/* Corrected Grid item usage */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, fontSize: '0.875rem', mt: 1 }}>
+                      <Typography component="span" sx={{ fontWeight: 'medium', display: 'flex', alignItems: 'center', color: 'text.primary' }}>
+                        <Upload className="mr-1 h-4 w-4" style={{ color: 'text.secondary' }} /> Publicados: <Typography component="span" sx={{ ml: 0.5, color: 'text.secondary' }}>{totalPublicados}</Typography>
+                      </Typography>
+                      <ArrowRight className="h-4 w-4" style={{ color: 'text.secondary' }} />
+                      <Typography component="span" sx={{ fontWeight: 'medium', display: 'flex', alignItems: 'center', color: 'text.primary' }}>
+                        <Archive className="mr-1 h-4 w-4" style={{ color: 'text.secondary' }} /> Arquivados: <Typography component="span" sx={{ ml: 0.5, color: 'text.secondary' }}>{totalArquivados}</Typography>
+                      </Typography>
+                      <ArrowRight className="h-4 w-4" style={{ color: 'text.secondary' }} />
+                      <Typography component="span" sx={{ fontWeight: 'medium', display: 'flex', alignItems: 'center', color: 'text.primary' }}>
+                        <Save className="mr-1 h-4 w-4" style={{ color: 'text.secondary' }} /> Guardados: <Typography component="span" sx={{ ml: 0.5, color: 'text.secondary' }}>{totalGuardados}</Typography>
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  {/* Aggregated Stand Data - Leads Pipeline */}
+                  <Grid item xs={12}> {/* Corrected Grid item usage */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, fontSize: '0.875rem', mt: 1 }}>
+                      <Typography component="span" sx={{ fontWeight: 'medium', display: 'flex', alignItems: 'center', color: 'info.main' }}>
+                        <Download className="mr-1 h-4 w-4" style={{ color: 'info.main' }} /> Leads Recebidas: <Typography component="span" sx={{ ml: 0.5, color: 'info.main' }}>{totalLeadsRecebidas}</Typography>
+                      </Typography>
+                      <ArrowRight className="h-4 w-4" style={{ color: 'text.secondary' }} />
+                      <Typography component="span" sx={{ fontWeight: 'medium', display: 'flex', alignItems: 'center', color: 'warning.main' }}>
+                        <Hourglass className="mr-1 h-4 w-4" style={{ color: 'warning.main' }} /> Leads Pendentes: <Typography component="span" sx={{ ml: 0.5, color: 'warning.main' }}>{totalLeadsPendentes}</Typography>
+                      </Typography>
+                      <ArrowRight className="h-4 w-4" style={{ color: 'text.secondary' }} />
+                      <Typography component="span" sx={{ fontWeight: 'medium', display: 'flex', alignItems: 'center', color: 'error.main' }}>
+                        <ExpiredIcon className="mr-1 h-4 w-4" style={{ color: 'error.main' }} /> Leads Expiradas: <Typography component="span" sx={{ ml: 0.5, color: 'error.main' }}>{totalLeadsExpiradas}</Typography>
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </Grid>
+          </MuiCard>
           {/* End Main Overview Card */}
 
           {/* New Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Grid container spacing={2}>
             {/* Pisca Card */}
-            <Card className="p-4 shadow-subtle border-l-4 border-blue-200 bg-blue-50">
-              <CardTitle className="text-lg font-semibold mb-3 flex items-center text-blue-800">
-                <Package className="mr-2 h-5 w-5" /> Pisca
-              </CardTitle>
-              <div className="space-y-2">
-                {renderField(Package, "Último Plano", company["Plano Indicado"] || crmCompany?.Last_Plan)}
-                {renderField(CheckCircle, "Plano Ativo", crmCompany?.Plan_Active)}
-                {renderField(Calendar, "Expiração do Plano", crmCompany?.Plan_Expiration_Date)}
-                {renderField(Repeat, "Renovação Automática", crmCompany?.Plan_Auto_Renewal)}
-                {renderField(TrendingUp, "Bumps Totais", crmCompany?.Total_Bumps)}
-                {renderField(TrendingUp, "Bumps Atuais", crmCompany?.Current_Bumps)}
-                {renderField(Wallet, "Plafond", crmCompany?.Plafond)} {/* Moved Plafond here */}
-              </div>
-            </Card>
+            <Grid item xs={12} md={4}> {/* Corrected Grid item usage */}
+              <MuiCard sx={{ p: 2, boxShadow: 1, borderLeft: 4, borderColor: 'info.light', bgcolor: 'info.lightest' }}>
+                <Typography variant="h6" component="div" sx={{ fontWeight: 'semibold', mb: 1.5, display: 'flex', alignItems: 'center', color: 'info.dark' }}>
+                  <Package className="mr-2 h-5 w-5" /> Pisca
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {renderField(Package, "Último Plano", company["Plano Indicado"] || crmCompany?.Last_Plan)}
+                  {renderField(CheckCircle, "Plano Ativo", crmCompany?.Plan_Active)}
+                  {renderField(Calendar, "Expiração do Plano", crmCompany?.Plan_Expiration_Date)}
+                  {renderField(Repeat, "Renovação Automática", crmCompany?.Plan_Auto_Renewal)}
+                  {renderField(TrendingUp, "Bumps Totais", crmCompany?.Total_Bumps)}
+                  {renderField(TrendingUp, "Bumps Atuais", crmCompany?.Current_Bumps)}
+                  {renderField(Wallet, "Plafond", crmCompany?.Plafond)}
+                </Box>
+              </MuiCard>
+            </Grid>
 
             {/* Resumo Card */}
-            <Card className="p-4 shadow-subtle border-l-4 border-green-200 bg-green-50">
-              <CardTitle className="text-lg font-semibold mb-3 flex items-center text-green-800">
-                <Info className="mr-2 h-5 w-5" /> Resumo
-              </CardTitle>
-              <div className="space-y-2">
-                {renderField(Tag, "Classificação", company["Classificação"])}
-                {renderField(CheckCircle, "Parceiro Credibom", crmCompany?.Is_CRB_Partner)}
-                {renderField(Car, "Simulador Financiamento", crmCompany?.Financing_Simulator_On)}
-                {renderField(Clock, "Último Login", crmCompany?.Last_Login_Date)}
-                {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
-              </div>
-            </Card>
+            <Grid item xs={12} md={4}> {/* Corrected Grid item usage */}
+              <MuiCard sx={{ p: 2, boxShadow: 1, borderLeft: 4, borderColor: 'success.light', bgcolor: 'success.lightest' }}>
+                <Typography variant="h6" component="div" sx={{ fontWeight: 'semibold', mb: 1.5, display: 'flex', alignItems: 'center', color: 'success.dark' }}>
+                  <Info className="mr-2 h-5 w-5" /> Resumo
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {renderField(Tag, "Classificação", company["Classificação"])}
+                  {renderField(CheckCircle, "Parceiro Credibom", crmCompany?.Is_CRB_Partner)}
+                  {renderField(Car, "Simulador Financiamento", crmCompany?.Financing_Simulator_On)}
+                  {renderField(Clock, "Último Login", crmCompany?.Last_Login_Date)}
+                  {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
+                </Box>
+              </MuiCard>
+            </Grid>
 
             {/* Alertas Card */}
-            <Card className={`p-4 shadow-subtle border-l-4 ${alerts.length > 0 ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50'}`}>
-              <CardTitle className={`text-lg font-semibold mb-3 flex items-center ${alerts.length > 0 ? 'text-red-800' : 'text-yellow-800'}`}>
-                <BellRing className="mr-2 h-5 w-5" /> Alertas
-              </CardTitle>
-              <div className="space-y-2">
-                {alerts.length === 0 ? (
-                  <Alert className="bg-transparent border-none p-0 text-yellow-800">
-                    <AlertDescription className="flex items-center">
-                      <CheckCircle className="mr-2 h-4 w-4" /> Sem alertas pendentes.
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  alerts.map((alert, index) => (
-                    <Alert key={index} variant="destructive" className="bg-red-100 border-red-200 text-red-800 p-2">
+            <Grid item xs={12} md={4}> {/* Corrected Grid item usage */}
+              <MuiCard sx={{ p: 2, boxShadow: 1, borderLeft: 4, borderColor: alerts.length > 0 ? 'error.light' : 'warning.light', bgcolor: alerts.length > 0 ? 'error.lightest' : 'warning.lightest' }}>
+                <Typography variant="h6" component="div" sx={{ fontWeight: 'semibold', mb: 1.5, display: 'flex', alignItems: 'center', color: alerts.length > 0 ? 'error.dark' : 'warning.dark' }}>
+                  <BellRing className="mr-2 h-5 w-5" /> Alertas
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {alerts.length === 0 ? (
+                    <Alert className="bg-transparent border-none p-0 text-yellow-800">
                       <AlertDescription className="flex items-center">
-                        <Info className="mr-2 h-4 w-4" /> {alert}
+                        <CheckCircle className="mr-2 h-4 w-4" /> Sem alertas pendentes.
                       </AlertDescription>
                     </Alert>
-                  ))
-                )}
-              </div>
-            </Card>
-          </div>
+                  ) : (
+                    alerts.map((alert, index) => (
+                      <Alert key={index} variant="destructive" className="bg-red-100 border-red-200 text-red-800 p-2">
+                        <AlertDescription className="flex items-center">
+                          <Info className="mr-2 h-4 w-4" /> {alert}
+                        </AlertDescription>
+                      </Alert>
+                    ))
+                  )}
+                </Box>
+              </MuiCard>
+            </Grid>
+          </Grid>
           {/* End New Overview Cards */}
 
-          <Tabs defaultValue="details" onValueChange={(value) => console.log('Tab changed to:', value)}>
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-10">
-              <TabsTrigger value="details">Detalhes</TabsTrigger>
-              <TabsTrigger value="stands">Stands</TabsTrigger>
-              <TabsTrigger value="contacts">Contactos</TabsTrigger>
-              <TabsTrigger value="easyvistas">Easyvistas</TabsTrigger>
-              <TabsTrigger value="deals">Negócios</TabsTrigger>
-              <TabsTrigger value="employees">Colaboradores</TabsTrigger> {/* New Tab */}
-            </TabsList>
-            <TabsContent value="details" className="mt-4 space-y-6">
+          <MuiTabs value={selectedTab} onChange={(event, newValue) => setSelectedTab(newValue)} aria-label="company details tabs"
+            sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+            <MuiTab label="Detalhes" />
+            <MuiTab label="Stands" />
+            <MuiTab label="Contactos" />
+            <MuiTab label="Easyvistas" />
+            <MuiTab label="Negócios" />
+            <MuiTab label="Colaboradores" />
+          </MuiTabs>
+
+          {selectedTab === 0 && (
+            <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
               <Accordion type="multiple" className="w-full space-y-4">
                 <AccordionItem value="essential-info" className="border rounded-md shadow-sm">
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Info className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Informações Essenciais da Empresa
-                    </div>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Informações Essenciais da Empresa</Typography>
+                    </Box>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField(Building, "Nome Fiscal", crmCompany?.Company_Name)}
@@ -479,10 +491,10 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
                 <AccordionItem value="location-address" className="border rounded-md shadow-sm">
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <MapPin className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Localização e Morada
-                    </div>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Localização e Morada</Typography>
+                    </Box>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField(MapPin, "Morada", company["Morada"] || crmCompany?.Company_Address)}
@@ -494,10 +506,10 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
                 <AccordionItem value="account-management" className="border rounded-md shadow-sm">
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <User className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Gestão de Conta (AM)
-                    </div>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Gestão de Conta (AM)</Typography>
+                    </Box>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField(User, "Pessoa de Contacto (CRM)", crmCompany?.Company_Contact_Person)}
@@ -510,10 +522,10 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
                 <AccordionItem value="stock-api" className="border rounded-md shadow-sm">
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Package className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Dados de Stock e API
-                    </div>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Dados de Stock e API</Typography>
+                    </Box>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField(Package, "Stock STV", company["Stock STV"] || crmCompany?.Stock_STV)}
@@ -524,10 +536,10 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
                 <AccordionItem value="plan-financing" className="border rounded-md shadow-sm">
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <DollarSign className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Detalhes do Plano e Financiamento
-                    </div>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Detalhes do Plano e Financiamento</Typography>
+                    </Box>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField(Wallet, "Plafond", crmCompany?.Plafond)}
@@ -548,10 +560,10 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
                 <AccordionItem value="marketing-competition" className="border rounded-md shadow-sm">
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <TrendingUp className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Marketing e Concorrência
-                    </div>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Marketing e Concorrência</Typography>
+                    </Box>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField(Tag, "Classificação", company["Classificação"])}
@@ -568,10 +580,10 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
                 <AccordionItem value="partnerships-other" className="border rounded-md shadow-sm">
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <ShieldCheck className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Parcerias e Outros
-                    </div>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Parcerias e Outros</Typography>
+                    </Box>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField(CheckCircle, "Parceiro Credibom (CRM)", crmCompany?.Is_CRB_Partner)}
@@ -584,10 +596,10 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
                 <AccordionItem value="important-dates" className="border rounded-md shadow-sm">
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Calendar className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Datas Importantes
-                    </div>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Datas Importantes</Typography>
+                    </Box>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
                     {renderField(Calendar, "Data de Criação (CRM)", crmCompany?.Creation_Date)}
@@ -597,48 +609,65 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </AccordionItem>
               </Accordion>
               <Separator className="my-6" />
-              <p className="text-xs text-muted-foreground">
+              <Typography variant="caption" color="text.secondary">
                 Criado em: {company.created_at ? new Date(company.created_at).toLocaleString() : 'N/A'}
-              </p>
-            </TabsContent>
-            <TabsContent value="stands" className="mt-4">
+              </Typography>
+            </Box>
+          )}
+
+          {selectedTab === 1 && (
+            <Box sx={{ mt: 2 }}>
               {crmCompany && crmCompany.stands && crmCompany.stands.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Grid container spacing={2}>
                   {crmCompany.stands.map((stand) => (
-                    <StandCard key={stand.Stand_ID} stand={stand} />
+                    <Grid item xs={12} md={6} lg={4} key={stand.Stand_ID}> {/* Corrected Grid item usage */}
+                      <StandCard stand={stand} />
+                    </Grid>
                   ))}
-                </div>
+                </Grid>
               ) : (
-                <p className="text-muted-foreground text-center py-4">Nenhum stand associado encontrado no CRM principal.</p>
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>Nenhum stand associado encontrado no CRM principal.</Typography>
               )}
-            </TabsContent>
-            <TabsContent value="contacts" className="mt-4">
-              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+            </Box>
+          )}
+
+          {selectedTab === 2 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" component="h3" sx={{ fontWeight: 'semibold', mb: 2, display: 'flex', alignItems: 'center', color: 'primary.main' }}>
                 <MessageSquareMore className="mr-2 h-5 w-5" /> Histórico de Contactos
-              </h3>
+              </Typography>
               <AccountContactList companyExcelId={company.excel_company_id} />
-            </TabsContent>
-            <TabsContent value="easyvistas" className="mt-4">
-              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+            </Box>
+          )}
+
+          {selectedTab === 3 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" component="h3" sx={{ fontWeight: 'semibold', mb: 2, display: 'flex', alignItems: 'center', color: 'primary.main' }}>
                 <Eye className="mr-2 h-5 w-5" /> Registos Easyvista
-              </h3>
+              </Typography>
               <EasyvistaList companyExcelId={company.excel_company_id} />
-            </TabsContent>
-            <TabsContent value="deals" className="mt-4">
-              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+            </Box>
+          )}
+
+          {selectedTab === 4 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" component="h3" sx={{ fontWeight: 'semibold', mb: 2, display: 'flex', alignItems: 'center', color: 'primary.main' }}>
                 <Handshake className="mr-2 h-5 w-5" /> Negócios
-              </h3>
+              </Typography>
               <DealList companyExcelId={company.excel_company_id} />
-            </TabsContent>
-            <TabsContent value="employees" className="mt-4"> {/* New Tab Content */}
-              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+            </Box>
+          )}
+
+          {selectedTab === 5 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" component="h3" sx={{ fontWeight: 'semibold', mb: 2, display: 'flex', alignItems: 'center', color: 'primary.main' }}>
                 <Users className="mr-2 h-5 w-5" /> Colaboradores
-              </h3>
+              </Typography>
               <EmployeeList companyExcelId={company.excel_company_id} onEmployeeChanged={onDataUpdated} />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+            </Box>
+          )}
+        </MuiCardContent>
+      </MuiCard>
     </ScrollArea>
   );
 };
