@@ -1,18 +1,39 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Upload, Loader2 } from 'lucide-react';
 import { parseStandsExcel } from '@/lib/excel-parser';
 import { useCrmData } from '@/context/CrmDataContext';
-import { showError } from '@/utils/toast';
+import { showError, showSuccess } from '@/utils/toast';
+import { upsertCompanies, upsertStands } from '@/integrations/supabase/utils'; // Import upsertCompanies and upsertStands
+import { supabase } from '@/integrations/supabase/client'; // Import supabase client
 
 const ExcelUploadCard: React.FC = () => {
-  const { updateCrmData } = useCrmData();
+  const { updateCrmData, loadInitialData } = useCrmData(); // Added loadInitialData to refresh
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null); // State to hold userId
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      } else {
+        setUserId(null);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -27,16 +48,29 @@ const ExcelUploadCard: React.FC = () => {
       showError("Por favor, selecione um ficheiro Excel para carregar.");
       return;
     }
+    if (!userId) {
+      showError("Utilizador não autenticado. Por favor, faça login para carregar dados.");
+      return;
+    }
 
     setIsUploading(true);
     try {
       const arrayBuffer = await selectedFile.arrayBuffer();
       const newCompanies = await parseStandsExcel(arrayBuffer);
-      updateCrmData(newCompanies);
+
+      // 1. Upsert companies to Supabase
+      const companyDbIdMap = await upsertCompanies(newCompanies, userId);
+      
+      // 2. Prepare stands for upsert, linking them to the new company DB IDs
+      const allStands = newCompanies.flatMap(company => company.stands);
+      await upsertStands(allStands, companyDbIdMap);
+
+      showSuccess("Dados CRM carregados e guardados com sucesso!");
       setSelectedFile(null);
-    } catch (error) {
+      loadInitialData(); // Refresh the CRM data in the context from Supabase
+    } catch (error: any) {
       console.error("Erro ao carregar ou analisar o ficheiro Excel:", error);
-      showError("Falha ao carregar ou analisar o ficheiro Excel. Verifique o formato.");
+      showError(error.message || "Falha ao carregar ou analisar o ficheiro Excel. Verifique o formato.");
     } finally {
       setIsUploading(false);
     }
@@ -50,7 +84,7 @@ const ExcelUploadCard: React.FC = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         <Input type="file" accept=".xlsx, .xls" onChange={handleFileChange} />
-        <Button onClick={handleUpload} disabled={!selectedFile || isUploading} className="w-full">
+        <Button onClick={handleUpload} disabled={!selectedFile || isUploading || !userId} className="w-full">
           {isUploading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -63,6 +97,9 @@ const ExcelUploadCard: React.FC = () => {
             </>
           )}
         </Button>
+        {!userId && (
+          <p className="text-sm text-red-500">Por favor, faça login para carregar dados.</p>
+        )}
         <p className="text-sm text-muted-foreground">
           Certifique-se de que o ficheiro Excel tem as mesmas colunas e nomes que o modelo original.
         </p>

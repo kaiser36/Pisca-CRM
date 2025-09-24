@@ -21,6 +21,7 @@ export const generateCrmDataCsvTemplate = (): string => {
     "Renovação do plano (1 para Sim, 0 para Não)",
     "Bumps_atuais",
     "Bumps_totais",
+    "Stand Name", // NEW: Added Stand Name to the template
     "Stand_ID (OBRIGATÓRIO)",
     "Stand Address",
     "Stand City",
@@ -64,6 +65,7 @@ export const generateCrmDataCsvTemplate = (): string => {
     "1", // Plan_Auto_Renewal
     "50",
     "100",
+    "Stand Principal", // NEW: Example Stand Name
     "STAND001",
     "Rua Principal, 123",
     "Lisboa",
