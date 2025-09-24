@@ -372,15 +372,15 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 {/* Aggregated Stand Data - Leads Pipeline */}
                 <div className="flex items-center text-sm md:col-span-2 flex-wrap gap-x-2 mt-2">
                   <span className="font-medium flex items-center text-blue-700">
-                    <Download className="mr-1 h-4 w-4 text-blue-700" /> Recebidas: <span className="ml-1">{totalLeadsRecebidas}</span>
+                    <Download className="mr-1 h-4 w-4 text-blue-700" /> Leads Recebidas: <span className="ml-1">{totalLeadsRecebidas}</span>
                   </span>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium flex items-center text-orange-700">
-                    <Hourglass className="mr-1 h-4 w-4 text-orange-700" /> Pendentes: <span className="ml-1">{totalLeadsPendentes}</span>
+                    <Hourglass className="mr-1 h-4 w-4 text-orange-700" /> Leads Pendentes: <span className="ml-1">{totalLeadsPendentes}</span>
                   </span>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium flex items-center text-red-700">
-                    <ExpiredIcon className="mr-1 h-4 w-4 text-red-700" /> Expiradas: <span className="ml-1">{totalLeadsExpiradas}</span>
+                    <ExpiredIcon className="mr-1 h-4 w-4 text-red-700" /> Leads Expiradas: <span className="ml-1">{totalLeadsExpiradas}</span>
                   </span>
                 </div>
               </div>
