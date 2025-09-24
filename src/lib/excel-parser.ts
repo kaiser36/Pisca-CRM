@@ -55,7 +55,7 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
 
   const workbook = XLSX.read(arrayBuffer, { type: 'array' });
   const sheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[sheetName]; // Corrected: Use workbook.Sheets
+  const worksheet = workbook.Sheets[sheetName];
   const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
   const companiesMap = new Map<string, Company>();
