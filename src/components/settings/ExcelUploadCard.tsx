@@ -69,21 +69,24 @@ const ExcelUploadCard: React.FC = () => {
       
       const allStands = newCompanies.flatMap(company => company.stands);
       await upsertStands(allStands, companyDbIdMap);
-      console.log("Stands upserted, calling loadInitialData.");
-
-      await loadInitialData(); // Await this call
-      console.log("loadInitialData completed.");
+      console.log("Stands upserted.");
 
       showSuccess("Dados CRM carregados e guardados com sucesso!");
       console.log("showSuccess called.");
       setSelectedFile(null);
+      setIsUploading(false); // Reset loading state immediately after DB operations and toast
+      console.log("setIsUploading(false) called after DB operations.");
+
+      console.log("Calling loadInitialData to refresh UI.");
+      await loadInitialData(); // Now load initial data after button is reset
+      console.log("loadInitialData completed.");
+
     } catch (error: any) {
       console.error("Error during upload in handleUpload:", error);
       showError(error.message || "Falha ao carregar ou analisar o ficheiro Excel. Verifique o formato.");
       console.log("showError called in catch block.");
-    } finally {
-      setIsUploading(false); // This should always run
-      console.log("setIsUploading(false) called in finally block.");
+      setIsUploading(false); // Ensure loading state is reset even on error
+      console.log("setIsUploading(false) called in catch block.");
     }
     console.log("handleUpload finished.");
   };
