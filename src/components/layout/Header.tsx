@@ -1,41 +1,55 @@
 "use client";
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Menu, Sun, Moon } from 'lucide-react';
-import { useTheme } from 'next-themes'; // Import useTheme hook
+import Button from '@mui/material/Button'; // Import MUI Button
+import IconButton from '@mui/material/IconButton'; // Import MUI IconButton
+import Typography from '@mui/material/Typography'; // Import MUI Typography
+import Box from '@mui/material/Box'; // Import MUI Box for layout
+import { Menu } from 'lucide-react'; // Keep Lucide icon for menu
 
 interface HeaderProps {
   onToggleSidebar: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
-  const { theme, setTheme } = useTheme();
-
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
+  // Removed useTheme and theme toggle for initial MUI migration.
+  // Dark/light mode can be re-integrated with MUI's theme system later.
 
   return (
-    <header className="flex items-center justify-between p-4 border-b bg-background sticky top-0 z-10 shadow-sm">
-      <div className="flex items-center">
-        <Button variant="ghost" size="icon" onClick={onToggleSidebar} className="mr-2 lg:hidden">
+    <Box
+      component="header"
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        p: 2,
+        borderBottom: 1,
+        borderColor: 'divider',
+        bgcolor: 'background.paper',
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
+        boxShadow: 1,
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <IconButton
+          color="inherit"
+          aria-label="open drawer"
+          edge="start"
+          onClick={onToggleSidebar}
+          sx={{ mr: 1, display: { lg: 'none' } }}
+        >
           <Menu className="h-5 w-5" />
-        </Button>
-        <h1 className="text-2xl font-bold tracking-tight">CRM de Clientes Automóveis</h1>
-      </div>
-      <div className="flex items-center space-x-2">
-        <Button variant="ghost" size="icon" onClick={toggleTheme}>
-          {theme === 'dark' ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
-          )}
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-        {/* Aqui pode adicionar outros elementos do cabeçalho, como um perfil de utilizador ou notificações */}
-      </div>
-    </header>
+        </IconButton>
+        <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold', letterSpacing: '-0.025em' }}>
+          CRM de Clientes Automóveis
+        </Typography>
+      </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {/* User profile or other header elements can go here */}
+      </Box>
+    </Box>
   );
 };
 

@@ -12,13 +12,17 @@ import Accounts from "./pages/Accounts";
 import AmView from "./pages/AmView";
 import Products from "./pages/Products";
 import { CrmDataProvider } from "@/context/CrmDataContext";
-import { ThemeProvider } from "@/components/theme-provider"; // Import ThemeProvider
+
+import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme'; // Import the custom MUI theme
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme"> {/* Wrap with ThemeProvider */}
+    <MuiThemeProvider theme={theme}> {/* Use MUI's ThemeProvider */}
+      <CssBaseline /> {/* Provides a consistent baseline for styling */}
       <TooltipProvider>
         <Toaster />
         <Sonner position="top-right" richColors className="[&>div]:z-[9999]" />
@@ -38,7 +42,7 @@ const App = () => (
           </CrmDataProvider>
         </BrowserRouter>
       </TooltipProvider>
-    </ThemeProvider>
+    </MuiThemeProvider>
   </QueryClientProvider>
 );
 

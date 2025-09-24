@@ -1,13 +1,18 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Keep shadcn/ui Select for now
+import { Label } from '@/components/ui/label'; // Keep shadcn/ui Label for now
 import { Loader2, Building } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '@/components/ui/separator'; // Keep Separator for now
+
+import MuiCard from '@mui/material/Card'; // Import MUI Card
+import MuiCardContent from '@mui/material/CardContent'; // Import MUI CardContent
+import MuiCardHeader from '@mui/material/CardHeader'; // Import MUI CardHeader
+import Typography from '@mui/material/Typography'; // Import MUI Typography
+import Box from '@mui/material/Box'; // Import MUI Box for layout
 
 interface CompanyOverviewDashboardProps {
   // Pode adicionar props se precisar de passar dados ou callbacks do pai
@@ -113,19 +118,21 @@ const CompanyOverviewDashboard: React.FC<CompanyOverviewDashboardProps> = () => 
   }, [userId, fetchCompanies]);
 
   return (
-    <Card className="w-full shadow-md">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center text-lg font-semibold">
-          <Building className="mr-2 h-5 w-5 text-blue-500" />
-          Número Total de Empresas
-        </CardTitle>
-        <CardDescription className="text-muted-foreground">
-          Visão geral e filtragem das empresas no seu CRM.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6"> {/* Increased spacing */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex flex-col space-y-1">
+    <MuiCard sx={{ width: '100%', boxShadow: 3 }}>
+      <MuiCardHeader
+        title={
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Building className="mr-2 h-5 w-5 text-blue-500" />
+            <Typography variant="h6" component="div" sx={{ fontWeight: 'semibold' }}>Número Total de Empresas</Typography>
+          </Box>
+        }
+        subheader="Visão geral e filtragem das empresas no seu CRM."
+        subheaderTypographyProps={{ color: 'text.secondary' }}
+        sx={{ pb: 1.5 }}
+      />
+      <MuiCardContent sx={{ pt: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
             <Label htmlFor="plan-status-filter" className="text-sm font-medium">Estado do Plano</Label>
             <Select value={planStatusFilter} onValueChange={setPlanStatusFilter} disabled={isLoading}>
               <SelectTrigger id="plan-status-filter" className="h-9">
@@ -137,9 +144,9 @@ const CompanyOverviewDashboard: React.FC<CompanyOverviewDashboardProps> = () => 
                 <SelectItem value="inactive">Inativo</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </Box>
 
-          <div className="flex flex-col space-y-1">
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
             <Label htmlFor="credibom-partner-filter" className="text-sm font-medium">Parceiro Credibom</Label>
             <Select value={credibomPartnerFilter} onValueChange={setCredibomPartnerFilter} disabled={isLoading}>
               <SelectTrigger id="credibom-partner-filter" className="h-9">
@@ -151,9 +158,9 @@ const CompanyOverviewDashboard: React.FC<CompanyOverviewDashboardProps> = () => 
                 <SelectItem value="no">Não</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </Box>
 
-          <div className="flex flex-col space-y-1">
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
             <Label htmlFor="account-am-filter" className="text-sm font-medium">Account (AM)</Label>
             <Select value={accountAMFilter} onValueChange={setAccountAMFilter} disabled={isLoading}>
               <SelectTrigger id="account-am-filter" className="h-9">
@@ -166,27 +173,27 @@ const CompanyOverviewDashboard: React.FC<CompanyOverviewDashboardProps> = () => 
                 ))}
               </SelectContent>
             </Select>
-          </div>
-        </div>
+          </Box>
+        </Box>
 
         <Separator className="my-4" />
 
         {isLoading ? (
-          <div className="flex items-center justify-center h-24">
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 96 }}>
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
+          </Box>
         ) : error ? (
-          <div className="flex items-center justify-center h-24 text-red-500">
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 96, color: 'error.main' }}>
             {error}
-          </div>
+          </Box>
         ) : (
-          <div className="text-center py-4">
-            <p className="text-6xl font-extrabold text-primary">{totalCompanies}</p>
-            <p className="text-lg text-muted-foreground mt-2">Empresas Encontradas</p>
-          </div>
+          <Box sx={{ textAlign: 'center', py: 2 }}>
+            <Typography variant="h2" component="p" sx={{ fontWeight: 'extrabold', color: 'primary.main' }}>{totalCompanies}</Typography>
+            <Typography variant="h6" component="p" sx={{ color: 'text.secondary', mt: 1 }}>Empresas Encontradas</Typography>
+          </Box>
         )}
-      </CardContent>
-    </Card>
+      </MuiCardContent>
+    </MuiCard>
   );
 };
 
