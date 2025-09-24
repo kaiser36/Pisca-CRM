@@ -2,9 +2,14 @@
 
 import React from 'react';
 import { Stand } from '@/types/crm';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator'; // Keep Separator for now
 import { MapPin, Phone, Mail, User, Building, Megaphone, Code, Upload, Archive, Save, TrendingUp, Tag, MessageSquareText, Clock, XOctagon, DollarSign } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
+
+import MuiCard from '@mui/material/Card'; // Import MUI Card
+import MuiCardContent from '@mui/material/CardContent'; // Import MUI CardContent
+import MuiCardHeader from '@mui/material/CardHeader'; // Import MUI CardHeader
+import Typography from '@mui/material/Typography'; // Import MUI Typography
+import Box from '@mui/material/Box'; // Import MUI Box for layout
 
 interface StandCardProps {
   stand: Stand;
@@ -14,20 +19,21 @@ const StandCard: React.FC<StandCardProps> = ({ stand }) => {
   const renderDetail = (Icon: React.ElementType, label: string, value: string | number | null | undefined) => {
     if (value === null || value === undefined || value === '' || value === 0) return null;
     return (
-      <div className="flex items-center text-sm">
+      <Box sx={{ display: 'flex', alignItems: 'center', fontSize: '0.875rem' }}>
         <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
-        <span className="font-medium">{label}:</span> <span className="ml-1 text-foreground">{value}</span>
-      </div>
+        <Typography component="span" sx={{ fontWeight: 'medium' }}>{label}:</Typography> <Typography component="span" sx={{ ml: 0.5, color: 'text.primary' }}>{value}</Typography>
+      </Box>
     );
   };
 
   return (
-    <Card className="w-full shadow-sm hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-semibold">{stand.Stand_ID}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2 text-sm">
-        {renderDetail(Building, "Nome do Stand", stand.Stand_Name || stand.Company_Name)} {/* Usar Stand_Name, com fallback para Company_Name */}
+    <MuiCard sx={{ width: '100%', boxShadow: 1, '&:hover': { boxShadow: 3 }, transition: 'box-shadow 0.3s' }}>
+      <MuiCardHeader
+        title={<Typography variant="h6" component="div" sx={{ fontWeight: 'semibold' }}>{stand.Stand_ID}</Typography>}
+        sx={{ pb: 1 }}
+      />
+      <MuiCardContent sx={{ pt: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+        {renderDetail(Building, "Nome do Stand", stand.Stand_Name || stand.Company_Name)}
         {renderDetail(MapPin, "Morada", `${stand.Address}, ${stand.Postal_Code} ${stand.City}`)}
         {renderDetail(Phone, "Telefone", stand.Phone)}
         {renderDetail(Mail, "Email", stand.Email)}
@@ -37,7 +43,7 @@ const StandCard: React.FC<StandCardProps> = ({ stand }) => {
         
         <Separator className="my-3" />
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1 }}>
           {renderDetail(Megaphone, "Anúncios", stand.Anuncios)}
           {renderDetail(Code, "API", stand.API)}
           {renderDetail(Upload, "Publicados", stand.Publicados)}
@@ -48,9 +54,9 @@ const StandCard: React.FC<StandCardProps> = ({ stand }) => {
           {renderDetail(Clock, "Leads Pendentes", stand.Leads_Pendentes)}
           {renderDetail(XOctagon, "Leads Expiradas", stand.Leads_Expiradas)}
           {renderDetail(DollarSign, "Leads Financiadas", stand.Leads_Financiadas)}
-        </div>
-      </CardContent>
-    </Card>
+        </Box>
+      </MuiCardContent>
+    </MuiCard>
   );
 };
 

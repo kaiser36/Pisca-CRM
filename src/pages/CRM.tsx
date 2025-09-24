@@ -7,9 +7,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+
+import Button from '@mui/material/Button'; // Import MUI Button
+import Card from '@mui/material/Card'; // Import MUI Card
+import CardContent from '@mui/material/CardContent'; // Import MUI CardContent
+import Typography from '@mui/material/Typography'; // Import MUI Typography
+import Box from '@mui/material/Box'; // Import MUI Box for layout
 
 const CRM: React.FC = () => {
   const { companies, isLoading, error } = useCrmData();
@@ -44,18 +49,18 @@ const CRM: React.FC = () => {
   if (isLoading) {
     return (
       <Layout>
-        <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[calc(100vh-var(--header-height)-var(--footer-height))]">
-          <div className="md:col-span-1 flex flex-col space-y-4">
+        <Box sx={{ container: 'true', mx: 'auto', p: 3, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 2fr' }, gap: 3, minHeight: 'calc(100vh - var(--header-height) - var(--footer-height))' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-20 w-full" />
             <Skeleton className="h-20 w-full" />
             <Skeleton className="h-20 w-full" />
-          </div>
-          <div className="md:col-span-2 flex flex-col space-y-4">
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Skeleton className="h-40 w-full" />
             <Skeleton className="h-40 w-full" />
-          </div>
-        </div>
+          </Box>
+        </Box>
       </Layout>
     );
   }
@@ -63,59 +68,56 @@ const CRM: React.FC = () => {
   if (error) {
     return (
       <Layout>
-        <div className="container mx-auto p-6 min-h-[calc(100vh-var(--header-height)-var(--footer-height))]">
+        <Box sx={{ container: 'true', mx: 'auto', p: 3, minHeight: 'calc(100vh - var(--header-height) - var(--footer-height))' }}>
           <Alert variant="destructive">
             <Terminal className="h-4 w-4" />
             <AlertTitle>Erro</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-        </div>
+        </Box>
       </Layout>
     );
   }
 
   return (
     <Layout>
-      <div className="h-full flex flex-col p-6"> {/* Added p-6 for consistent padding */}
+      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3 }}>
         {isMobile ? (
           // Mobile View
           selectedCompanyId ? (
             // Show Company Detail on mobile
-            <div className="flex flex-col h-full">
-              <div className="flex items-center mb-4">
-                <Button variant="ghost" size="icon" onClick={handleBackToCompanyList} className="mr-2">
+            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
+                <Button variant="text" onClick={handleBackToCompanyList} sx={{ minWidth: 0, padding: 1, mr: 1 }}>
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
-                <h2 className="text-xl font-semibold">Detalhes da Empresa</h2>
-              </div>
+                <Typography variant="h5" component="h2" sx={{ fontWeight: 'semibold' }}>Detalhes da Empresa</Typography>
+              </Box>
               <CompanyDetail company={selectedCompany} onBack={handleBackToCompanyList} />
-            </div>
+            </Box>
           ) : (
             // Show Company List on mobile
-            <div className="flex flex-col h-full">
-              <h2 className="text-xl font-semibold mb-4">Empresas ({filteredCompanies.length})</h2>
+            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <Typography variant="h5" component="h2" sx={{ fontWeight: 'semibold', marginBottom: 2 }}>Empresas ({filteredCompanies.length})</Typography>
               <CompanyFilter searchTerm={searchTerm} onSearchChange={setSearchTerm} />
               <CompanyList
                 companies={filteredCompanies}
                 onSelectCompany={setSelectedCompanyId}
                 selectedCompanyId={selectedCompanyId}
               />
-            </div>
+            </Box>
           )
         ) : (
           // Desktop View
-          <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Box sx={{ flexGrow: 1, display: 'grid', gridTemplateColumns: isCompanyListCollapsed ? '1fr' : '1fr 2fr', gap: 3 }}>
             {/* Company List Section */}
-            <div className={cn(
-              "flex flex-col h-full transition-all duration-300 ease-in-out",
-              isCompanyListCollapsed ? "w-0 overflow-hidden md:w-auto md:col-span-0" : "md:col-span-1"
-            )}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Empresas ({filteredCompanies.length})</h2>
-                <Button variant="ghost" size="icon" onClick={toggleCompanyList} className="ml-2">
+            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', transition: 'all 300ms ease-in-out', width: isCompanyListCollapsed ? 0 : 'auto', overflow: isCompanyListCollapsed ? 'hidden' : 'visible' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                <Typography variant="h5" component="h2" sx={{ fontWeight: 'semibold' }}>Empresas ({filteredCompanies.length})</Typography>
+                <Button variant="text" onClick={toggleCompanyList} sx={{ minWidth: 0, padding: 1, ml: 1 }}>
                   {isCompanyListCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
                 </Button>
-              </div>
+              </Box>
               {!isCompanyListCollapsed && (
                 <>
                   <CompanyFilter searchTerm={searchTerm} onSearchChange={setSearchTerm} />
@@ -126,19 +128,16 @@ const CRM: React.FC = () => {
                   />
                 </>
               )}
-            </div>
+            </Box>
 
             {/* Company Detail Section */}
-            <div className={cn(
-              "flex flex-col h-full",
-              isCompanyListCollapsed ? "md:col-span-3" : "md:col-span-2"
-            )}>
-              <h2 className="text-xl font-semibold mb-4">Detalhes da Empresa</h2>
+            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <Typography variant="h5" component="h2" sx={{ fontWeight: 'semibold', marginBottom: 2 }}>Detalhes da Empresa</Typography>
               <CompanyDetail company={selectedCompany} />
-            </div>
-          </div>
+            </Box>
+          </Box>
         )}
-      </div>
+      </Box>
     </Layout>
   );
 };
