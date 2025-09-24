@@ -90,3 +90,34 @@ export async function deleteEmployee(id: string): Promise<void> {
     throw new Error(error.message);
   }
 }
+
+/**
+ * Upserts employee data into the employees table.
+ */
+export async function upsertEmployees(employees: Employee[], userId: string): Promise<void> {
+  const dataToUpsert = employees.map(employee => ({
+    user_id: userId,
+    company_excel_id: employee.company_excel_id,
+    nome_colaborador: employee.nome_colaborador,
+    telemovel: employee.telemovel || null,
+    email: employee.email || null,
+    cargo: employee.cargo || null,
+    commercial_name: employee.commercial_name || null,
+    image_url: employee.image_url || null,
+    stand_id: employee.stand_id || null,
+    stand_name: employee.stand_name || null,
+  }));
+
+  if (dataToUpsert.length === 0) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from('employees')
+    .upsert(dataToUpsert, { onConflict: 'company_excel_id, nome_colaborador, user_id' }); // Ensure uniqueness per user
+
+  if (error) {
+    console.error('Error upserting employees:', error);
+    throw new Error(error.message);
+  }
+}

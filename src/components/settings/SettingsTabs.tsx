@@ -7,12 +7,13 @@ import AdditionalExcelUploadCard from './AdditionalExcelUploadCard';
 import AccountContactExcelTemplateCard from './AccountContactExcelTemplateCard';
 import CrmDataExcelTemplateCard from './CrmDataExcelTemplateCard';
 import AdditionalCompanyDataExcelTemplateCard from './AdditionalCompanyDataExcelTemplateCard';
-import EmployeeExcelTemplateCard from './EmployeeExcelTemplateCard'; // Import the new component
+import EmployeeExcelTemplateCard from './EmployeeExcelTemplateCard';
+import EmployeeExcelUploadCard from './EmployeeExcelUploadCard'; // Import the new upload card
 
 const SettingsTabs: React.FC = () => {
   return (
     <Tabs defaultValue="upload-data" className="w-full">
-      <TabsList className="grid w-full grid-cols-2 h-10"> {/* Adjusted height */}
+      <TabsList className="grid w-full grid-cols-2 h-10">
         <TabsTrigger value="upload-data">Carregar Dados</TabsTrigger>
         <TabsTrigger value="templates">Modelos</TabsTrigger>
       </TabsList>
@@ -20,6 +21,7 @@ const SettingsTabs: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ExcelUploadCard />
           <AdditionalExcelUploadCard />
+          <EmployeeExcelUploadCard /> {/* Add the new upload card here */}
         </div>
       </TabsContent>
       <TabsContent value="templates" className="mt-6">
@@ -27,7 +29,7 @@ const SettingsTabs: React.FC = () => {
           <CrmDataExcelTemplateCard />
           <AdditionalCompanyDataExcelTemplateCard />
           <AccountContactExcelTemplateCard />
-          <EmployeeExcelTemplateCard /> {/* Add the new template card here */}
+          <EmployeeExcelTemplateCard />
         </div>
       </TabsContent>
     </Tabs>
