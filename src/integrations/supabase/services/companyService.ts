@@ -281,105 +281,83 @@ export async function fetchCompaniesByExcelCompanyIds(userId: string, excelCompa
  * Maps Excel Company_id to Supabase DB UUID.
  */
 export async function upsertCompanies(companies: Company[], userId: string): Promise<Map<string, string>> {
-  const companyDbIdMap = new Map<string, string>(); // Map Excel Company_id to Supabase DB UUID
+  const companyDbIdMap = new Map<string, string>();
 
-  for (const company of companies) {
-    const { data: existingCompany, error: fetchError } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('company_id', company.Company_id)
-      .eq('user_id', userId)
-      .single();
+  const companiesToUpsert = companies.map(company => ({
+    user_id: userId,
+    company_id: company.Company_id,
+    company_name: company.Company_Name,
+    nif: company.NIF,
+    company_email: company.Company_Email,
+    company_contact_person: company.Company_Contact_Person,
+    website: company.Website,
+    plafond: company.Plafond,
+    supervisor: company.Supervisor,
+    is_crb_partner: company.Is_CRB_Partner,
+    is_apdca_partner: company.Is_APDCA_Partner,
+    creation_date: company.Creation_Date,
+    last_login_date: company.Last_Login_Date,
+    financing_simulator_on: company.Financing_Simulator_On,
+    simulator_color: company.Simulator_Color,
+    last_plan: company.Last_Plan,
+    plan_price: company.Plan_Price,
+    plan_expiration_date: company.Plan_Expiration_Date,
+    plan_active: company.Plan_Active,
+    plan_auto_renewal: company.Plan_Auto_Renewal,
+    current_bumps: company.Current_Bumps,
+    total_bumps: company.Total_Bumps,
+    commercial_name: company.Commercial_Name,
+    company_postal_code: company.Company_Postal_Code,
+    district: company.District,
+    company_city: company.Company_City,
+    company_address: company.Company_Address,
+    am_old: company.AM_Old,
+    am_current: company.AM_Current,
+    stock_stv: company.Stock_STV,
+    company_api_info: company.Company_API_Info,
+    company_stock: company.Company_Stock,
+    logo_url: company.Logo_URL,
+    classification: company.Classification,
+    imported_percentage: company.Imported_Percentage,
+    vehicle_source: company.Vehicle_Source,
+    competition: company.Competition,
+    social_media_investment: company.Social_Media_Investment,
+    portal_investment: company.Portal_Investment,
+    b2b_market: company.B2B_Market,
+    uses_crm: company.Uses_CRM,
+    crm_software: company.CRM_Software,
+    recommended_plan: company.Recommended_Plan,
+    credit_mediator: company.Credit_Mediator,
+    bank_of_portugal_link: company.Bank_Of_Portugal_Link,
+    financing_agreements: company.Financing_Agreements,
+    last_visit_date: company.Last_Visit_Date,
+    company_group: company.Company_Group,
+    represented_brands: company.Represented_Brands,
+    company_type: company.Company_Type,
+    wants_ct: company.Wants_CT,
+    wants_crb_partner: company.Wants_CRB_Partner,
+    autobiz_info: company.Autobiz_Info,
+    stand_name: company.Stand_Name,
+  }));
 
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means "no rows found"
-      console.error('Error fetching existing company:', fetchError);
-      throw new Error(fetchError.message);
-    }
-
-    const companyData = {
-      user_id: userId,
-      company_id: company.Company_id,
-      company_name: company.Company_Name,
-      nif: company.NIF,
-      company_email: company.Company_Email,
-      company_contact_person: company.Company_Contact_Person,
-      website: company.Website,
-      plafond: company.Plafond,
-      supervisor: company.Supervisor,
-      is_crb_partner: company.Is_CRB_Partner,
-      is_apdca_partner: company.Is_APDCA_Partner,
-      creation_date: company.Creation_Date,
-      last_login_date: company.Last_Login_Date,
-      financing_simulator_on: company.Financing_Simulator_On,
-      simulator_color: company.Simulator_Color,
-      last_plan: company.Last_Plan,
-      plan_price: company.Plan_Price,
-      plan_expiration_date: company.Plan_Expiration_Date,
-      plan_active: company.Plan_Active,
-      plan_auto_renewal: company.Plan_Auto_Renewal,
-      current_bumps: company.Current_Bumps,
-      total_bumps: company.Total_Bumps,
-      commercial_name: company.Commercial_Name,
-      company_postal_code: company.Company_Postal_Code,
-      district: company.District,
-      company_city: company.Company_City,
-      company_address: company.Company_Address,
-      am_old: company.AM_Old,
-      am_current: company.AM_Current,
-      stock_stv: company.Stock_STV,
-      company_api_info: company.Company_API_Info,
-      company_stock: company.Company_Stock,
-      logo_url: company.Logo_URL,
-      classification: company.Classification,
-      imported_percentage: company.Imported_Percentage,
-      vehicle_source: company.Vehicle_Source,
-      competition: company.Competition,
-      social_media_investment: company.Social_Media_Investment,
-      portal_investment: company.Portal_Investment,
-      b2b_market: company.B2B_Market,
-      uses_crm: company.Uses_CRM,
-      crm_software: company.CRM_Software,
-      recommended_plan: company.Recommended_Plan,
-      credit_mediator: company.Credit_Mediator,
-      bank_of_portugal_link: company.Bank_Of_Portugal_Link,
-      financing_agreements: company.Financing_Agreements,
-      last_visit_date: company.Last_Visit_Date,
-      company_group: company.Company_Group,
-      represented_brands: company.Represented_Brands,
-      company_type: company.Company_Type,
-      wants_ct: company.Wants_CT,
-      wants_crb_partner: company.Wants_CRB_Partner,
-      autobiz_info: company.Autobiz_Info,
-      stand_name: company.Stand_Name, // NEW
-    };
-
-    if (existingCompany) {
-      // Update existing company
-      const { data, error } = await supabase
-        .from('companies')
-        .update(companyData)
-        .eq('id', existingCompany.id)
-        .select('id')
-        .single();
-      if (error) {
-        console.error('Error updating company:', error);
-        throw new Error(error.message);
-      }
-      companyDbIdMap.set(company.Company_id, data.id);
-    } else {
-      // Insert new company
-      const { data, error } = await supabase
-        .from('companies')
-        .insert(companyData)
-        .select('id')
-        .single();
-      if (error) {
-        console.error('Error inserting company:', error);
-        throw new Error(error.message);
-      }
-      companyDbIdMap.set(company.Company_id, data.id);
-    }
+  if (companiesToUpsert.length === 0) {
+    return companyDbIdMap;
   }
+
+  const { data, error } = await supabase
+    .from('companies')
+    .upsert(companiesToUpsert, { onConflict: 'company_id, user_id' })
+    .select('id, company_id'); // Select both to map Excel ID to DB ID
+
+  if (error) {
+    console.error('Error upserting companies:', error);
+    throw new Error(error.message);
+  }
+
+  data?.forEach(c => {
+    companyDbIdMap.set(c.company_id, c.id);
+  });
+
   return companyDbIdMap;
 }
 

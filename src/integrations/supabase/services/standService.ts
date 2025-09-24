@@ -5,26 +5,14 @@ import { Stand } from '@/types/crm';
  * Upserts stand data into Supabase.
  */
 export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, string>): Promise<void> {
-  for (const stand of stands) {
+  const standsToUpsert = stands.map(stand => {
     const companyDbId = companyDbIdMap.get(stand.Company_id);
     if (!companyDbId) {
       console.warn(`Company DB ID not found for Excel Company_id: ${stand.Company_id}. Skipping stand: ${stand.Stand_ID}`);
-      continue;
+      return null; // Skip this stand if companyDbId is not found
     }
 
-    const { data: existingStand, error: fetchError } = await supabase
-      .from('stands')
-      .select('id')
-      .eq('stand_id', stand.Stand_ID)
-      .eq('company_db_id', companyDbId)
-      .single();
-
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means "no rows found"
-      console.error('Error fetching existing stand:', fetchError);
-      throw new Error(fetchError.message);
-    }
-
-    const standData = {
+    return {
       company_db_id: companyDbId,
       stand_id: stand.Stand_ID,
       company_id_excel: stand.Company_id,
@@ -49,26 +37,18 @@ export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, 
       leads_financiadas: stand.Leads_Financiadas,
       whatsapp: stand.Whatsapp,
     };
+  }).filter((s): s is NonNullable<typeof s> => s !== null); // Filter out null stands
 
-    if (existingStand) {
-      // Update existing stand
-      const { error } = await supabase
-        .from('stands')
-        .update(standData)
-        .eq('id', existingStand.id);
-      if (error) {
-        console.error('Error updating stand:', error);
-        throw new Error(error.message);
-      }
-    } else {
-      // Insert new stand
-      const { error } = await supabase
-        .from('stands')
-        .insert(standData);
-      if (error) {
-        console.error('Error inserting stand:', error);
-        throw new Error(error.message);
-      }
-    }
+  if (standsToUpsert.length === 0) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from('stands')
+    .upsert(standsToUpsert, { onConflict: 'stand_id, company_db_id' }); // Use stand_id and company_db_id as conflict keys
+
+  if (error) {
+    console.error('Error upserting stands:', error);
+    throw new Error(error.message);
   }
 }
