@@ -71,11 +71,10 @@ const ExcelUploadCard: React.FC = () => {
       await upsertStands(allStands, companyDbIdMap);
       console.log("Stands upserted, calling loadInitialData.");
 
-      await loadInitialData(); // Await this call
+      await loadInitialData(); // Await this call, it will show its own success toast
       console.log("loadInitialData completed.");
 
-      showSuccess("Dados CRM carregados e guardados com sucesso!");
-      console.log("showSuccess called.");
+      // Removed redundant showSuccess here, as loadInitialData already handles it.
       setSelectedFile(null);
     } catch (error: any) {
       console.error("Error during upload in handleUpload:", error);
