@@ -23,7 +23,7 @@ interface EmployeeEditFormProps {
 }
 
 const formSchema = z.object({
-  id_people: z.string().min(1, "ID da Pessoa é obrigatório"),
+  // id_people: z.string().min(1, "ID da Pessoa é obrigatório").nullable().optional(), // Removed from form
   nome_colaborador: z.string().min(1, "Nome do Colaborador é obrigatório"),
   telemovel: z.string().nullable().optional(),
   email: z.string().email("Email inválido").nullable().optional().or(z.literal('')),
@@ -65,7 +65,7 @@ const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      id_people: employee.id_people || '',
+      // id_people: employee.id_people || '', // Removed from default values
       nome_colaborador: employee.nome_colaborador || '',
       telemovel: employee.telemovel || '',
       email: employee.email || '',
@@ -84,8 +84,8 @@ const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      const updatedEmployee: Partial<Omit<Employee, 'id' | 'created_at' | 'user_id'>> = {
-        id_people: values.id_people,
+      const updatedEmployee: Partial<Omit<Employee, 'id' | 'created_at' | 'user_id' | 'id_people'>> = { // Removed id_people from Omit
+        // id_people: values.id_people, // Removed from payload
         nome_colaborador: values.nome_colaborador,
         telemovel: values.telemovel || null,
         email: values.email || null,
@@ -107,7 +107,7 @@ const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
   };
 
   const fieldsConfig = [
-    { name: "id_people", label: "ID da Pessoa", type: "text", required: true },
+    // { name: "id_people", label: "ID da Pessoa", type: "text", required: true }, // Removed from fieldsConfig
     { name: "nome_colaborador", label: "Nome do Colaborador", type: "text", required: true },
     { name: "telemovel", label: "Telemóvel", type: "text" },
     { name: "email", label: "Email", type: "email" },

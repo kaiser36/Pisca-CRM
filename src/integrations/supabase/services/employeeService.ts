@@ -7,7 +7,19 @@ import { Employee } from '@/types/crm';
 export async function insertEmployee(employee: Omit<Employee, 'id' | 'created_at'>): Promise<Employee> {
   const { data, error } = await supabase
     .from('employees')
-    .insert(employee)
+    .insert({
+      user_id: employee.user_id,
+      // id_people: employee.id_people, // Removed from insert payload
+      nome_colaborador: employee.nome_colaborador,
+      telemovel: employee.telemovel,
+      email: employee.email,
+      cargo: employee.cargo,
+      company_excel_id: employee.company_excel_id,
+      commercial_name: employee.commercial_name,
+      image_url: employee.image_url,
+      stand_id: employee.stand_id,
+      stand_name: employee.stand_name,
+    })
     .select()
     .single();
 
@@ -42,7 +54,17 @@ export async function fetchEmployeesByCompanyExcelId(userId: string, companyExce
 export async function updateEmployee(id: string, employee: Partial<Omit<Employee, 'id' | 'created_at' | 'user_id'>>): Promise<Employee> {
   const { data, error } = await supabase
     .from('employees')
-    .update(employee)
+    .update({
+      // id_people: employee.id_people, // Removed from update payload
+      nome_colaborador: employee.nome_colaborador,
+      telemovel: employee.telemovel,
+      email: employee.email,
+      cargo: employee.cargo,
+      commercial_name: employee.commercial_name,
+      image_url: employee.image_url,
+      stand_id: employee.stand_id,
+      stand_name: employee.stand_name,
+    })
     .eq('id', id)
     .select()
     .single();

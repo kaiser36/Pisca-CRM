@@ -249,7 +249,7 @@ export interface Product {
 export interface Employee {
   id?: string;
   user_id: string;
-  id_people: string;
+  id_people?: string | null; // Made optional
   nome_colaborador: string;
   telemovel?: string | null;
   email?: string | null;

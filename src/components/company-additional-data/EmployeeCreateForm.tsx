@@ -23,7 +23,7 @@ interface EmployeeCreateFormProps {
 }
 
 const formSchema = z.object({
-  id_people: z.string().min(1, "ID da Pessoa é obrigatório"),
+  // id_people: z.string().min(1, "ID da Pessoa é obrigatório").nullable().optional(), // Removed from form
   nome_colaborador: z.string().min(1, "Nome do Colaborador é obrigatório"),
   telemovel: z.string().nullable().optional(),
   email: z.string().email("Email inválido").nullable().optional().or(z.literal('')),
@@ -81,7 +81,7 @@ const EmployeeCreateForm: React.FC<EmployeeCreateFormProps> = ({
       }
     };
 
-    if (userId && companyExcelId) {
+    if (userId) { // Only load stands if userId is available
       loadStands();
     }
   }, [userId, companyExcelId]);
@@ -89,7 +89,7 @@ const EmployeeCreateForm: React.FC<EmployeeCreateFormProps> = ({
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      id_people: '',
+      // id_people: '', // Removed from default values
       nome_colaborador: '',
       telemovel: '',
       email: '',
@@ -108,11 +108,11 @@ const EmployeeCreateForm: React.FC<EmployeeCreateFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      const newEmployee: Omit<Employee, 'id' | 'created_at'> = {
+      const newEmployee: Omit<Employee, 'id' | 'created_at' | 'id_people'> = { // Removed id_people from Omit
         user_id: userId,
         company_excel_id: companyExcelId,
         commercial_name: commercialName || null,
-        id_people: values.id_people,
+        // id_people: values.id_people, // Removed from payload
         nome_colaborador: values.nome_colaborador,
         telemovel: values.telemovel || null,
         email: values.email || null,
@@ -134,7 +134,7 @@ const EmployeeCreateForm: React.FC<EmployeeCreateFormProps> = ({
   };
 
   const fieldsConfig = [
-    { name: "id_people", label: "ID da Pessoa", type: "text", required: true },
+    // { name: "id_people", label: "ID da Pessoa", type: "text", required: true }, // Removed from fieldsConfig
     { name: "nome_colaborador", label: "Nome do Colaborador", type: "text", required: true },
     { name: "telemovel", label: "Telemóvel", type: "text" },
     { name: "email", label: "Email", type: "email" },
