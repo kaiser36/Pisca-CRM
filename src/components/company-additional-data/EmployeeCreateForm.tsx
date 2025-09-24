@@ -23,7 +23,6 @@ interface EmployeeCreateFormProps {
 }
 
 const formSchema = z.object({
-  // id_people: z.string().min(1, "ID da Pessoa é obrigatório").nullable().optional(), // Removed from form
   nome_colaborador: z.string().min(1, "Nome do Colaborador é obrigatório"),
   telemovel: z.string().nullable().optional(),
   email: z.string().email("Email inválido").nullable().optional().or(z.literal('')),
@@ -89,7 +88,6 @@ const EmployeeCreateForm: React.FC<EmployeeCreateFormProps> = ({
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      // id_people: '', // Removed from default values
       nome_colaborador: '',
       telemovel: '',
       email: '',
@@ -108,11 +106,10 @@ const EmployeeCreateForm: React.FC<EmployeeCreateFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      const newEmployee: Omit<Employee, 'id' | 'created_at' | 'id_people'> = { // Removed id_people from Omit
+      const newEmployee: Omit<Employee, 'id' | 'created_at' | 'id_people'> = {
         user_id: userId,
         company_excel_id: companyExcelId,
         commercial_name: commercialName || null,
-        // id_people: values.id_people, // Removed from payload
         nome_colaborador: values.nome_colaborador,
         telemovel: values.telemovel || null,
         email: values.email || null,
@@ -134,7 +131,6 @@ const EmployeeCreateForm: React.FC<EmployeeCreateFormProps> = ({
   };
 
   const fieldsConfig = [
-    // { name: "id_people", label: "ID da Pessoa", type: "text", required: true }, // Removed from fieldsConfig
     { name: "nome_colaborador", label: "Nome do Colaborador", type: "text", required: true },
     { name: "telemovel", label: "Telemóvel", type: "text" },
     { name: "email", label: "Email", type: "email" },
@@ -144,11 +140,11 @@ const EmployeeCreateForm: React.FC<EmployeeCreateFormProps> = ({
       name: "stand_id",
       label: "Stand",
       type: "select",
-      options: companyStands.map(stand => ({ value: stand.Stand_ID, label: stand.Stand_ID + ' - ' + stand.Company_Name })),
+      options: companyStands.map(stand => ({ value: stand.Stand_ID, label: stand.Stand_ID + ' - ' + (stand.Stand_Name || stand.Company_Name) })),
       placeholder: "Selecione o Stand",
       onValueChange: (value: string) => {
         const selectedStand = companyStands.find(s => s.Stand_ID === value);
-        form.setValue("stand_name", selectedStand?.Company_Name || '');
+        form.setValue("stand_name", selectedStand?.Stand_Name || selectedStand?.Company_Name || '');
         form.setValue("stand_id", value);
       },
       value: form.watch("stand_id") || '',
