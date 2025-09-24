@@ -10,7 +10,7 @@ const Index = () => {
     <Layout>
       <div className="min-h-[calc(100vh-var(--header-height)-var(--footer-height))] flex flex-col items-center justify-center bg-background text-foreground p-4">
         <div className="text-center p-8 bg-card rounded-lg shadow-md mb-8 w-full max-w-2xl">
-          <h1 className="text-4xl font-extrabold tracking-tight mb-4 text-primary">Bem-vindo ao Pisca CRM</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight mb-4 text-primary">Bem-vindo à sua Aplicação CRM</h1>
           <p className="text-lg text-muted-foreground mb-8">
             Comece a gerir os seus clientes do setor automóvel aqui!
           </p>
