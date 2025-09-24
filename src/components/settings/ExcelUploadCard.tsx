@@ -8,14 +8,14 @@ import { Upload, Loader2 } from 'lucide-react';
 import { parseStandsExcel } from '@/lib/excel-parser';
 import { useCrmData } from '@/context/CrmDataContext';
 import { showError, showSuccess } from '@/utils/toast';
-import { upsertCompanies, upsertStands } from '@/integrations/supabase/utils'; // Import upsertCompanies and upsertStands
-import { supabase } from '@/integrations/supabase/client'; // Import supabase client
+import { upsertCompanies, upsertStands } from '@/integrations/supabase/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 const ExcelUploadCard: React.FC = () => {
-  const { updateCrmData, loadInitialData } = useCrmData(); // Added loadInitialData to refresh
+  const { updateCrmData, loadInitialData } = useCrmData();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null); // State to hold userId
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -45,10 +45,12 @@ const ExcelUploadCard: React.FC = () => {
 
   const handleUpload = async () => {
     if (!selectedFile) {
+      console.log("No file selected, calling showError.");
       showError("Por favor, selecione um ficheiro Excel para carregar.");
       return;
     }
     if (!userId) {
+      console.log("User not authenticated, calling showError.");
       showError("Utilizador não autenticado. Por favor, faça login para carregar dados.");
       return;
     }
@@ -58,18 +60,17 @@ const ExcelUploadCard: React.FC = () => {
       const arrayBuffer = await selectedFile.arrayBuffer();
       const newCompanies = await parseStandsExcel(arrayBuffer);
 
-      // 1. Upsert companies to Supabase
       const companyDbIdMap = await upsertCompanies(newCompanies, userId);
       
-      // 2. Prepare stands for upsert, linking them to the new company DB IDs
       const allStands = newCompanies.flatMap(company => company.stands);
       await upsertStands(allStands, companyDbIdMap);
 
+      console.log("Upload successful, calling showSuccess.");
       showSuccess("Dados CRM carregados e guardados com sucesso!");
       setSelectedFile(null);
-      loadInitialData(); // Refresh the CRM data in the context from Supabase
+      loadInitialData();
     } catch (error: any) {
-      console.error("Erro ao carregar ou analisar o ficheiro Excel:", error);
+      console.error("Error during upload:", error);
       showError(error.message || "Falha ao carregar ou analisar o ficheiro Excel. Verifique o formato.");
     } finally {
       setIsUploading(false);

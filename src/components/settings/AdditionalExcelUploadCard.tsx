@@ -44,10 +44,12 @@ const AdditionalExcelUploadCard: React.FC = () => {
 
   const handleUpload = async () => {
     if (!selectedFile) {
+      console.log("No file selected for additional data, calling showError.");
       showError("Por favor, selecione um ficheiro Excel para carregar.");
       return;
     }
     if (!userId) {
+      console.log("User not authenticated for additional data, calling showError.");
       showError("Utilizador não autenticado. Por favor, faça login para carregar dados.");
       return;
     }
@@ -99,10 +101,11 @@ const AdditionalExcelUploadCard: React.FC = () => {
       });
 
       await upsertCompanyAdditionalExcelData(dataToUpsert, userId);
+      console.log("Additional data upload successful, calling showSuccess.");
       showSuccess(`Dados adicionais de ${dataToUpsert.length} empresas carregados com sucesso!`);
       setSelectedFile(null);
     } catch (error: any) {
-      console.error("Erro ao carregar ou analisar o ficheiro Excel:", error);
+      console.error("Error during additional data upload:", error);
       showError(error.message || "Falha ao carregar ou analisar o ficheiro Excel para dados adicionais.");
     } finally {
       setIsUploading(false);
