@@ -106,9 +106,9 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     let displayValue: React.ReactNode = value;
     if (typeof value === 'boolean') {
       displayValue = value ? (
-        <Badge variant="secondary" className="bg-green-100 text-green-800">Sim</Badge>
+        <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Sim</Badge>
       ) : (
-        <Badge variant="secondary" className="bg-red-100 text-red-800">Não</Badge>
+        <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Não</Badge>
       );
     } else if (typeof value === 'number') {
       displayValue = value.toLocaleString('pt-PT');
@@ -212,7 +212,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
         <CardHeader className="pb-4 px-6 pt-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <Avatar className="h-16 w-16 border-2 border-primary">
+              <Avatar className="h-16 w-16 border-2 border-primary shadow-md">
                 <AvatarImage src={company["Logotipo"] || undefined} alt={companyDisplayName} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
                   {firstLetter}
