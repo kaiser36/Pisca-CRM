@@ -1,5 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster as Sonner } from "@/components/ui/sonner"; // Este é o Toaster do sonner
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -10,7 +10,7 @@ import Settings from "./pages/Settings";
 import CompanyAdditionalData from "./pages/CompanyAdditionalData";
 import Accounts from "./pages/Accounts";
 import AmView from "./pages/AmView";
-import Products from "./pages/Products"; // New import for Products
+import Products from "./pages/Products";
 import { CrmDataProvider } from "@/context/CrmDataContext";
 
 const queryClient = new QueryClient();
@@ -18,8 +18,9 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
+      <Toaster /> {/* Este é o Toaster do shadcn/ui, para os toasts mais antigos */}
+      {/* Configurado o Toaster do sonner com z-index alto e posição */}
+      <Sonner position="top-right" richColors className="[&>div]:z-[9999]" />
       <BrowserRouter>
         <CrmDataProvider>
           <Routes>
@@ -29,7 +30,7 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/accounts" element={<Accounts />} />
             <Route path="/am-view" element={<AmView />} />
-            <Route path="/products" element={<Products />} /> {/* New Route for Products */}
+            <Route path="/products" element={<Products />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
