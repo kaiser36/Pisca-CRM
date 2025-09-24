@@ -5,7 +5,7 @@ import { CompanyAdditionalExcelData, Negocio } from '@/types/crm'; // Import Neg
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus } from 'lucide-react';
+import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus, Upload, Archive, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CompanyAdditionalEditForm from './CompanyAdditionalEditForm';
@@ -162,9 +162,16 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     }
   };
 
+  // Calculate aggregated stand data
+  const crmCompany = company.crmCompany;
+  const totalPublicados = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Publicados || 0), 0) || 0;
+  const totalArquivados = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Arquivados || 0), 0) || 0;
+  const totalGuardados = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Guardados || 0), 0) || 0;
+
+
   // Alert logic
   const alerts: string[] = [];
-  const crmCompany = company.crmCompany;
+  
 
   // 1. Se o plano estiver expirado
   const planExpirationDate = crmCompany?.Plan_Expiration_Date || null;
@@ -363,6 +370,16 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 {renderField(Repeat, "Renovação Automática", crmCompany?.Plan_Auto_Renewal)}
                 {renderField(TrendingUp, "Bumps Totais", crmCompany?.Total_Bumps)}
                 {renderField(TrendingUp, "Bumps Atuais", crmCompany?.Current_Bumps)}
+                <Separator className="my-2" />
+                <p className="text-sm font-medium text-blue-800 flex items-center">
+                  <Upload className="mr-2 h-4 w-4" /> Total Publicados: <span className="ml-1 text-foreground">{totalPublicados}</span>
+                </p>
+                <p className="text-sm font-medium text-blue-800 flex items-center">
+                  <Archive className="mr-2 h-4 w-4" /> Total Arquivados: <span className="ml-1 text-foreground">{totalArquivados}</span>
+                </p>
+                <p className="text-sm font-medium text-blue-800 flex items-center">
+                  <Save className="mr-2 h-4 w-4" /> Total Guardados: <span className="ml-1 text-foreground">{totalGuardados}</span>
+                </p>
               </div>
             </Card>
 
