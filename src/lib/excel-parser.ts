@@ -82,6 +82,7 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
     const planAutoRenewal = findBooleanValue(row, ['Renovação do plano', 'RenovacaoDoPlano']); // Mapeado para 'Renovação do plano'
     const currentBumps = findNumericValue(row, ['Bumps_atuais', 'Bumps Atuais']) || 0; // Mapeado para 'Bumps_atuais'
     const totalBumps = findNumericValue(row, ['Bumps_totais', 'Bumps Totais']) || 0; // Mapeado para 'Bumps_totais'
+    const standName = findValue(row, ['Stand Name', 'StandName', 'Stand']) || ''; // NEW: Extract Stand Name
 
 
     const stand: Stand = {
@@ -134,6 +135,7 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
           Plan_Auto_Renewal: planAutoRenewal,
           Current_Bumps: currentBumps,
           Total_Bumps: totalBumps,
+          Stand_Name: standName, // NEW
           stands: [],
         });
       }

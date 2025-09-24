@@ -96,6 +96,7 @@ export async function fetchCompaniesWithStands(userId: string): Promise<Company[
       Wants_CT: company.wants_ct,
       Wants_CRB_Partner: company.wants_crb_partner,
       Autobiz_Info: company.autobiz_info,
+      Stand_Name: company.stand_name, // NEW
       
       stands: []
     });
@@ -234,6 +235,7 @@ export async function fetchCompaniesByExcelCompanyIds(userId: string, excelCompa
       Wants_CT: company.wants_ct,
       Wants_CRB_Partner: company.wants_crb_partner,
       Autobiz_Info: company.autobiz_info,
+      Stand_Name: company.stand_name, // NEW
       
       stands: []
     });
@@ -348,6 +350,7 @@ export async function upsertCompanies(companies: Company[], userId: string): Pro
       wants_ct: company.Wants_CT,
       wants_crb_partner: company.Wants_CRB_Partner,
       autobiz_info: company.Autobiz_Info,
+      stand_name: company.Stand_Name, // NEW
     };
 
     if (existingCompany) {
@@ -428,6 +431,7 @@ export async function updateCompanyAdditionalInfo(companyIdExcel: string, data: 
   if (data.Wants_CT !== undefined) updatePayload.wants_ct = data.Wants_CT;
   if (data.Wants_CRB_Partner !== undefined) updatePayload.wants_crb_partner = data.Wants_CRB_Partner;
   if (data.Autobiz_Info !== undefined) updatePayload.autobiz_info = data.Autobiz_Info;
+  if (data.Stand_Name !== undefined) updatePayload.stand_name = data.Stand_Name; // NEW
 
   if (Object.keys(updatePayload).length === 0) {
     console.warn('No additional company data to update for company:', companyIdExcel);
@@ -519,6 +523,7 @@ export async function fetchCompanyByEmail(userId: string, email: string): Promis
     Wants_CT: data.wants_ct,
     Wants_CRB_Partner: data.wants_crb_partner,
     Autobiz_Info: data.autobiz_info,
+    Stand_Name: data.stand_name, // NEW
     stands: [] // Stands are not fetched by this function
   };
 }

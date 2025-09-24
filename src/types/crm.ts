@@ -78,6 +78,7 @@ export interface Company {
   Wants_CT?: boolean;
   Wants_CRB_Partner?: boolean;
   Autobiz_Info?: string;
+  Stand_Name?: string; // NEW: Nome comercial do ponto de venda
 
   stands: Stand[];
 }
