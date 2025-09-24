@@ -5,7 +5,7 @@ import { CompanyAdditionalExcelData, Negocio } from '@/types/crm'; // Import Neg
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake } from 'lucide-react';
+import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CompanyAdditionalEditForm from './CompanyAdditionalEditForm';
@@ -14,8 +14,10 @@ import AccountContactCreateForm from './AccountContactCreateForm';
 import AccountContactList from './AccountContactList';
 import EasyvistaCreateForm from './EasyvistaCreateForm';
 import EasyvistaList from './EasyvistaList';
-import DealCreateForm from './DealCreateForm'; // New import
-import DealList from './DealList'; // New import
+import DealCreateForm from './DealCreateForm';
+import DealList from './DealList';
+import EmployeeCreateForm from './EmployeeCreateForm'; // New import
+import EmployeeList from './EmployeeList'; // New import
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Accordion,
@@ -26,10 +28,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { isPast, parseISO, differenceInMonths, differenceInDays, format } from 'date-fns'; // Import format
-import { supabase } from '@/integrations/supabase/client'; // Import supabase client
-import { fetchDealsByCompanyExcelId } from '@/integrations/supabase/utils'; // Import fetchDealsByCompanyExcelId
-import { showError } from '@/utils/toast'; // Import showError
+import { isPast, parseISO, differenceInMonths, differenceInDays, format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { fetchDealsByCompanyExcelId } from '@/integrations/supabase/utils';
+import { showError } from '@/utils/toast';
 
 interface CompanyAdditionalDetailCardProps {
   company: CompanyAdditionalExcelData | null;
@@ -41,9 +43,10 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   const [isCreateContactDialogOpen, setIsCreateContactDialogOpen] = useState(false);
   const [isCreateEasyvistaDialogOpen, setIsCreateEasyvistaDialogOpen] = useState(false);
   const [isCreateDealDialogOpen, setIsCreateDealDialogOpen] = useState(false);
-  const [deals, setDeals] = useState<Negocio[]>([]); // New state for deals
-  const [isDealsLoading, setIsDealsLoading] = useState(true); // New state for deals loading
-  const [dealsError, setDealsError] = useState<string | null>(null); // New state for deals error
+  const [isCreateEmployeeDialogOpen, setIsCreateEmployeeDialogOpen] = useState(false); // New state
+  const [deals, setDeals] = useState<Negocio[]>([]);
+  const [isDealsLoading, setIsDealsLoading] = useState(true);
+  const [dealsError, setDealsError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
   // Fetch userId on component mount
@@ -282,6 +285,25 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </DialogContent>
               </Dialog>
 
+              <Dialog open={isCreateEmployeeDialogOpen} onOpenChange={setIsCreateEmployeeDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <UserPlus className="mr-2 h-4 w-4" /> Novo Colaborador
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Adicionar Novo Colaborador</DialogTitle>
+                  </DialogHeader>
+                  <EmployeeCreateForm
+                    companyExcelId={company.excel_company_id}
+                    commercialName={company["Nome Comercial"] || company.crmCompany?.Commercial_Name}
+                    onSave={() => setIsCreateEmployeeDialogOpen(false)}
+                    onCancel={() => setIsCreateEmployeeDialogOpen(false)}
+                  />
+                </DialogContent>
+              </Dialog>
+
               <Dialog open={isEditDialogOpen} onOpenChange={(open) => { console.log('Edit Dialog open change:', open); setIsEditDialogOpen(open); }}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -386,12 +408,13 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
           {/* End New Overview Cards */}
 
           <Tabs defaultValue="details" onValueChange={(value) => console.log('Tab changed to:', value)}>
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-10">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-10">
               <TabsTrigger value="details">Detalhes</TabsTrigger>
               <TabsTrigger value="stands">Stands</TabsTrigger>
               <TabsTrigger value="contacts">Contactos</TabsTrigger>
               <TabsTrigger value="easyvistas">Easyvistas</TabsTrigger>
               <TabsTrigger value="deals">Negócios</TabsTrigger>
+              <TabsTrigger value="employees">Colaboradores</TabsTrigger> {/* New Tab */}
             </TabsList>
             <TabsContent value="details" className="mt-4 space-y-6">
               <Accordion type="multiple" className="w-full space-y-4">
@@ -567,6 +590,12 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 <Handshake className="mr-2 h-5 w-5" /> Negócios
               </h3>
               <DealList companyExcelId={company.excel_company_id} />
+            </TabsContent>
+            <TabsContent value="employees" className="mt-4"> {/* New Tab Content */}
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+                <Users className="mr-2 h-5 w-5" /> Colaboradores
+              </h3>
+              <EmployeeList companyExcelId={company.excel_company_id} onEmployeeChanged={onDataUpdated} />
             </TabsContent>
           </Tabs>
         </CardContent>

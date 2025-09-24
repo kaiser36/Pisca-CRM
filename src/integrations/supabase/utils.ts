@@ -8,3 +8,4 @@ export * from './services/easyvistaService.ts';
 export * from './services/accountManagementService.ts';
 export * from './services/dealService.ts';
 export * from './services/productService.ts';
+export * from './services/employeeService.ts';

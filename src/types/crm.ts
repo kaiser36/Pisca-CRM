@@ -243,3 +243,19 @@ export interface Product {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface Employee {
+  id?: string;
+  user_id: string;
+  id_people: string;
+  nome_colaborador: string;
+  telemovel?: string | null;
+  email?: string | null;
+  cargo?: string | null;
+  company_excel_id: string;
+  commercial_name?: string | null;
+  image_url?: string | null;
+  stand_id?: string | null; // Excel ID of the stand
+  stand_name?: string | null; // Name of the stand
+  created_at?: string;
+}
