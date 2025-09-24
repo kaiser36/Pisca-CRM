@@ -28,7 +28,7 @@ export async function fetchCompaniesWithStands(userId: string): Promise<Company[
 
     const { data: batchStandsData, error: batchStandsError } = await supabase
       .from('stands')
-      .select('*')
+      .select('*, stand_name') // Select stand_name
       .in('company_db_id', batchIds);
 
     if (batchStandsError) {
@@ -129,6 +129,7 @@ export async function fetchCompaniesWithStands(userId: string): Promise<Company[
         Leads_Expiradas: stand.leads_expiradas,
         Leads_Financiadas: stand.leads_financiadas,
         Whatsapp: stand.whatsapp,
+        Stand_Name: stand.stand_name, // NEW: Include stand_name
       });
     }
   });
@@ -167,7 +168,7 @@ export async function fetchCompaniesByExcelCompanyIds(userId: string, excelCompa
 
     const { data: batchStandsData, error: batchStandsError } = await supabase
       .from('stands')
-      .select('*')
+      .select('*, stand_name') // Select stand_name
       .in('company_db_id', batchIds);
 
     if (batchStandsError) {
@@ -269,6 +270,7 @@ export async function fetchCompaniesByExcelCompanyIds(userId: string, excelCompa
         Leads_Expiradas: stand.leads_expiradas,
         Leads_Financiadas: stand.leads_financiadas,
         Whatsapp: stand.whatsapp,
+        Stand_Name: stand.stand_name, // NEW: Include stand_name
       });
     }
   });

@@ -39,6 +39,7 @@ export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, 
       leads_expiradas: stand.Leads_Expiradas,
       leads_financiadas: stand.Leads_Financiadas,
       whatsapp: stand.Whatsapp,
+      stand_name: stand.Stand_Name, // NEW: Include stand_name
     });
   });
 
