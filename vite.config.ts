@@ -8,10 +8,17 @@ export default defineConfig(() => ({
     host: "::",
     port: 8080,
   },
-  plugins: [dyadComponentTagger(), react()],
+  plugins: [
+    dyadComponentTagger(),
+    react({
+      jsxRuntime: 'automatic', // Explicitly set jsxRuntime
+    }),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "react": "react", // Explicitly resolve react
+      "react-dom": "react-dom", // Explicitly resolve react-dom
     },
   },
 }));

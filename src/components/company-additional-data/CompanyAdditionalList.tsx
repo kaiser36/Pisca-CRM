@@ -1,11 +1,18 @@
 "use client";
 
 import React from 'react';
+import { useState } from 'react';
 import { CompanyAdditionalExcelData } from '@/types/crm';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Search, Loader2 } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area'; // Keep ScrollArea for now
+import { Search } from 'lucide-react'; // Keep Lucide icons
+
+import MuiCard from '@mui/material/Card';
+import MuiCardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress'; // MUI equivalent for Loader2
 
 interface CompanyAdditionalListProps {
   companies: CompanyAdditionalExcelData[];
@@ -25,49 +32,66 @@ const CompanyAdditionalList: React.FC<CompanyAdditionalListProps> = ({
   isSearching,
 }) => {
   return (
-    <div className="flex flex-col h-full">
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="text"
-          placeholder="Pesquisar empresas adicionais..."
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-9 pr-10"
-        />
-        {isSearching && (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-        )}
-      </div>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <TextField
+        fullWidth
+        variant="outlined"
+        placeholder="Pesquisar empresas adicionais..."
+        value={searchTerm}
+        onChange={(e) => onSearchChange(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Search className="h-4 w-4 text-muted-foreground" />
+            </InputAdornment>
+          ),
+          endAdornment: isSearching && (
+            <InputAdornment position="end">
+              <CircularProgress size={20} />
+            </InputAdornment>
+          ),
+        }}
+        sx={{ mb: 2 }}
+      />
       <ScrollArea className="flex-1 pr-4">
-        <div className="space-y-3"> {/* Adjusted spacing */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           {companies.length === 0 && !isSearching ? (
-            <p className="text-muted-foreground text-center py-4">Nenhuma empresa encontrada.</p>
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>Nenhuma empresa encontrada.</Typography>
           ) : companies.length === 0 && isSearching ? (
-            <p className="text-muted-foreground text-center py-4">A pesquisar...</p>
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>A pesquisar...</Typography>
           ) : (
             companies.map((company) => (
-              <Card
+              <MuiCard
                 key={company.id || company.excel_company_id}
-                className={`cursor-pointer transition-all duration-200 ease-in-out ${
-                  selectedCompanyId === company.excel_company_id
-                    ? 'border-primary bg-primary/10 shadow-md'
-                    : 'border-transparent hover:border-muted-foreground/20 hover:bg-muted/50'
-                }`}
                 onClick={() => onSelectCompany(company.excel_company_id)}
+                sx={{
+                  cursor: 'pointer',
+                  transition: 'all 200ms ease-in-out',
+                  border: 1,
+                  borderColor: selectedCompanyId === company.excel_company_id ? 'primary.main' : 'transparent',
+                  bgcolor: selectedCompanyId === company.excel_company_id ? 'primary.light' : 'background.paper',
+                  boxShadow: selectedCompanyId === company.excel_company_id ? 3 : 1,
+                  '&:hover': {
+                    borderColor: selectedCompanyId === company.excel_company_id ? 'primary.dark' : 'grey.300',
+                    bgcolor: selectedCompanyId === company.excel_company_id ? 'primary.main' : 'action.hover',
+                    boxShadow: 3,
+                  },
+                }}
               >
-                <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-base font-semibold">{company["Nome Comercial"] || company.excel_company_id}</CardTitle>
-                </CardHeader>
-                <CardContent className="py-2 px-4 text-sm text-muted-foreground">
-                  ID Excel: {company.excel_company_id}
-                </CardContent>
-              </Card>
+                <MuiCardContent sx={{ py: 1.5, px: 2 }}>
+                  <Typography variant="subtitle1" component="div" sx={{ fontWeight: 'semibold' }}>
+                    {company["Nome Comercial"] || company.excel_company_id}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    ID Excel: {company.excel_company_id}
+                  </Typography>
+                </MuiCardContent>
+              </MuiCard>
             ))
           )}
-        </div>
+        </Box>
       </ScrollArea>
-    </div>
+    </Box>
   );
 };
 
