@@ -29,7 +29,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
   initialDiscountType,
   initialDiscountValue,
 }) => {
-  const { watch, setValue, formState: { errors } } = useFormContext(); // Get errors from context
+  const { watch, setValue, formState: { errors }, trigger } = useFormContext(); // Get errors and trigger from context
 
   const selectedProductId = watch(`deal_products.${index}.product_id`);
   const quantity = watch(`deal_products.${index}.quantity`);
@@ -100,6 +100,8 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
     }
     if (watch(`deal_products.${index}.total_price_at_deal_time`) !== discountedProductLineTotal) {
       setValue(`deal_products.${index}.total_price_at_deal_time`, discountedProductLineTotal, { shouldDirty: true, shouldValidate: true });
+      // Explicitly trigger validation/re-render for the parent form's watched fields
+      trigger(`deal_products.${index}.total_price_at_deal_time`);
     }
     if (watch(`deal_products.${index}.product_name`) !== (product?.produto || '')) {
       setValue(`deal_products.${index}.product_name`, product?.produto || '', { shouldDirty: true, shouldValidate: true });
@@ -109,7 +111,7 @@ const DealProductFormItem: React.FC<DealProductFormItemProps> = ({
     }
     
     console.log(`[DealProductFormItem ${index}] Calculated total price: ${discountedProductLineTotal}`);
-  }, [selectedProductId, quantity, discountType, discountValue, allProducts, index, setValue, watch]);
+  }, [selectedProductId, quantity, discountType, discountValue, allProducts, index, setValue, watch, trigger]);
 
   const productCategories = Array.from(new Set(allProducts.map(p => p.categoria).filter((cat): cat is string => cat !== null && cat.trim() !== '')));
   console.log(`[DealProductFormItem ${index}] Available product categories:`, productCategories);
