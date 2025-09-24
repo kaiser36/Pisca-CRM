@@ -5,7 +5,7 @@ import { CompanyAdditionalExcelData, Negocio } from '@/types/crm'; // Import Neg
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus, Upload, Archive, Save, ArrowRight } from 'lucide-react'; // Added ArrowRight
+import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus, Upload, Archive, Save, ArrowRight, Download, Hourglass, XCircle as ExpiredIcon } from 'lucide-react'; // Added Download, Hourglass, ExpiredIcon
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CompanyAdditionalEditForm from './CompanyAdditionalEditForm';
@@ -167,6 +167,11 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   const totalPublicados = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Publicados || 0), 0) || 0;
   const totalArquivados = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Arquivados || 0), 0) || 0;
   const totalGuardados = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Guardados || 0), 0) || 0;
+
+  // Calculate aggregated leads data
+  const totalLeadsRecebidas = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Leads_Recebidas || 0), 0) || 0;
+  const totalLeadsPendentes = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Leads_Pendentes || 0), 0) || 0;
+  const totalLeadsExpiradas = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Leads_Expiradas || 0), 0) || 0;
 
 
   // Alert logic
@@ -350,7 +355,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 {renderField(Globe, "Website", company["Site"] || crmCompany?.Website)}
                 {renderField(Landmark, "NIF", crmCompany?.NIF)}
                 {renderField(User, "AM Atual", company["AM"] || crmCompany?.AM_Current)}
-                {/* Aggregated Stand Data in pipeline format */}
+                {/* Aggregated Stand Data - Anúncios Pipeline */}
                 <div className="flex items-center text-sm md:col-span-2 flex-wrap gap-x-2">
                   <span className="font-medium flex items-center">
                     <Upload className="mr-1 h-4 w-4 text-muted-foreground" /> Publicados: <span className="ml-1 text-foreground">{totalPublicados}</span>
@@ -364,6 +369,20 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                     <Save className="mr-1 h-4 w-4 text-muted-foreground" /> Guardados: <span className="ml-1 text-foreground">{totalGuardados}</span>
                   </span>
                 </div>
+                {/* Aggregated Stand Data - Leads Pipeline */}
+                <div className="flex items-center text-sm md:col-span-2 flex-wrap gap-x-2 mt-2">
+                  <span className="font-medium flex items-center text-blue-700">
+                    <Download className="mr-1 h-4 w-4 text-blue-700" /> Recebidas: <span className="ml-1">{totalLeadsRecebidas}</span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium flex items-center text-orange-700">
+                    <Hourglass className="mr-1 h-4 w-4 text-orange-700" /> Pendentes: <span className="ml-1">{totalLeadsPendentes}</span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium flex items-center text-red-700">
+                    <ExpiredIcon className="mr-1 h-4 w-4 text-red-700" /> Expiradas: <span className="ml-1">{totalLeadsExpiradas}</span>
+                  </span>
+                </div>
               </div>
             </div>
           </Card>
@@ -371,7 +390,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
           {/* New Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Pisca Card (removed aggregated data) */}
+            {/* Pisca Card */}
             <Card className="p-4 shadow-subtle border-l-4 border-blue-200 bg-blue-50">
               <CardTitle className="text-lg font-semibold mb-3 flex items-center text-blue-800">
                 <Package className="mr-2 h-5 w-5" /> Pisca
