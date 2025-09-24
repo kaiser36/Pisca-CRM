@@ -9,7 +9,8 @@ import CrmDataExcelTemplateCard from './CrmDataExcelTemplateCard';
 import AdditionalCompanyDataExcelTemplateCard from './AdditionalCompanyDataExcelTemplateCard';
 import EmployeeExcelTemplateCard from './EmployeeExcelTemplateCard';
 import EmployeeExcelUploadCard from './EmployeeExcelUploadCard';
-import AccountContactExcelUploadCard from './AccountContactExcelUploadCard'; // Import the new upload card
+import AccountContactExcelUploadCard from './AccountContactExcelUploadCard';
+import EasyvistaExcelTemplateCard from './EasyvistaExcelTemplateCard'; // Import the new component
 
 const SettingsTabs: React.FC = () => {
   return (
@@ -23,7 +24,7 @@ const SettingsTabs: React.FC = () => {
           <ExcelUploadCard />
           <AdditionalExcelUploadCard />
           <EmployeeExcelUploadCard />
-          <AccountContactExcelUploadCard /> {/* Add the new upload card here */}
+          <AccountContactExcelUploadCard />
         </div>
       </TabsContent>
       <TabsContent value="templates" className="mt-6">
@@ -32,6 +33,7 @@ const SettingsTabs: React.FC = () => {
           <AdditionalCompanyDataExcelTemplateCard />
           <AccountContactExcelTemplateCard />
           <EmployeeExcelTemplateCard />
+          <EasyvistaExcelTemplateCard /> {/* Add the new template card here */}
         </div>
       </TabsContent>
     </Tabs>
