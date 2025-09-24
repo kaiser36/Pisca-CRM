@@ -338,7 +338,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
         <CardContent className="space-y-6">
           {/* Main Overview Card */}
           <Card className="p-6 shadow-subtle border-l-4 border-primary">
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-center space-x-4">
               <Avatar className="h-16 w-16">
                 <AvatarImage src={company["Logotipo"] || undefined} alt={companyDisplayName} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
@@ -351,6 +351,20 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 {renderField(Landmark, "NIF", crmCompany?.NIF)}
                 {renderField(User, "AM Atual", company["AM"] || crmCompany?.AM_Current)}
                 {renderField(Wallet, "Plafond", crmCompany?.Plafond)}
+                {/* New: Aggregated Stand Data */}
+                <div className="flex items-center text-sm">
+                  <Upload className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Total Publicados:</span> <span className="ml-1 text-foreground">{totalPublicados}</span>
+                </div>
+                <div className="flex items-center text-sm">
+                  <Archive className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Total Arquivados:</span> <span className="ml-1 text-foreground">{totalArquivados}</span>
+                </div>
+                <div className="flex items-center text-sm">
+                  <Save className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Total Guardados:</span> <span className="ml-1 text-foreground">{totalGuardados}</span>
+                </div>
+                {/* End New: Aggregated Stand Data */}
               </div>
             </div>
           </Card>
@@ -358,7 +372,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
           {/* New Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Pisca Card */}
+            {/* Pisca Card (removed aggregated data) */}
             <Card className="p-4 shadow-subtle border-l-4 border-blue-200 bg-blue-50">
               <CardTitle className="text-lg font-semibold mb-3 flex items-center text-blue-800">
                 <Package className="mr-2 h-5 w-5" /> Pisca
@@ -370,16 +384,6 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 {renderField(Repeat, "Renovação Automática", crmCompany?.Plan_Auto_Renewal)}
                 {renderField(TrendingUp, "Bumps Totais", crmCompany?.Total_Bumps)}
                 {renderField(TrendingUp, "Bumps Atuais", crmCompany?.Current_Bumps)}
-                <Separator className="my-2" />
-                <p className="text-sm font-medium text-blue-800 flex items-center">
-                  <Upload className="mr-2 h-4 w-4" /> Total Publicados: <span className="ml-1 text-foreground">{totalPublicados}</span>
-                </p>
-                <p className="text-sm font-medium text-blue-800 flex items-center">
-                  <Archive className="mr-2 h-4 w-4" /> Total Arquivados: <span className="ml-1 text-foreground">{totalArquivados}</span>
-                </p>
-                <p className="text-sm font-medium text-blue-800 flex items-center">
-                  <Save className="mr-2 h-4 w-4" /> Total Guardados: <span className="ml-1 text-foreground">{totalGuardados}</span>
-                </p>
               </div>
             </Card>
 
