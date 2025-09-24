@@ -350,7 +350,6 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 {renderField(Globe, "Website", company["Site"] || crmCompany?.Website)}
                 {renderField(Landmark, "NIF", crmCompany?.NIF)}
                 {renderField(User, "AM Atual", company["AM"] || crmCompany?.AM_Current)}
-                {renderField(Wallet, "Plafond", crmCompany?.Plafond)}
                 {/* Aggregated Stand Data in pipeline format */}
                 <div className="flex items-center text-sm md:col-span-2 flex-wrap gap-x-2">
                   <span className="font-medium flex items-center">
@@ -372,7 +371,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
           {/* New Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Pisca Card */}
+            {/* Pisca Card (removed aggregated data) */}
             <Card className="p-4 shadow-subtle border-l-4 border-blue-200 bg-blue-50">
               <CardTitle className="text-lg font-semibold mb-3 flex items-center text-blue-800">
                 <Package className="mr-2 h-5 w-5" /> Pisca
@@ -384,6 +383,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 {renderField(Repeat, "Renovação Automática", crmCompany?.Plan_Auto_Renewal)}
                 {renderField(TrendingUp, "Bumps Totais", crmCompany?.Total_Bumps)}
                 {renderField(TrendingUp, "Bumps Atuais", crmCompany?.Current_Bumps)}
+                {renderField(Wallet, "Plafond", crmCompany?.Plafond)} {/* Moved Plafond here */}
               </div>
             </Card>
 
@@ -398,7 +398,6 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 {renderField(Car, "Simulador Financiamento", crmCompany?.Financing_Simulator_On)}
                 {renderField(Clock, "Último Login", crmCompany?.Last_Login_Date)}
                 {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
-                {renderField(Wallet, "Plafond", crmCompany?.Plafond)}
               </div>
             </Card>
 
