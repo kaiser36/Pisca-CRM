@@ -1,14 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { CompanyAdditionalExcelData, Negocio } from '@/types/crm'; // Import Negocio type
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus, Upload, Archive, Save, ArrowRight, Download, Hourglass, XCircle as ExpiredIcon } from 'lucide-react'; // Added Download, Hourglass, ExpiredIcon
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import CompanyAdditionalEditForm from './CompanyAdditionalEditForm';
+import { CompanyAdditionalExcelData, Negocio } from '@/types/crm';
 import StandCard from '@/components/crm/StandCard';
 import AccountContactCreateForm from './AccountContactCreateForm';
 import AccountContactList from './AccountContactList';
@@ -16,22 +9,37 @@ import EasyvistaCreateForm from './EasyvistaCreateForm';
 import EasyvistaList from './EasyvistaList';
 import DealCreateForm from './DealCreateForm';
 import DealList from './DealList';
-import EmployeeCreateForm from './EmployeeCreateForm'; // New import
-import EmployeeList from './EmployeeList'; // New import
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import EmployeeCreateForm from './EmployeeCreateForm';
+import EmployeeList from './EmployeeList';
+import CompanyAdditionalEditForm from './CompanyAdditionalEditForm'; // Adicionado: Importação em falta
+import { Separator } from '@/components/ui/separator'; // Keep Separator for now
+import { ScrollArea } from '@/components/ui/scroll-area'; // Keep ScrollArea for now
+import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus, Upload, Archive, Save, ArrowRight, Download, Hourglass, XCircle as ExpiredIcon } from 'lucide-react';
 import { isPast, parseISO, differenceInMonths, differenceInDays, format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchDealsByCompanyExcelId } from '@/integrations/supabase/utils';
 import { showError } from '@/utils/toast';
+
+// Material UI Imports
+import MuiCard from '@mui/material/Card';
+import MuiCardContent from '@mui/material/CardContent';
+import MuiCardHeader from '@mui/material/CardHeader';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import MuiButton from '@mui/material/Button';
+import MuiDialog from '@mui/material/Dialog';
+import MuiDialogTitle from '@mui/material/DialogTitle';
+import MuiDialogContent from '@mui/material/DialogContent';
+import MuiTabs from '@mui/material/Tabs';
+import MuiTab from '@mui/material/Tab';
+import MuiAccordion from '@mui/material/Accordion';
+import MuiAccordionSummary from '@mui/material/AccordionSummary';
+import MuiAccordionDetails from '@mui/material/AccordionDetails';
+import MuiAvatar from '@mui/material/Avatar';
+import MuiBadge from '@mui/material/Badge';
+import MuiAlert from '@mui/material/Alert';
+import MuiAlertTitle from '@mui/material/AlertTitle';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'; // MUI icon for accordion
 
 interface CompanyAdditionalDetailCardProps {
   company: CompanyAdditionalExcelData | null;
@@ -43,11 +51,12 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   const [isCreateContactDialogOpen, setIsCreateContactDialogOpen] = useState(false);
   const [isCreateEasyvistaDialogOpen, setIsCreateEasyvistaDialogOpen] = useState(false);
   const [isCreateDealDialogOpen, setIsCreateDealDialogOpen] = useState(false);
-  const [isCreateEmployeeDialogOpen, setIsCreateEmployeeDialogOpen] = useState(false); // New state
+  const [isCreateEmployeeDialogOpen, setIsCreateEmployeeDialogOpen] = useState(false);
   const [deals, setDeals] = useState<Negocio[]>([]);
   const [isDealsLoading, setIsDealsLoading] = useState(true);
   const [dealsError, setDealsError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [currentTab, setCurrentTab] = useState(0); // For MUI Tabs
 
   // Fetch userId on component mount
   React.useEffect(() => {
@@ -95,9 +104,22 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
   if (!company) {
     return (
-      <div className="flex items-center justify-center h-full text-muted-foreground p-4 rounded-lg border bg-card">
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          color: 'text.secondary',
+          p: 2,
+          borderRadius: 1,
+          border: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
         Selecione uma empresa para ver os detalhes adicionais.
-      </div>
+      </Box>
     );
   }
 
@@ -107,15 +129,19 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     let displayValue: React.ReactNode = value;
     if (typeof value === 'boolean') {
       displayValue = value ? (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Sim</Badge>
+        <MuiBadge color="success" variant="dot" sx={{ '& .MuiBadge-dot': { height: 10, width: 10, borderRadius: '50%' } }}>
+          <Typography component="span" sx={{ color: 'success.main', ml: 1 }}>Sim</Typography>
+        </MuiBadge>
       ) : (
-        <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Não</Badge>
+        <MuiBadge color="error" variant="dot" sx={{ '& .MuiBadge-dot': { height: 10, width: 10, borderRadius: '50%' } }}>
+          <Typography component="span" sx={{ color: 'error.main', ml: 1 }}>Não</Typography>
+        </MuiBadge>
       );
     } else if (typeof value === 'number') {
       displayValue = value.toLocaleString('pt-PT');
     } else if (label.includes('Link') || label.includes('Site') || label.includes('Logotipo')) {
       displayValue = (
-        <a href={String(value)} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+        <a href={String(value)} target="_blank" rel="noopener noreferrer" style={{ color: 'blue', textDecoration: 'underline' }}>
           {String(value)}
         </a>
       );
@@ -133,10 +159,10 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     }
 
     return (
-      <div className="flex items-center text-sm">
+      <Box sx={{ display: 'flex', alignItems: 'center', fontSize: '0.875rem' }}>
         <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
-        <span className="font-medium">{label}:</span> <span className="ml-1 text-foreground">{displayValue}</span>
-      </div>
+        <Typography component="span" sx={{ fontWeight: 'medium' }}>{label}:</Typography> <Typography component="span" sx={{ ml: 0.5, color: 'text.primary' }}>{displayValue}</Typography>
+      </Box>
     );
   };
 
@@ -185,7 +211,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   }
 
   // 2. Se o plano ativo estiver não (incluindo null/undefined)
-  if (!crmCompany?.Plan_Active) { // This condition now covers false, null, and undefined
+  if (!crmCompany?.Plan_Active) {
     alerts.push("O plano da empresa não está ativo!");
   }
 
@@ -196,7 +222,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   }
 
   // 4. Se o ultimo login foi à mais de uma semana atras
-  if (!isDealsLoading && !dealsError) { // Only check deals if loaded successfully
+  if (!isDealsLoading && !dealsError) {
     deals.forEach(deal => {
       if (deal.expected_close_date) {
         try {
@@ -227,418 +253,417 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     alerts.push("⛔ Empresa encerrada.");
   }
 
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setCurrentTab(newValue);
+  };
+
   return (
     <ScrollArea className="h-full w-full pr-4">
-      <Card className="w-full shadow-md">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-2xl font-bold">{companyDisplayName}</CardTitle>
-              {isCompanyClosed && (
-                <Badge variant="destructive" className="text-sm px-3 py-1">Empresa Encerrada</Badge>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Dialog open={isCreateContactDialogOpen} onOpenChange={(open) => { console.log('Create Contact Dialog open change:', open); setIsCreateContactDialogOpen(open); }}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <PlusCircle className="mr-2 h-4 w-4" /> Novo Contacto
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Adicionar Novo Contacto de Conta</DialogTitle>
-                  </DialogHeader>
-                  <AccountContactCreateForm
-                    companyExcelId={company.excel_company_id}
-                    commercialName={company["Nome Comercial"]}
-                    companyName={company.crmCompany?.Company_Name || company["Nome Comercial"]}
-                    onSave={() => setIsCreateContactDialogOpen(false)}
-                    onCancel={() => setIsCreateContactDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
+      <MuiCard sx={{ width: '100%', boxShadow: 3 }}>
+        <MuiCardHeader
+          title={
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, justifyContent: 'space-between', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>{companyDisplayName}</Typography>
+                {isCompanyClosed && (
+                  <MuiBadge color="error" sx={{ '& .MuiBadge-badge': { fontSize: '0.8rem', px: 1, py: 0.5, borderRadius: 1 } }}>
+                    Empresa Encerrada
+                  </MuiBadge>
+                )}
+              </Box>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                <MuiButton variant="outlined" size="small" onClick={() => setIsCreateContactDialogOpen(true)}>
+                  <PlusCircle className="mr-2 h-4 w-4" /> Novo Contacto
+                </MuiButton>
+                <MuiDialog open={isCreateContactDialogOpen} onClose={() => setIsCreateContactDialogOpen(false)} maxWidth="md" fullWidth>
+                  <MuiDialogTitle>Adicionar Novo Contacto de Conta</MuiDialogTitle>
+                  <MuiDialogContent dividers>
+                    <AccountContactCreateForm
+                      companyExcelId={company.excel_company_id}
+                      commercialName={company["Nome Comercial"]}
+                      companyName={company.crmCompany?.Company_Name || company["Nome Comercial"]}
+                      onSave={() => setIsCreateContactDialogOpen(false)}
+                      onCancel={() => setIsCreateContactDialogOpen(false)}
+                    />
+                  </MuiDialogContent>
+                </MuiDialog>
 
-              <Dialog open={isCreateEasyvistaDialogOpen} onOpenChange={(open) => { console.log('Create Easyvista Dialog open change:', open); setIsCreateEasyvistaDialogOpen(open); }}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Eye className="mr-2 h-4 w-4" /> Novo Easyvista
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Criar Novo Registo Easyvista</DialogTitle>
-                  </DialogHeader>
-                  <EasyvistaCreateForm
-                    companyExcelId={company.excel_company_id}
-                    commercialName={company["Nome Comercial"]}
-                    onSave={() => setIsCreateEasyvistaDialogOpen(false)}
-                    onCancel={() => setIsCreateEasyvistaDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
+                <MuiButton variant="outlined" size="small" onClick={() => setIsCreateEasyvistaDialogOpen(true)}>
+                  <Eye className="mr-2 h-4 w-4" /> Novo Easyvista
+                </MuiButton>
+                <MuiDialog open={isCreateEasyvistaDialogOpen} onClose={() => setIsCreateEasyvistaDialogOpen(false)} maxWidth="md" fullWidth>
+                  <MuiDialogTitle>Criar Novo Registo Easyvista</MuiDialogTitle>
+                  <MuiDialogContent dividers>
+                    <EasyvistaCreateForm
+                      companyExcelId={company.excel_company_id}
+                      commercialName={company["Nome Comercial"]}
+                      onSave={() => setIsCreateEasyvistaDialogOpen(false)}
+                      onCancel={() => setIsCreateEasyvistaDialogOpen(false)}
+                    />
+                  </MuiDialogContent>
+                </MuiDialog>
 
-              <Dialog open={isCreateDealDialogOpen} onOpenChange={(open) => { console.log('Create Deal Dialog open change:', open); setIsCreateDealDialogOpen(open); }}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Handshake className="mr-2 h-4 w-4" /> Novo Negócio
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Criar Novo Negócio</DialogTitle>
-                  </DialogHeader>
-                  <DealCreateForm
-                    companyExcelId={company.excel_company_id}
-                    commercialName={company["Nome Comercial"] || company.crmCompany?.Commercial_Name}
-                    onSave={() => setIsCreateDealDialogOpen(false)}
-                    onCancel={() => setIsCreateDealDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
+                <MuiButton variant="outlined" size="small" onClick={() => setIsCreateDealDialogOpen(true)}>
+                  <Handshake className="mr-2 h-4 w-4" /> Novo Negócio
+                </MuiButton>
+                <MuiDialog open={isCreateDealDialogOpen} onClose={() => setIsCreateDealDialogOpen(false)} maxWidth="md" fullWidth>
+                  <MuiDialogTitle>Criar Novo Negócio</MuiDialogTitle>
+                  <MuiDialogContent dividers>
+                    <DealCreateForm
+                      companyExcelId={company.excel_company_id}
+                      commercialName={company["Nome Comercial"] || company.crmCompany?.Commercial_Name}
+                      onSave={() => setIsCreateDealDialogOpen(false)}
+                      onCancel={() => setIsCreateDealDialogOpen(false)}
+                    />
+                  </MuiDialogContent>
+                </MuiDialog>
 
-              <Dialog open={isCreateEmployeeDialogOpen} onOpenChange={setIsCreateEmployeeDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <UserPlus className="mr-2 h-4 w-4" /> Novo Colaborador
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Adicionar Novo Colaborador</DialogTitle>
-                  </DialogHeader>
-                  <EmployeeCreateForm
-                    companyExcelId={company.excel_company_id}
-                    commercialName={company["Nome Comercial"] || company.crmCompany?.Commercial_Name}
-                    onSave={() => setIsCreateEmployeeDialogOpen(false)}
-                    onCancel={() => setIsCreateEmployeeDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
+                <MuiButton variant="outlined" size="small" onClick={() => setIsCreateEmployeeDialogOpen(true)}>
+                  <UserPlus className="mr-2 h-4 w-4" /> Novo Colaborador
+                </MuiButton>
+                <MuiDialog open={isCreateEmployeeDialogOpen} onClose={() => setIsCreateEmployeeDialogOpen(false)} maxWidth="md" fullWidth>
+                  <MuiDialogTitle>Adicionar Novo Colaborador</MuiDialogTitle>
+                  <MuiDialogContent dividers>
+                    <EmployeeCreateForm
+                      companyExcelId={company.excel_company_id}
+                      commercialName={company["Nome Comercial"] || company.crmCompany?.Commercial_Name}
+                      onSave={() => setIsCreateEmployeeDialogOpen(false)}
+                      onCancel={() => setIsCreateEmployeeDialogOpen(false)}
+                    />
+                  </MuiDialogContent>
+                </MuiDialog>
 
-              <Dialog open={isEditDialogOpen} onOpenChange={(open) => { console.log('Edit Dialog open change:', open); setIsEditDialogOpen(open); }}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Pencil className="mr-2 h-4 w-4" /> Editar
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Editar Dados Adicionais da Empresa</DialogTitle>
-                  </DialogHeader>
-                  <CompanyAdditionalEditForm
-                    company={company}
-                    onSave={() => {
-                      setIsEditDialogOpen(false);
-                      onDataUpdated();
-                    }}
-                    onCancel={() => setIsEditDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-          <CardDescription className="text-muted-foreground">ID Excel: {company.excel_company_id}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+                <MuiButton variant="outlined" size="small" onClick={() => setIsEditDialogOpen(true)}>
+                  <Pencil className="mr-2 h-4 w-4" /> Editar
+                </MuiButton>
+                <MuiDialog open={isEditDialogOpen} onClose={() => setIsEditDialogOpen(false)} maxWidth="md" fullWidth>
+                  <MuiDialogTitle>Editar Dados Adicionais da Empresa</MuiDialogTitle>
+                  <MuiDialogContent dividers>
+                    <CompanyAdditionalEditForm
+                      company={company}
+                      onSave={() => {
+                        setIsEditDialogOpen(false);
+                        onDataUpdated();
+                      }}
+                      onCancel={() => setIsEditDialogOpen(false)}
+                    />
+                  </MuiDialogContent>
+                </MuiDialog>
+              </Box>
+            </Box>
+          }
+          subheader={`ID Excel: ${company.excel_company_id}`}
+          subheaderTypographyProps={{ color: 'text.secondary' }}
+          sx={{ pb: 1.5 }}
+        />
+        <MuiCardContent sx={{ pt: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
           {/* Main Overview Card */}
-          <Card className="p-6 shadow-subtle border-l-4 border-primary">
-            <div className="flex flex-col sm:flex-row items-center space-x-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={company["Logotipo"] || undefined} alt={companyDisplayName} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
-                  {firstLetter}
-                </AvatarFallback>
-              </Avatar>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 flex-1">
+          <MuiCard sx={{ p: 3, boxShadow: 1, borderLeft: 4, borderColor: 'primary.main' }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', gap: 2 }}>
+              <MuiAvatar sx={{ bgcolor: 'primary.main', width: 64, height: 64, fontSize: '2rem', fontWeight: 'bold' }} src={company["Logotipo"] || undefined} alt={companyDisplayName}>
+                {firstLetter}
+              </MuiAvatar>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: { xs: 1, md: 2 }, flex: 1 }}>
                 {renderField(Mail, "Email", company["Email da empresa"] || crmCompany?.Company_Email)}
                 {renderField(Globe, "Website", company["Site"] || crmCompany?.Website)}
                 {renderField(Landmark, "NIF", crmCompany?.NIF)}
                 {renderField(User, "AM Atual", company["AM"] || crmCompany?.AM_Current)}
                 {/* Aggregated Stand Data - Anúncios Pipeline */}
-                <div className="flex items-center text-sm md:col-span-2 flex-wrap gap-x-2">
-                  <span className="font-medium flex items-center">
-                    <Upload className="mr-1 h-4 w-4 text-muted-foreground" /> Publicados: <span className="ml-1 text-foreground">{totalPublicados}</span>
-                  </span>
+                <Box sx={{ display: 'flex', alignItems: 'center', fontSize: '0.875rem', flexWrap: 'wrap', gap: 1, gridColumn: { xs: 'span 1', md: 'span 2' } }}>
+                  <Typography component="span" sx={{ fontWeight: 'medium', display: 'flex', alignItems: 'center' }}>
+                    <Upload className="mr-1 h-4 w-4 text-muted-foreground" /> Publicados: <Typography component="span" sx={{ ml: 0.5, color: 'text.primary' }}>{totalPublicados}</Typography>
+                  </Typography>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium flex items-center">
-                    <Archive className="mr-1 h-4 w-4 text-muted-foreground" /> Arquivados: <span className="ml-1 text-foreground">{totalArquivados}</span>
-                  </span>
+                  <Typography component="span" sx={{ fontWeight: 'medium', display: 'flex', alignItems: 'center' }}>
+                    <Archive className="mr-1 h-4 w-4 text-muted-foreground" /> Arquivados: <Typography component="span" sx={{ ml: 0.5, color: 'text.primary' }}>{totalArquivados}</Typography>
+                  </Typography>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium flex items-center">
-                    <Save className="mr-1 h-4 w-4 text-muted-foreground" /> Guardados: <span className="ml-1 text-foreground">{totalGuardados}</span>
-                  </span>
-                </div>
+                  <Typography component="span" sx={{ fontWeight: 'medium', display: 'flex', alignItems: 'center' }}>
+                    <Save className="mr-1 h-4 w-4 text-muted-foreground" /> Guardados: <Typography component="span" sx={{ ml: 0.5, color: 'text.primary' }}>{totalGuardados}</Typography>
+                  </Typography>
+                </Box>
                 {/* Aggregated Stand Data - Leads Pipeline */}
-                <div className="flex items-center text-sm md:col-span-2 flex-wrap gap-x-2 mt-2">
-                  <span className="font-medium flex items-center text-blue-700">
-                    <Download className="mr-1 h-4 w-4 text-blue-700" /> Leads Recebidas: <span className="ml-1">{totalLeadsRecebidas}</span>
-                  </span>
+                <Box sx={{ display: 'flex', alignItems: 'center', fontSize: '0.875rem', flexWrap: 'wrap', gap: 1, gridColumn: { xs: 'span 1', md: 'span 2' }, mt: 1 }}>
+                  <Typography component="span" sx={{ fontWeight: 'medium', display: 'flex', alignItems: 'center', color: 'info.main' }}>
+                    <Download className="mr-1 h-4 w-4" /> Leads Recebidas: <Typography component="span" sx={{ ml: 0.5 }}>{totalLeadsRecebidas}</Typography>
+                  </Typography>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium flex items-center text-orange-700">
-                    <Hourglass className="mr-1 h-4 w-4 text-orange-700" /> Leads Pendentes: <span className="ml-1">{totalLeadsPendentes}</span>
-                  </span>
+                  <Typography component="span" sx={{ fontWeight: 'medium', display: 'flex', alignItems: 'center', color: 'warning.main' }}>
+                    <Hourglass className="mr-1 h-4 w-4" /> Leads Pendentes: <Typography component="span" sx={{ ml: 0.5 }}>{totalLeadsPendentes}</Typography>
+                  </Typography>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium flex items-center text-red-700">
-                    <ExpiredIcon className="mr-1 h-4 w-4 text-red-700" /> Leads Expiradas: <span className="ml-1">{totalLeadsExpiradas}</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </Card>
+                  <Typography component="span" sx={{ fontWeight: 'medium', display: 'flex', alignItems: 'center', color: 'error.main' }}>
+                    <ExpiredIcon className="mr-1 h-4 w-4" /> Leads Expiradas: <Typography component="span" sx={{ ml: 0.5 }}>{totalLeadsExpiradas}</Typography>
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          </MuiCard>
           {/* End Main Overview Card */}
 
           {/* New Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
             {/* Pisca Card */}
-            <Card className="p-4 shadow-subtle border-l-4 border-blue-200 bg-blue-50">
-              <CardTitle className="text-lg font-semibold mb-3 flex items-center text-blue-800">
+            <MuiCard sx={{ p: 2, boxShadow: 1, borderLeft: 4, borderColor: 'info.light', bgcolor: 'info.lighter' }}>
+              <Typography variant="h6" component="div" sx={{ fontWeight: 'semibold', mb: 1.5, display: 'flex', alignItems: 'center', color: 'info.dark' }}>
                 <Package className="mr-2 h-5 w-5" /> Pisca
-              </CardTitle>
-              <div className="space-y-2">
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {renderField(Package, "Último Plano", company["Plano Indicado"] || crmCompany?.Last_Plan)}
                 {renderField(CheckCircle, "Plano Ativo", crmCompany?.Plan_Active)}
                 {renderField(Calendar, "Expiração do Plano", crmCompany?.Plan_Expiration_Date)}
                 {renderField(Repeat, "Renovação Automática", crmCompany?.Plan_Auto_Renewal)}
                 {renderField(TrendingUp, "Bumps Totais", crmCompany?.Total_Bumps)}
                 {renderField(TrendingUp, "Bumps Atuais", crmCompany?.Current_Bumps)}
-                {renderField(Wallet, "Plafond", crmCompany?.Plafond)} {/* Moved Plafond here */}
-              </div>
-            </Card>
+                {renderField(Wallet, "Plafond", crmCompany?.Plafond)}
+              </Box>
+            </MuiCard>
 
             {/* Resumo Card */}
-            <Card className="p-4 shadow-subtle border-l-4 border-green-200 bg-green-50">
-              <CardTitle className="text-lg font-semibold mb-3 flex items-center text-green-800">
+            <MuiCard sx={{ p: 2, boxShadow: 1, borderLeft: 4, borderColor: 'success.light', bgcolor: 'success.lighter' }}>
+              <Typography variant="h6" component="div" sx={{ fontWeight: 'semibold', mb: 1.5, display: 'flex', alignItems: 'center', color: 'success.dark' }}>
                 <Info className="mr-2 h-5 w-5" /> Resumo
-              </CardTitle>
-              <div className="space-y-2">
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {renderField(Tag, "Classificação", company["Classificação"])}
                 {renderField(CheckCircle, "Parceiro Credibom", crmCompany?.Is_CRB_Partner)}
                 {renderField(Car, "Simulador Financiamento", crmCompany?.Financing_Simulator_On)}
                 {renderField(Clock, "Último Login", crmCompany?.Last_Login_Date)}
                 {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
-              </div>
-            </Card>
+              </Box>
+            </MuiCard>
 
             {/* Alertas Card */}
-            <Card className={`p-4 shadow-subtle border-l-4 ${alerts.length > 0 ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50'}`}>
-              <CardTitle className={`text-lg font-semibold mb-3 flex items-center ${alerts.length > 0 ? 'text-red-800' : 'text-yellow-800'}`}>
+            <MuiCard sx={{ p: 2, boxShadow: 1, borderLeft: 4, borderColor: alerts.length > 0 ? 'error.light' : 'warning.light', bgcolor: alerts.length > 0 ? 'error.lighter' : 'warning.lighter' }}>
+              <Typography variant="h6" component="div" sx={{ fontWeight: 'semibold', mb: 1.5, display: 'flex', alignItems: 'center', color: alerts.length > 0 ? 'error.dark' : 'warning.dark' }}>
                 <BellRing className="mr-2 h-5 w-5" /> Alertas
-              </CardTitle>
-              <div className="space-y-2">
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {alerts.length === 0 ? (
-                  <Alert className="bg-transparent border-none p-0 text-yellow-800">
-                    <AlertDescription className="flex items-center">
+                  <MuiAlert severity="success" sx={{ bgcolor: 'transparent', border: 'none', p: 0, color: 'success.dark' }}>
+                    <MuiAlertTitle sx={{ display: 'flex', alignItems: 'center', m: 0 }}>
                       <CheckCircle className="mr-2 h-4 w-4" /> Sem alertas pendentes.
-                    </AlertDescription>
-                  </Alert>
+                    </MuiAlertTitle>
+                  </MuiAlert>
                 ) : (
                   alerts.map((alert, index) => (
-                    <Alert key={index} variant="destructive" className="bg-red-100 border-red-200 text-red-800 p-2">
-                      <AlertDescription className="flex items-center">
+                    <MuiAlert key={index} severity="error" sx={{ bgcolor: 'error.light', border: 1, borderColor: 'error.main', color: 'error.dark', p: 1 }}>
+                      <MuiAlertTitle sx={{ display: 'flex', alignItems: 'center', m: 0 }}>
                         <Info className="mr-2 h-4 w-4" /> {alert}
-                      </AlertDescription>
-                    </Alert>
+                      </MuiAlertTitle>
+                    </MuiAlert>
                   ))
                 )}
-              </div>
-            </Card>
-          </div>
+              </Box>
+            </MuiCard>
+          </Box>
           {/* End New Overview Cards */}
 
-          <Tabs defaultValue="details" onValueChange={(value) => console.log('Tab changed to:', value)}>
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-10">
-              <TabsTrigger value="details">Detalhes</TabsTrigger>
-              <TabsTrigger value="stands">Stands</TabsTrigger>
-              <TabsTrigger value="contacts">Contactos</TabsTrigger>
-              <TabsTrigger value="easyvistas">Easyvistas</TabsTrigger>
-              <TabsTrigger value="deals">Negócios</TabsTrigger>
-              <TabsTrigger value="employees">Colaboradores</TabsTrigger> {/* New Tab */}
-            </TabsList>
-            <TabsContent value="details" className="mt-4 space-y-6">
-              <Accordion type="multiple" className="w-full space-y-4">
-                <AccordionItem value="essential-info" className="border rounded-md shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
-                      <Info className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Informações Essenciais da Empresa
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Building, "Nome Fiscal", crmCompany?.Company_Name)}
-                    {renderField(Building, "Nome Comercial", company["Nome Comercial"])}
-                    {renderField(Landmark, "NIF", crmCompany?.NIF)}
-                    {renderField(Mail, "Email Principal", company["Email da empresa"] || crmCompany?.Company_Email)}
-                    {renderField(Globe, "Website", company["Site"] || crmCompany?.Website)}
-                    {renderField(Car, "Logotipo (URL)", company["Logotipo"])}
-                    {renderField(Building, "Tipo de Empresa", company["Tipo de empresa"])}
-                    {renderField(Factory, "Grupo", company["Grupo"])}
-                    {renderField(Tag, "Marcas Representadas", company["Marcas representadas"])}
-                  </AccordionContent>
-                </AccordionItem>
+          <MuiTabs value={currentTab} onChange={handleTabChange} aria-label="company details tabs"
+            variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile
+            sx={{ borderBottom: 1, borderColor: 'divider', mt: 2 }}
+          >
+            <MuiTab label="Detalhes" />
+            <MuiTab label="Stands" />
+            <MuiTab label="Contactos" />
+            <MuiTab label="Easyvistas" />
+            <MuiTab label="Negócios" />
+            <MuiTab label="Colaboradores" />
+          </MuiTabs>
 
-                <AccordionItem value="location-address" className="border rounded-md shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
-                      <MapPin className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Localização e Morada
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(MapPin, "Morada", company["Morada"] || crmCompany?.Company_Address)}
-                    {renderField(MapPin, "Código Postal", company["STAND_POSTAL_CODE"] || crmCompany?.Company_Postal_Code)}
-                    {renderField(MapPin, "Distrito", company["Distrito"] || crmCompany?.District)}
-                    {renderField(MapPin, "Cidade", company["Cidade"] || crmCompany?.Company_City)}
-                  </AccordionContent>
-                </AccordionItem>
+          {currentTab === 0 && (
+            <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <MuiAccordion defaultExpanded sx={{ boxShadow: 1, border: 1, borderColor: 'divider' }}>
+                <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel1a-content" id="panel1a-header">
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Info className="mr-2 h-5 w-5 text-muted-foreground" />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Informações Essenciais da Empresa</Typography>
+                  </Box>
+                </MuiAccordionSummary>
+                <MuiAccordionDetails sx={{ pt: 1, pb: 2, bgcolor: 'action.hover', borderTop: 1, borderColor: 'divider', display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                  {renderField(Building, "Nome Fiscal", crmCompany?.Company_Name)}
+                  {renderField(Building, "Nome Comercial", company["Nome Comercial"])}
+                  {renderField(Landmark, "NIF", crmCompany?.NIF)}
+                  {renderField(Mail, "Email Principal", company["Email da empresa"] || crmCompany?.Company_Email)}
+                  {renderField(Globe, "Website", company["Site"] || crmCompany?.Website)}
+                  {renderField(Car, "Logotipo (URL)", company["Logotipo"])}
+                  {renderField(Building, "Tipo de Empresa", company["Tipo de empresa"])}
+                  {renderField(Factory, "Grupo", company["Grupo"])}
+                  {renderField(Tag, "Marcas Representadas", company["Marcas representadas"])}
+                </MuiAccordionDetails>
+              </MuiAccordion>
 
-                <AccordionItem value="account-management" className="border rounded-md shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
-                      <User className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Gestão de Conta (AM)
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(User, "Pessoa de Contacto (CRM)", crmCompany?.Company_Contact_Person)}
-                    {renderField(Briefcase, "Supervisor (CRM)", crmCompany?.Supervisor)}
-                    {renderField(User, "AM Antigo", company["AM_OLD"])}
-                    {renderField(User, "AM Atual", company["AM"])}
-                    {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
-                  </AccordionContent>
-                </AccordionItem>
+              <MuiAccordion sx={{ boxShadow: 1, border: 1, borderColor: 'divider' }}>
+                <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel2a-content" id="panel2a-header">
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <MapPin className="mr-2 h-5 w-5 text-muted-foreground" />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Localização e Morada</Typography>
+                  </Box>
+                </MuiAccordionSummary>
+                <MuiAccordionDetails sx={{ pt: 1, pb: 2, bgcolor: 'action.hover', borderTop: 1, borderColor: 'divider', display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                  {renderField(MapPin, "Morada", company["Morada"] || crmCompany?.Company_Address)}
+                  {renderField(MapPin, "Código Postal", company["STAND_POSTAL_CODE"] || crmCompany?.Company_Postal_Code)}
+                  {renderField(MapPin, "Distrito", company["Distrito"] || crmCompany?.District)}
+                  {renderField(MapPin, "Cidade", company["Cidade"] || crmCompany?.Company_City)}
+                </MuiAccordionDetails>
+              </MuiAccordion>
 
-                <AccordionItem value="stock-api" className="border rounded-md shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
-                      <Package className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Dados de Stock e API
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Package, "Stock STV", company["Stock STV"] || crmCompany?.Stock_STV)}
-                    {renderField(Package, "Stock na Empresa", company["Stock na empresa"] || crmCompany?.Company_Stock)}
-                    {renderField(Info, "API Info", company["API"] || crmCompany?.Company_API_Info)}
-                  </AccordionContent>
-                </AccordionItem>
+              <MuiAccordion sx={{ boxShadow: 1, border: 1, borderColor: 'divider' }}>
+                <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel3a-content" id="panel3a-header">
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <User className="mr-2 h-5 w-5 text-muted-foreground" />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Gestão de Conta (AM)</Typography>
+                  </Box>
+                </MuiAccordionSummary>
+                <MuiAccordionDetails sx={{ pt: 1, pb: 2, bgcolor: 'action.hover', borderTop: 1, borderColor: 'divider', display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                  {renderField(User, "Pessoa de Contacto (CRM)", crmCompany?.Company_Contact_Person)}
+                  {renderField(Briefcase, "Supervisor (CRM)", crmCompany?.Supervisor)}
+                  {renderField(User, "AM Antigo", company["AM_OLD"])}
+                  {renderField(User, "AM Atual", company["AM"])}
+                  {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
+                </MuiAccordionDetails>
+              </MuiAccordion>
 
-                <AccordionItem value="plan-financing" className="border rounded-md shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
-                      <DollarSign className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Detalhes do Plano e Financiamento
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Wallet, "Plafond", crmCompany?.Plafond)}
-                    {renderField(Package, "Último Plano", company["Plano Indicado"] || crmCompany?.Last_Plan)}
-                    {renderField(DollarSign, "Preço do Plano", crmCompany?.Plan_Price)}
-                    {renderField(Calendar, "Expiração do Plano", crmCompany?.Plan_Expiration_Date)}
-                    {renderField(CheckCircle, "Plano Ativo", crmCompany?.Plan_Active)}
-                    {renderField(Repeat, "Renovação Automática", crmCompany?.Plan_Auto_Renewal)}
-                    {renderField(TrendingUp, "Bumps Atuais", crmCompany?.Current_Bumps)}
-                    {renderField(TrendingUp, "Bumps Totais", crmCompany?.Total_Bumps)}
-                    {renderField(Banknote, "Mediador de Crédito", company["Mediador de credito"])}
-                    {renderField(LinkIcon, "Link Banco de Portugal", company["Link do Banco de Portugal"])}
-                    {renderField(ShieldCheck, "Financeiras com Acordo", company["Financeiras com acordo"])}
-                    {renderField(Car, "Simulador Financiamento", crmCompany?.Financing_Simulator_On)}
-                    {renderField(Car, "Cor do Simulador", crmCompany?.Simulator_Color)}
-                  </AccordionContent>
-                </AccordionItem>
+              <MuiAccordion sx={{ boxShadow: 1, border: 1, borderColor: 'divider' }}>
+                <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel4a-content" id="panel4a-header">
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Package className="mr-2 h-5 w-5 text-muted-foreground" />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Dados de Stock e API</Typography>
+                  </Box>
+                </MuiAccordionSummary>
+                <MuiAccordionDetails sx={{ pt: 1, pb: 2, bgcolor: 'action.hover', borderTop: 1, borderColor: 'divider', display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                  {renderField(Package, "Stock STV", company["Stock STV"] || crmCompany?.Stock_STV)}
+                  {renderField(Package, "Stock na Empresa", company["Stock na empresa"] || crmCompany?.Company_Stock)}
+                  {renderField(Info, "API Info", company["API"] || crmCompany?.Company_API_Info)}
+                </MuiAccordionDetails>
+              </MuiAccordion>
 
-                <AccordionItem value="marketing-competition" className="border rounded-md shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
-                      <TrendingUp className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Marketing e Concorrência
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Tag, "Classificação", company["Classificação"])}
-                    {renderField(TrendingUp, "Percentagem de Importados", company["Percentagem de Importados"])}
-                    {renderField(Car, "Onde compra as viaturas", company["Onde compra as viaturas"])}
-                    {renderField(Users, "Concorrência", company["Concorrencia"])}
-                    {renderField(DollarSign, "Investimento Redes Sociais", company["Investimento redes sociais"])}
-                    {renderField(DollarSign, "Investimento em Portais", company["Investimento em portais"])}
-                    {renderField(Building, "Mercado B2B", company["Mercado b2b"])}
-                    {renderField(ShieldCheck, "Utiliza CRM", company["Utiliza CRM"])}
-                    {renderField(Info, "Qual o CRM", company["Qual o CRM"])}
-                  </AccordionContent>
-                </AccordionItem>
+              <MuiAccordion sx={{ boxShadow: 1, border: 1, borderColor: 'divider' }}>
+                <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel5a-content" id="panel5a-header">
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <DollarSign className="mr-2 h-5 w-5 text-muted-foreground" />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Detalhes do Plano e Financiamento</Typography>
+                  </Box>
+                </MuiAccordionSummary>
+                <MuiAccordionDetails sx={{ pt: 1, pb: 2, bgcolor: 'action.hover', borderTop: 1, borderColor: 'divider', display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                  {renderField(Wallet, "Plafond", crmCompany?.Plafond)}
+                  {renderField(Package, "Último Plano", company["Plano Indicado"] || crmCompany?.Last_Plan)}
+                  {renderField(DollarSign, "Preço do Plano", crmCompany?.Plan_Price)}
+                  {renderField(Calendar, "Expiração do Plano", crmCompany?.Plan_Expiration_Date)}
+                  {renderField(CheckCircle, "Plano Ativo", crmCompany?.Plan_Active)}
+                  {renderField(Repeat, "Renovação Automática", crmCompany?.Plan_Auto_Renewal)}
+                  {renderField(TrendingUp, "Bumps Atuais", crmCompany?.Current_Bumps)}
+                  {renderField(TrendingUp, "Bumps Totais", crmCompany?.Total_Bumps)}
+                  {renderField(Banknote, "Mediador de Crédito", company["Mediador de credito"])}
+                  {renderField(LinkIcon, "Link Banco de Portugal", company["Link do Banco de Portugal"])}
+                  {renderField(ShieldCheck, "Financeiras com Acordo", company["Financeiras com acordo"])}
+                  {renderField(Car, "Simulador Financiamento", crmCompany?.Financing_Simulator_On)}
+                  {renderField(Car, "Cor do Simulador", crmCompany?.Simulator_Color)}
+                </MuiAccordionDetails>
+              </MuiAccordion>
 
-                <AccordionItem value="partnerships-other" className="border rounded-md shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
-                      <ShieldCheck className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Parcerias e Outros
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(CheckCircle, "Parceiro Credibom (CRM)", crmCompany?.Is_CRB_Partner)}
-                    {renderField(CheckCircle, "Parceiro APDCA (CRM)", crmCompany?.Is_APDCA_Partner)}
-                    {renderField(ShieldCheck, "Quer CT", company["Quer CT"])}
-                    {renderField(ShieldCheck, "Quer ser Parceiro Credibom (Adicional)", company["Quer ser parceiro Credibom"])}
-                    {renderField(Info, "Autobiz", company["Autobiz"])}
-                  </AccordionContent>
-                </AccordionItem>
+              <MuiAccordion sx={{ boxShadow: 1, border: 1, borderColor: 'divider' }}>
+                <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel6a-content" id="panel6a-header">
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <TrendingUp className="mr-2 h-5 w-5 text-muted-foreground" />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Marketing e Concorrência</Typography>
+                  </Box>
+                </MuiAccordionSummary>
+                <MuiAccordionDetails sx={{ pt: 1, pb: 2, bgcolor: 'action.hover', borderTop: 1, borderColor: 'divider', display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                  {renderField(Tag, "Classificação", company["Classificação"])}
+                  {renderField(TrendingUp, "Percentagem de Importados", company["Percentagem de Importados"])}
+                  {renderField(Car, "Onde compra as viaturas", company["Onde compra as viaturas"])}
+                  {renderField(Users, "Concorrência", company["Concorrencia"])}
+                  {renderField(DollarSign, "Investimento Redes Sociais", company["Investimento redes sociais"])}
+                  {renderField(DollarSign, "Investimento em Portais", company["Investimento em portais"])}
+                  {renderField(Building, "Mercado B2B", company["Mercado b2b"])}
+                  {renderField(ShieldCheck, "Utiliza CRM", company["Utiliza CRM"])}
+                  {renderField(Info, "Qual o CRM", company["Qual o CRM"])}
+                </MuiAccordionDetails>
+              </MuiAccordion>
 
-                <AccordionItem value="important-dates" className="border rounded-md shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
-                    <div className="flex items-center">
-                      <Calendar className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Datas Importantes
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Calendar, "Data de Criação (CRM)", crmCompany?.Creation_Date)}
-                    {renderField(Clock, "Último Login (CRM)", crmCompany?.Last_Login_Date)}
-                    {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+              <MuiAccordion sx={{ boxShadow: 1, border: 1, borderColor: 'divider' }}>
+                <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel7a-content" id="panel7a-header">
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <ShieldCheck className="mr-2 h-5 w-5 text-muted-foreground" />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Parcerias e Outros</Typography>
+                  </Box>
+                </MuiAccordionSummary>
+                <MuiAccordionDetails sx={{ pt: 1, pb: 2, bgcolor: 'action.hover', borderTop: 1, borderColor: 'divider', display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                  {renderField(CheckCircle, "Parceiro Credibom (CRM)", crmCompany?.Is_CRB_Partner)}
+                  {renderField(CheckCircle, "Parceiro APDCA (CRM)", crmCompany?.Is_APDCA_Partner)}
+                  {renderField(ShieldCheck, "Quer CT", company["Quer CT"])}
+                  {renderField(ShieldCheck, "Quer ser Parceiro Credibom (Adicional)", company["Quer ser parceiro Credibom"])}
+                  {renderField(Info, "Autobiz", company["Autobiz"])}
+                </MuiAccordionDetails>
+              </MuiAccordion>
+
+              <MuiAccordion sx={{ boxShadow: 1, border: 1, borderColor: 'divider' }}>
+                <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel8a-content" id="panel8a-header">
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Calendar className="mr-2 h-5 w-5 text-muted-foreground" />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Datas Importantes</Typography>
+                  </Box>
+                </MuiAccordionSummary>
+                <MuiAccordionDetails sx={{ pt: 1, pb: 2, bgcolor: 'action.hover', borderTop: 1, borderColor: 'divider', display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                  {renderField(Calendar, "Data de Criação (CRM)", crmCompany?.Creation_Date)}
+                  {renderField(Clock, "Último Login (CRM)", crmCompany?.Last_Login_Date)}
+                  {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
+                </MuiAccordionDetails>
+              </MuiAccordion>
               <Separator className="my-6" />
-              <p className="text-xs text-muted-foreground">
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 2 }}>
                 Criado em: {company.created_at ? new Date(company.created_at).toLocaleString() : 'N/A'}
-              </p>
-            </TabsContent>
-            <TabsContent value="stands" className="mt-4">
+              </Typography>
+            </Box>
+          )}
+          {currentTab === 1 && (
+            <Box sx={{ mt: 2 }}>
               {crmCompany && crmCompany.stands && crmCompany.stands.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: '1fr 1fr 1fr' }, gap: 2 }}>
                   {crmCompany.stands.map((stand) => (
                     <StandCard key={stand.Stand_ID} stand={stand} />
                   ))}
-                </div>
+                </Box>
               ) : (
-                <p className="text-muted-foreground text-center py-4">Nenhum stand associado encontrado no CRM principal.</p>
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>Nenhum stand associado encontrado no CRM principal.</Typography>
               )}
-            </TabsContent>
-            <TabsContent value="contacts" className="mt-4">
-              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+            </Box>
+          )}
+          {currentTab === 2 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" component="div" sx={{ fontWeight: 'semibold', mb: 2, display: 'flex', alignItems: 'center', color: 'primary.main' }}>
                 <MessageSquareMore className="mr-2 h-5 w-5" /> Histórico de Contactos
-              </h3>
+              </Typography>
               <AccountContactList companyExcelId={company.excel_company_id} />
-            </TabsContent>
-            <TabsContent value="easyvistas" className="mt-4">
-              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+            </Box>
+          )}
+          {currentTab === 3 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" component="div" sx={{ fontWeight: 'semibold', mb: 2, display: 'flex', alignItems: 'center', color: 'primary.main' }}>
                 <Eye className="mr-2 h-5 w-5" /> Registos Easyvista
-              </h3>
+              </Typography>
               <EasyvistaList companyExcelId={company.excel_company_id} />
-            </TabsContent>
-            <TabsContent value="deals" className="mt-4">
-              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+            </Box>
+          )}
+          {currentTab === 4 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" component="div" sx={{ fontWeight: 'semibold', mb: 2, display: 'flex', alignItems: 'center', color: 'primary.main' }}>
                 <Handshake className="mr-2 h-5 w-5" /> Negócios
-              </h3>
+              </Typography>
               <DealList companyExcelId={company.excel_company_id} />
-            </TabsContent>
-            <TabsContent value="employees" className="mt-4"> {/* New Tab Content */}
-              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+            </Box>
+          )}
+          {currentTab === 5 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" component="div" sx={{ fontWeight: 'semibold', mb: 2, display: 'flex', alignItems: 'center', color: 'primary.main' }}>
                 <Users className="mr-2 h-5 w-5" /> Colaboradores
-              </h3>
+              </Typography>
               <EmployeeList companyExcelId={company.excel_company_id} onEmployeeChanged={onDataUpdated} />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+            </Box>
+          )}
+        </MuiCardContent>
+      </MuiCard>
     </ScrollArea>
   );
 };

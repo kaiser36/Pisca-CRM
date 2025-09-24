@@ -1,8 +1,9 @@
 "use client";
 
 import React from 'react';
-import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import TextField from '@mui/material/TextField'; // Import MUI TextField
+import InputAdornment from '@mui/material/InputAdornment'; // For the search icon
+import { Search } from 'lucide-react'; // Keep Lucide icon for search
 
 interface CompanyFilterProps {
   searchTerm: string;
@@ -11,16 +12,21 @@ interface CompanyFilterProps {
 
 const CompanyFilter: React.FC<CompanyFilterProps> = ({ searchTerm, onSearchChange }) => {
   return (
-    <div className="relative mb-4">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      <Input
-        type="text"
-        placeholder="Pesquisar empresas..."
-        value={searchTerm}
-        onChange={(e) => onSearchChange(e.target.value)}
-        className="pl-9"
-      />
-    </div>
+    <TextField
+      fullWidth
+      variant="outlined"
+      placeholder="Pesquisar empresas..."
+      value={searchTerm}
+      onChange={(e) => onSearchChange(e.target.value)}
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <Search className="h-4 w-4 text-muted-foreground" />
+          </InputAdornment>
+        ),
+      }}
+      sx={{ mb: 2 }} // Margin bottom for spacing
+    />
   );
 };
 
