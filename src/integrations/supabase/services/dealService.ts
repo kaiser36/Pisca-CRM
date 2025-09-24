@@ -267,3 +267,37 @@ export async function deleteDeal(id: string): Promise<void> {
     throw new Error(error.message);
   }
 }
+
+/**
+ * Upserts deal data into the negocios table.
+ */
+export async function upsertDeals(deals: Negocio[], userId: string): Promise<void> {
+  const dataToUpsert = deals.map(deal => ({
+    user_id: userId,
+    company_excel_id: deal.company_excel_id,
+    deal_name: deal.deal_name,
+    deal_status: deal.deal_status || 'Prospecting',
+    deal_value: deal.deal_value || 0, // Will be recalculated by triggers or UI
+    currency: deal.currency || 'EUR',
+    expected_close_date: deal.expected_close_date || null,
+    stage: deal.stage || null,
+    priority: deal.priority || 'Medium',
+    notes: deal.notes || null,
+    discount_type: deal.discount_type || 'none',
+    discount_value: deal.discount_value || 0,
+    final_deal_value: deal.final_deal_value || 0, // Will be recalculated by triggers or UI
+  }));
+
+  if (dataToUpsert.length === 0) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from('negocios')
+    .upsert(dataToUpsert, { onConflict: 'company_excel_id, deal_name, user_id' }); // Ensure uniqueness per user, company, and deal name
+
+  if (error) {
+    console.error('Error upserting deals:', error);
+    throw new Error(error.message);
+  }
+}
