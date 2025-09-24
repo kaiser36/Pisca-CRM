@@ -43,6 +43,7 @@ const AdditionalExcelUploadCard: React.FC = () => {
   };
 
   const handleUpload = async () => {
+    console.log("Additional handleUpload started.");
     if (!selectedFile) {
       console.log("No file selected for additional data, calling showError.");
       showError("Por favor, selecione um ficheiro Excel para carregar.");
@@ -55,12 +56,15 @@ const AdditionalExcelUploadCard: React.FC = () => {
     }
 
     setIsUploading(true);
+    console.log("Additional setIsUploading(true) called.");
     try {
+      console.log("Starting additional file parsing.");
       const parsedData = await parseGenericExcel(selectedFile);
+      console.log(`Additional file parsed, found ${parsedData.length} rows.`);
       
       const dataToUpsert: CompanyAdditionalExcelData[] = parsedData.map((row: Record<string, any>) => {
         const excelCompanyId = String(row['excel_company_id'] || row['Company_id'] || '');
-        console.log(`Processing excel_company_id: ${excelCompanyId}`);
+        // console.log(`Processing excel_company_id: ${excelCompanyId}`); // Too verbose for console
         return {
           user_id: userId,
           excel_company_id: excelCompanyId,
@@ -100,16 +104,22 @@ const AdditionalExcelUploadCard: React.FC = () => {
         } as CompanyAdditionalExcelData;
       });
 
+      console.log("Starting upsertCompanyAdditionalExcelData.");
       await upsertCompanyAdditionalExcelData(dataToUpsert, userId);
-      console.log("Additional data upload successful, calling showSuccess.");
+      console.log("upsertCompanyAdditionalExcelData completed.");
+
       showSuccess(`Dados adicionais de ${dataToUpsert.length} empresas carregados com sucesso!`);
+      console.log("showSuccess called for additional data.");
       setSelectedFile(null);
     } catch (error: any) {
-      console.error("Error during additional data upload:", error);
+      console.error("Error during additional data upload in handleUpload:", error);
       showError(error.message || "Falha ao carregar ou analisar o ficheiro Excel para dados adicionais.");
+      console.log("showError called in catch block for additional data.");
     } finally {
       setIsUploading(false);
+      console.log("Additional setIsUploading(false) called in finally block.");
     }
+    console.log("Additional handleUpload finished.");
   };
 
   return (

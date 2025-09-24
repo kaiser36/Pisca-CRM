@@ -44,6 +44,7 @@ const ExcelUploadCard: React.FC = () => {
   };
 
   const handleUpload = async () => {
+    console.log("handleUpload started.");
     if (!selectedFile) {
       console.log("No file selected, calling showError.");
       showError("Por favor, selecione um ficheiro Excel para carregar.");
@@ -55,26 +56,36 @@ const ExcelUploadCard: React.FC = () => {
       return;
     }
 
-    setIsUploading(true);
+    setIsUploading(true); // Set loading state
+    console.log("setIsUploading(true) called.");
     try {
+      console.log("Starting file parsing.");
       const arrayBuffer = await selectedFile.arrayBuffer();
       const newCompanies = await parseStandsExcel(arrayBuffer);
+      console.log("File parsed, starting upsertCompanies.");
 
       const companyDbIdMap = await upsertCompanies(newCompanies, userId);
+      console.log("Companies upserted, starting upsertStands.");
       
       const allStands = newCompanies.flatMap(company => company.stands);
       await upsertStands(allStands, companyDbIdMap);
+      console.log("Stands upserted, calling loadInitialData.");
 
-      console.log("Upload successful, calling showSuccess.");
+      await loadInitialData(); // Await this call
+      console.log("loadInitialData completed.");
+
       showSuccess("Dados CRM carregados e guardados com sucesso!");
+      console.log("showSuccess called.");
       setSelectedFile(null);
-      loadInitialData();
     } catch (error: any) {
-      console.error("Error during upload:", error);
+      console.error("Error during upload in handleUpload:", error);
       showError(error.message || "Falha ao carregar ou analisar o ficheiro Excel. Verifique o formato.");
+      console.log("showError called in catch block.");
     } finally {
-      setIsUploading(false);
+      setIsUploading(false); // This should always run
+      console.log("setIsUploading(false) called in finally block.");
     }
+    console.log("handleUpload finished.");
   };
 
   return (
