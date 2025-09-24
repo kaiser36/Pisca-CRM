@@ -8,7 +8,8 @@ import AccountContactExcelTemplateCard from './AccountContactExcelTemplateCard';
 import CrmDataExcelTemplateCard from './CrmDataExcelTemplateCard';
 import AdditionalCompanyDataExcelTemplateCard from './AdditionalCompanyDataExcelTemplateCard';
 import EmployeeExcelTemplateCard from './EmployeeExcelTemplateCard';
-import EmployeeExcelUploadCard from './EmployeeExcelUploadCard'; // Import the new upload card
+import EmployeeExcelUploadCard from './EmployeeExcelUploadCard';
+import AccountContactExcelUploadCard from './AccountContactExcelUploadCard'; // Import the new upload card
 
 const SettingsTabs: React.FC = () => {
   return (
@@ -21,7 +22,8 @@ const SettingsTabs: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ExcelUploadCard />
           <AdditionalExcelUploadCard />
-          <EmployeeExcelUploadCard /> {/* Add the new upload card here */}
+          <EmployeeExcelUploadCard />
+          <AccountContactExcelUploadCard /> {/* Add the new upload card here */}
         </div>
       </TabsContent>
       <TabsContent value="templates" className="mt-6">

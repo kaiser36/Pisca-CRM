@@ -35,3 +35,47 @@ export async function fetchAccountContactsByCompanyExcelId(userId: string, compa
   }
   return data as AccountContact[];
 }
+
+/**
+ * Upserts account contact data into the account_contacts table.
+ */
+export async function upsertAccountContacts(contacts: AccountContact[], userId: string): Promise<void> {
+  const dataToUpsert = contacts.map(contact => ({
+    user_id: userId,
+    account_am: contact.account_am || null,
+    contact_type: contact.contact_type || null,
+    report_text: contact.report_text || null,
+    contact_date: contact.contact_date || null,
+    contact_method: contact.contact_method || null,
+    commercial_name: contact.commercial_name || null,
+    company_name: contact.company_name || null,
+    crm_id: contact.crm_id || null,
+    company_excel_id: contact.company_excel_id,
+    stand_name: contact.stand_name || null,
+    subject: contact.subject || null,
+    contact_person_name: contact.contact_person_name || null,
+    company_group: contact.company_group || null,
+    account_armatis: contact.account_armatis || null,
+    quarter: contact.quarter || null,
+    is_credibom_partner: contact.is_credibom_partner || false,
+    send_email: contact.send_email || false,
+    email_type: contact.email_type || null,
+    email_subject: contact.email_subject || null,
+    email_body: contact.email_body || null,
+    attachment_url: contact.attachment_url || null,
+    sending_email: contact.sending_email || null,
+  }));
+
+  if (dataToUpsert.length === 0) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from('account_contacts')
+    .upsert(dataToUpsert, { onConflict: 'company_excel_id, contact_person_name, contact_date, user_id' }); // Ensure uniqueness per user
+
+  if (error) {
+    console.error('Error upserting account contacts:', error);
+    throw new Error(error.message);
+  }
+}
