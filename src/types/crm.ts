@@ -21,6 +21,7 @@ export interface Stand {
   Leads_Expiradas: number; // Numero de leads expiradas pelo stand
   Leads_Financiadas: number; // Numero de leads financiadas pelo stand
   Whatsapp: string; // Numero de Whatsapp de cada stand
+  Stand_Name?: string; // Nome comercial do ponto de venda
 }
 
 export interface Company {

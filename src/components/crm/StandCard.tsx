@@ -27,7 +27,7 @@ const StandCard: React.FC<StandCardProps> = ({ stand }) => {
         <CardTitle className="text-lg font-semibold">{stand.Stand_ID}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
-        {renderDetail(Building, "Nome do Stand", stand.Company_Name)} {/* Changed label to "Nome do Stand" */}
+        {renderDetail(Building, "Nome do Stand", stand.Stand_Name || stand.Company_Name)} {/* Usar Stand_Name, com fallback para Company_Name */}
         {renderDetail(MapPin, "Morada", `${stand.Address}, ${stand.Postal_Code} ${stand.City}`)}
         {renderDetail(Phone, "Telefone", stand.Phone)}
         {renderDetail(Mail, "Email", stand.Email)}
