@@ -1,21 +1,16 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area'; // Keep ScrollArea for now
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Keep shadcn/ui Alert for now
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Building, Mail, Info } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton'; // Keep Skeleton for now
+import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchCompaniesMissingAdditionalData } from '@/integrations/supabase/utils';
 import { Company } from '@/types/crm';
 import { Link } from 'react-router-dom';
-
-import MuiCard from '@mui/material/Card'; // Import MUI Card
-import MuiCardContent from '@mui/material/CardContent'; // Import MUI CardContent
-import MuiCardHeader from '@mui/material/CardHeader'; // Import MUI CardHeader
-import Typography from '@mui/material/Typography'; // Import MUI Typography
-import Box from '@mui/material/Box'; // Import MUI Box for layout
-import MuiButton from '@mui/material/Button'; // Import MUI Button
+import { Button } from '@/components/ui/button';
 
 const MissingAdditionalDataList: React.FC = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -68,96 +63,78 @@ const MissingAdditionalDataList: React.FC = () => {
 
   if (isLoading) {
     return (
-      <MuiCard sx={{ width: '100%', boxShadow: 1 }}>
-        <MuiCardHeader
-          title={<Typography variant="h6" component="div">Empresas sem Dados Adicionais</Typography>}
-          subheader={<Typography variant="body2" color="text.secondary">A carregar...</Typography>}
-        />
-        <MuiCardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <Card className="w-full shadow-sm">
+        <CardHeader>
+          <CardTitle>Empresas sem Dados Adicionais</CardTitle>
+          <CardDescription>A carregar...</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
-        </MuiCardContent>
-      </MuiCard>
+        </CardContent>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <MuiCard sx={{ width: '100%', boxShadow: 1 }}>
-        <MuiCardHeader
-          title={<Typography variant="h6" component="div">Empresas sem Dados Adicionais</Typography>}
-        />
-        <MuiCardContent>
+      <Card className="w-full shadow-sm">
+        <CardHeader>
+          <CardTitle>Empresas sem Dados Adicionais</CardTitle>
+        </CardHeader>
+        <CardContent>
           <Alert variant="destructive">
             <Terminal className="h-4 w-4" />
             <AlertTitle>Erro</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-        </MuiCardContent>
-      </MuiCard>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <MuiCard sx={{ width: '100%', boxShadow: 3 }}>
-      <MuiCardHeader
-        title={
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Info className="mr-2 h-5 w-5 text-blue-500" />
-            <Typography variant="h6" component="div" sx={{ fontWeight: 'semibold' }}>Empresas sem Dados Adicionais ({companies.length})</Typography>
-          </Box>
-        }
-        subheader="Estas empresas existem no seu CRM principal, mas não têm dados adicionais carregados."
-        subheaderTypographyProps={{ color: 'text.secondary' }}
-        sx={{ pb: 1.5 }}
-      />
-      <MuiCardContent sx={{ pt: 0 }}>
+    <Card className="w-full shadow-md">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center text-lg font-semibold">
+          <Info className="mr-2 h-5 w-5 text-blue-500" />
+          Empresas sem Dados Adicionais ({companies.length})
+        </CardTitle>
+        <CardDescription className="text-muted-foreground">
+          Estas empresas existem no seu CRM principal, mas não têm dados adicionais carregados.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         {companies.length === 0 ? (
-          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>Todas as empresas do CRM têm dados adicionais.</Typography>
+          <p className="text-muted-foreground text-center py-4">Todas as empresas do CRM têm dados adicionais.</p>
         ) : (
           <ScrollArea className="h-[300px] w-full pr-4">
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <div className="space-y-3">
               {companies.map((company) => (
-                <Box
-                  key={company.Company_id}
-                  sx={{
-                    display: 'flex',
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    alignItems: { xs: 'flex-start', sm: 'center' },
-                    justifyContent: 'space-between',
-                    p: 1.5,
-                    border: 1,
-                    borderColor: 'divider',
-                    borderRadius: 1,
-                    bgcolor: 'background.paper',
-                    '&:hover': { bgcolor: 'action.hover' },
-                    transition: 'background-color 0.3s, box-shadow 0.3s',
-                    boxShadow: 1,
-                  }}
-                >
-                  <Box>
-                    <Typography variant="body1" sx={{ fontWeight: 'medium', display: 'flex', alignItems: 'center', color: 'text.primary' }}>
+                <div key={company.Company_id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-md bg-background hover:bg-muted/50 transition-colors shadow-sm">
+                  <div>
+                    <p className="font-medium flex items-center text-foreground">
                       <Building className="mr-2 h-4 w-4 text-muted-foreground" />
                       {company.Company_Name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+                    </p>
+                    <p className="text-sm text-muted-foreground flex items-center mt-1">
                       <Mail className="mr-2 h-4 w-4" />
                       {company.Company_Email}
-                    </Typography>
-                  </Box>
-                  <Link to={`/company-additional-data?companyId=${company.Company_id}`} style={{ textDecoration: 'none', marginTop: { xs: 1, sm: 0 } }}>
-                    <MuiButton variant="outlined" size="small">
+                    </p>
+                  </div>
+                  <Link to={`/company-additional-data?companyId=${company.Company_id}`} className="mt-2 sm:mt-0">
+                    <Button variant="outline" size="sm">
                       Adicionar Dados
-                    </MuiButton>
+                    </Button>
                   </Link>
-                </Box>
+                </div>
               ))}
-            </Box>
+            </div>
           </ScrollArea>
         )}
-      </MuiCardContent>
-    </MuiCard>
+      </CardContent>
+    </Card>
   );
 };
 
