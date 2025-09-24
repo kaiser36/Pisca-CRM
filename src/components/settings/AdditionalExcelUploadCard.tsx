@@ -10,10 +10,12 @@ import { upsertCompanyAdditionalExcelData } from '@/integrations/supabase/utils'
 import { showSuccess, showError } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
 import { CompanyAdditionalExcelData } from '@/types/crm';
+import { Progress } from '@/components/ui/progress'; // Import the Progress component
 
 const AdditionalExcelUploadCard: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0); // New state for progress
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -37,34 +39,33 @@ const AdditionalExcelUploadCard: React.FC = () => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       setSelectedFile(event.target.files[0]);
+      setUploadProgress(0); // Reset progress on new file selection
     } else {
       setSelectedFile(null);
     }
   };
 
   const handleUpload = async () => {
-    console.log("Additional handleUpload started.");
     if (!selectedFile) {
-      console.log("No file selected for additional data, calling showError.");
       showError("Por favor, selecione um ficheiro Excel para carregar.");
       return;
     }
     if (!userId) {
-      console.log("User not authenticated for additional data, calling showError.");
       showError("Utilizador não autenticado. Por favor, faça login para carregar dados.");
       return;
     }
 
     setIsUploading(true);
-    console.log("Additional setIsUploading(true) called.");
+    setUploadProgress(0); // Start progress from 0
     try {
-      console.log("Starting additional file parsing.");
+      // Step 1: Parse Excel file (approx 40% of total process)
+      setUploadProgress(20);
       const parsedData = await parseGenericExcel(selectedFile);
-      console.log(`Additional file parsed, found ${parsedData.length} rows.`);
+      setUploadProgress(60);
       
+      // Step 2: Upsert additional company data (approx 40% of total process)
       const dataToUpsert: CompanyAdditionalExcelData[] = parsedData.map((row: Record<string, any>) => {
         const excelCompanyId = String(row['excel_company_id'] || row['Company_id'] || '');
-        // console.log(`Processing excel_company_id: ${excelCompanyId}`); // Too verbose for console
         return {
           user_id: userId,
           excel_company_id: excelCompanyId,
@@ -104,22 +105,18 @@ const AdditionalExcelUploadCard: React.FC = () => {
         } as CompanyAdditionalExcelData;
       });
 
-      console.log("Starting upsertCompanyAdditionalExcelData.");
       await upsertCompanyAdditionalExcelData(dataToUpsert, userId);
-      console.log("upsertCompanyAdditionalExcelData completed.");
+      setUploadProgress(100); // Mark as complete
 
       showSuccess(`Dados adicionais de ${dataToUpsert.length} empresas carregados com sucesso!`);
-      console.log("showSuccess called for additional data.");
       setSelectedFile(null);
     } catch (error: any) {
-      console.error("Error during additional data upload in handleUpload:", error);
+      console.error("Error during additional data upload:", error);
       showError(error.message || "Falha ao carregar ou analisar o ficheiro Excel para dados adicionais.");
-      console.log("showError called in catch block for additional data.");
+      setUploadProgress(0); // Reset or indicate error state
     } finally {
       setIsUploading(false);
-      console.log("Additional setIsUploading(false) called in finally block.");
     }
-    console.log("Additional handleUpload finished.");
   };
 
   return (
@@ -137,7 +134,7 @@ const AdditionalExcelUploadCard: React.FC = () => {
           {isUploading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              A carregar...
+              A carregar ({uploadProgress}%)
             </>
           ) : (
             <>
@@ -146,6 +143,9 @@ const AdditionalExcelUploadCard: React.FC = () => {
             </>
           )}
         </Button>
+        {isUploading && (
+          <Progress value={uploadProgress} className="w-full mt-2" />
+        )}
         {!userId && (
           <p className="text-sm text-red-500">Por favor, faça login para carregar dados.</p>
         )}
