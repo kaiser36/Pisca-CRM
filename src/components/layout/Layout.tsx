@@ -50,7 +50,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto p-6 bg-muted/40">
+        <main className="flex-1 overflow-y-auto bg-muted/40"> {/* Removido o 'p-6' daqui */}
           {children}
         </main>
       </div>

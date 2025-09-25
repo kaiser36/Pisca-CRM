@@ -26,9 +26,9 @@ const PiscaConsole: React.FC = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto p-6 h-full flex flex-col">
-        <h1 className="text-3xl font-bold mb-6">Consola Pisca</h1>
-        <Card className="flex-1 shadow-md flex flex-col">
+      <div className="h-full flex flex-col w-full"> {/* Alterado aqui para ocupar toda a altura e largura */}
+        <h1 className="text-3xl font-bold mb-6 px-6">Consola Pisca</h1> {/* Adicionado padding horizontal para o título */}
+        <Card className="flex-1 shadow-md flex flex-col mx-6"> {/* Adicionado padding horizontal para o Card */}
           <CardHeader className="pb-4">
             <CardTitle className="text-lg font-semibold">Aceder ao Dashboard Pisca Pisca</CardTitle>
             <CardDescription className="text-muted-foreground">
