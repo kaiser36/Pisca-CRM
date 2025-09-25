@@ -98,7 +98,7 @@ export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, 
       leads_recebidas: stand.Leads_Recebidas,
       leads_pendentes: stand.Leads_Pendentes,
       leads_expiradas: stand.leads_expiradas,
-      leads_financiadas: stand.Leads_Financiadas,
+      Leads_Financiadas: stand.Leads_Financiadas,
       whatsapp: stand.Whatsapp,
       stand_name: stand.Stand_Name,
     };
@@ -143,15 +143,22 @@ export async function deleteStands(userId: string): Promise<void> {
     return;
   }
 
-  // Then, delete all stands associated with these company_db_ids
-  const { error: deleteError } = await supabase
-    .from('stands')
-    .delete()
-    .in('company_db_id', companyDbIds);
+  const BATCH_SIZE = 50; // Delete stands in batches of 50 company IDs
+  for (let i = 0; i < companyDbIds.length; i += BATCH_SIZE) {
+    const batchIds = companyDbIds.slice(i, i + BATCH_SIZE);
+    if (batchIds.length === 0) continue;
 
-  if (deleteError) {
-    console.error('[deleteStands] Error deleting stands:', deleteError);
-    throw new Error(deleteError.message);
+    console.log(`[deleteStands] Deleting stands for batch of company DB IDs:`, batchIds);
+    const { error: deleteError } = await supabase
+      .from('stands')
+      .delete()
+      .in('company_db_id', batchIds);
+
+    if (deleteError) {
+      console.error('[deleteStands] Error deleting stands in batch:', deleteError);
+      throw new Error(deleteError.message);
+    }
+    console.log(`[deleteStands] Successfully deleted stands for ${batchIds.length} companies in batch.`);
   }
-  console.log(`[deleteStands] Successfully deleted stands for user: ${userId}`);
+  console.log(`[deleteStands] Successfully deleted all stands for user: ${userId}`);
 }

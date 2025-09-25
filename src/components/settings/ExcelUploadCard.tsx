@@ -1,133 +1,134 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Upload, Loader2 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 import { parseStandsExcel } from '@/lib/excel-parser';
-import { useCrmData } from '@/context/CrmDataContext';
-import { showError, showSuccess } from '@/utils/toast';
-import { upsertCompanies, upsertStands, deleteCompanies, deleteStands } from '@/integrations/supabase/utils'; // Import delete functions
-import { supabase } from '@/integrations/supabase/client';
-import { Progress } from '@/components/ui/progress'; // Import the Progress component
+import { useAuth } from '@/components/providers/AuthContext';
+import { toast } from 'sonner';
+import { upsertCompanies } from '@/integrations/supabase/services/companyService';
+import { upsertStands, deleteStands } from '@/integrations/supabase/services/standService'; // Corrected import path
+import { Company } from '@/types/crm';
+import { Loader2 } from 'lucide-react';
 
-const ExcelUploadCard: React.FC = () => {
-  const { loadInitialData } = useCrmData();
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0); // New state for progress
-  const [userId, setUserId] = useState<string | null>(null);
+interface ExcelUploadCardProps {
+  onUploadSuccess: () => void;
+}
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-      } else {
-        setUserId(null);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+const ExcelUploadCard: React.FC<ExcelUploadCardProps> = ({ onUploadSuccess }) => {
+  const [file, setFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setSelectedFile(event.target.files[0]);
-      setUploadProgress(0); // Reset progress on new file selection
+      setFile(event.target.files[0]);
     } else {
-      setSelectedFile(null);
+      setFile(null);
     }
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) {
-      showError("Por favor, selecione um ficheiro Excel para carregar.");
+    if (!file) {
+      toast.error("Nenhum ficheiro selecionado.", {
+        description: "Por favor, selecione um ficheiro Excel para carregar.",
+      });
       return;
     }
-    if (!userId) {
-      showError("Utilizador não autenticado. Por favor, faça login para carregar dados.");
+
+    if (!user?.id) {
+      toast.error("Erro de autenticação.", {
+        description: "Utilizador não autenticado. Por favor, faça login novamente.",
+      });
       return;
     }
 
-    setIsUploading(true);
-    setUploadProgress(0); // Start progress from 0
-    try {
-      // Step 1: Delete existing data (approx 10% of total process)
-      setUploadProgress(5);
-      await deleteStands(userId); // Delete stands first due to foreign key constraint
-      setUploadProgress(10);
-      await deleteCompanies(userId); // Then delete companies
-      setUploadProgress(20);
+    setIsLoading(true);
+    const reader = new FileReader();
 
-      // Step 2: Parse Excel file (approx 20% of total process)
-      const arrayBuffer = await selectedFile.arrayBuffer();
-      const newCompanies = await parseStandsExcel(arrayBuffer);
-      setUploadProgress(40);
+    reader.onload = async (e) => {
+      try {
+        const arrayBuffer = e.target?.result as ArrayBuffer;
+        const companiesWithStands: Company[] = await parseStandsExcel(arrayBuffer);
 
-      // Step 3: Upsert Companies (approx 30% of total process)
-      const companyDbIdMap = await upsertCompanies(newCompanies, userId);
-      setUploadProgress(70);
-      
-      // Step 4: Upsert Stands (approx 20% of total process)
-      const allStands = newCompanies.flatMap(company => company.stands);
-      await upsertStands(allStands, companyDbIdMap);
-      setUploadProgress(90);
+        if (companiesWithStands.length === 0) {
+          toast.warning("Nenhum dado de empresa ou stand encontrado no ficheiro Excel.", {
+            description: "Verifique se o ficheiro está formatado corretamente.",
+          });
+          setIsLoading(false);
+          return;
+        }
 
-      // Step 5: Load initial data to refresh UI (approx 10% of total process)
-      await loadInitialData();
-      setUploadProgress(100); // Mark as complete
+        // 1. Delete existing companies and stands for the user
+        // Note: Deleting companies will cascade delete related stands if foreign key is set up with ON DELETE CASCADE
+        // However, explicitly deleting stands first can prevent potential issues with very large datasets
+        // and ensures a clean slate for stands.
+        await deleteStands(user.id); // Delete stands first
+        // await deleteCompanies(user.id); // If you want to delete companies too, uncomment this.
+                                       // For now, we assume companies might persist and stands are updated.
 
-      showSuccess("Dados CRM carregados e guardados com sucesso!");
-      setSelectedFile(null);
-    } catch (error: any) {
-      console.error("Error during upload:", error);
-      showError(error.message || "Falha ao carregar ou analisar o ficheiro Excel. Verifique o formato.");
-      setUploadProgress(0); // Reset or indicate error state
-    } finally {
-      setIsUploading(false);
-    }
+        // 2. Upsert companies and get their new DB IDs
+        const companyDbIdMap = await upsertCompanies(companiesWithStands, user.id);
+
+        // 3. Prepare stands for upsert using the new companyDbIdMap
+        const allStandsToUpsert = companiesWithStands.flatMap(company => 
+          company.stands.map(stand => ({
+            ...stand,
+            Company_id: company.Company_id // Ensure original Excel Company_id is passed for mapping
+          }))
+        );
+        
+        // 4. Upsert stands
+        await upsertStands(allStandsToUpsert, companyDbIdMap);
+
+        toast.success("Dados do CRM carregados com sucesso!", {
+          description: `${companiesWithStands.length} empresas e os seus stands foram atualizados.`,
+        });
+        onUploadSuccess();
+      } catch (error: any) {
+        console.error("Error during upload:", error);
+        toast.error("Erro durante o carregamento do ficheiro.", {
+          description: error.message || "Ocorreu um erro inesperado ao processar o ficheiro.",
+        });
+      } finally {
+        setIsLoading(false);
+        setFile(null); // Clear the selected file
+      }
+    };
+
+    reader.onerror = (error) => {
+      console.error("FileReader error:", error);
+      toast.error("Erro ao ler o ficheiro.", {
+        description: "Não foi possível ler o conteúdo do ficheiro.",
+      });
+      setIsLoading(false);
+    };
+
+    reader.readAsArrayBuffer(file);
   };
 
   return (
-    <Card className="w-full max-w-md shadow-sm">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold">Carregar Dados CRM</CardTitle>
-        <CardDescription className="text-muted-foreground">
-          Atualize as informações das empresas carregando um novo ficheiro Excel.
-          **Todos os dados existentes de empresas e stands serão substituídos.**
-        </CardDescription>
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle>Carregar Ficheiro CRM (Stands)</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Input type="file" accept=".xlsx, .xls" onChange={handleFileChange} />
-        <Button onClick={handleUpload} disabled={!selectedFile || isUploading || !userId} className="w-full">
-          {isUploading ? (
+        <div className="grid w-full items-center gap-1.5">
+          <Label htmlFor="excel-file">Ficheiro Excel</Label>
+          <Input id="excel-file" type="file" accept=".xlsx, .xls" onChange={handleFileChange} />
+        </div>
+        <Button onClick={handleUpload} disabled={!file || isLoading} className="w-full">
+          {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              A carregar ({uploadProgress}%)
+              A carregar...
             </>
           ) : (
-            <>
-              <Upload className="mr-2 h-4 w-4" />
-              Carregar Ficheiro
-            </>
+            "Carregar Dados CRM"
           )}
         </Button>
-        {isUploading && (
-          <Progress value={uploadProgress} className="w-full mt-2" />
-        )}
-        {!userId && (
-          <p className="text-sm text-red-500">Por favor, faça login para carregar dados.</p>
-        )}
-        <p className="text-sm text-muted-foreground">
-          Certifique-se de que o ficheiro Excel tem as mesmas colunas e nomes que o modelo original.
-        </p>
       </CardContent>
     </Card>
   );
