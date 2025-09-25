@@ -21,6 +21,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import AccountEditForm from './AccountEditForm';
 import { deleteAccount } from '@/integrations/supabase/utils';
 import { showError, showSuccess } from '@/utils/toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Import Avatar components
 
 interface AccountTableProps {
   accounts: Account[];
@@ -100,6 +101,7 @@ const AccountTable: React.FC<AccountTableProps> = ({ accounts, isLoading, error,
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[50px]">Avatar</TableHead> {/* New Avatar Column */}
                 <TableHead className="w-[150px]">Nome da Conta</TableHead>
                 <TableHead className="w-[100px]">AM</TableHead>
                 <TableHead>Email</TableHead>
@@ -112,6 +114,12 @@ const AccountTable: React.FC<AccountTableProps> = ({ accounts, isLoading, error,
             <TableBody>
               {accounts.map((account) => (
                 <TableRow key={account.id}>
+                  <TableCell className="py-3">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={account.photo_url || undefined} alt={account.account_name || 'AM Avatar'} />
+                      <AvatarFallback>{account.account_name?.charAt(0).toUpperCase() || 'AM'}</AvatarFallback>
+                    </Avatar>
+                  </TableCell>
                   <TableCell className="font-medium flex items-center py-3">
                     <User className="mr-2 h-4 w-4 text-muted-foreground" />
                     {account.account_name || 'N/A'}

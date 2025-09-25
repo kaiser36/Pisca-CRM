@@ -12,8 +12,9 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Image as ImageIcon, XCircle } from 'lucide-react'; // Import Image and XCircle icons
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Import Avatar components
 
 interface AccountEditFormProps {
   account: Account;
@@ -30,6 +31,8 @@ const formSchema = z.object({
   district: z.string().nullable().optional(),
   credibom_email: z.string().email("Email inválido").nullable().optional().or(z.literal('')),
   role: z.string().nullable().optional(),
+  // Add a field for the file input, but it won't be part of the final DB payload directly
+  imageFile: typeof window === 'undefined' ? z.any().optional() : z.instanceof(File).nullable().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -37,6 +40,8 @@ type FormData = z.infer<typeof formSchema>;
 const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null); // State for selected image file
+  const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(account.photo_url || null); // State to manage current photo URL
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -67,8 +72,84 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
       district: account.district || '',
       credibom_email: account.credibom_email || '',
       role: account.role || 'user',
+      imageFile: null,
     },
   });
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setSelectedImage(event.target.files[0]);
+      form.setValue('imageFile', event.target.files[0]);
+      setCurrentPhotoUrl(URL.createObjectURL(event.target.files[0])); // Show preview of new image
+    } else {
+      setSelectedImage(null);
+      form.setValue('imageFile', null);
+      setCurrentPhotoUrl(account.photo_url || null); // Revert to original if no new file
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    if (!userId) {
+      showError("Utilizador não autenticado.");
+      return;
+    }
+    if (!account.photo_url) return;
+
+    setIsSubmitting(true);
+    try {
+      // Extract file path from URL
+      const urlParts = account.photo_url.split('/avatars/');
+      if (urlParts.length < 2) {
+        throw new Error("URL de imagem inválido para remoção.");
+      }
+      const filePath = urlParts[1]; // e.g., 'user_id/filename.jpg'
+
+      const { error: deleteError } = await supabase.storage
+        .from('avatars')
+        .remove([filePath]);
+
+      if (deleteError) {
+        console.error('Error deleting image:', deleteError);
+        throw new Error(`Falha ao eliminar a imagem: ${deleteError.message}`);
+      }
+
+      await updateAccount(account.id, { photo_url: null });
+      setCurrentPhotoUrl(null);
+      setSelectedImage(null);
+      form.setValue('photo_url', null);
+      showSuccess("Fotografia eliminada com sucesso!");
+      onSave(); // Refresh parent data
+    } catch (error: any) {
+      console.error("Erro ao eliminar fotografia:", error);
+      showError(error.message || "Falha ao eliminar a fotografia.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const uploadImage = async (file: File, currentUserId: string): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `${currentUserId}/${fileName}`; // Store under user's ID
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false, // Do not upsert, create new or handle existing
+      });
+
+    if (uploadError) {
+      console.error('Error uploading image:', uploadError);
+      throw new Error(`Falha ao carregar a imagem: ${uploadError.message}`);
+    }
+
+    const { data } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  };
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
@@ -77,13 +158,30 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
     }
 
     setIsSubmitting(true);
+    let imageUrl: string | null = values.photo_url || null; // Start with existing URL or manually entered URL
+
     try {
+      if (selectedImage) {
+        // If a new image is selected, upload it
+        imageUrl = await uploadImage(selectedImage, userId);
+      } else if (currentPhotoUrl === null && account.photo_url !== null) {
+        // If currentPhotoUrl was explicitly set to null (removed), and original had a photo
+        imageUrl = null;
+      } else if (!selectedImage && currentPhotoUrl !== null && account.photo_url !== currentPhotoUrl) {
+        // If no new image selected, but photo_url was manually changed (e.g., pasted a new URL)
+        imageUrl = values.photo_url;
+      } else if (!selectedImage && currentPhotoUrl !== null && account.photo_url === currentPhotoUrl) {
+        // If no new image selected, and no change to photo_url, keep original
+        imageUrl = account.photo_url;
+      }
+
+
       const updatedAccount: Partial<Omit<Account, 'id' | 'created_at' | 'user_id'>> = {
         account_name: values.account_name,
         am: values.am || null,
         phone_number: values.phone_number || null,
         email: values.email || null,
-        photo_url: values.photo_url || null,
+        photo_url: imageUrl, // Use the new or existing image URL
         district: values.district || null,
         credibom_email: values.credibom_email || null,
         role: values.role || 'user',
@@ -105,10 +203,9 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
     { name: "am", label: "AM", type: "text" },
     { name: "phone_number", label: "Número de Telefone", type: "text" },
     { name: "email", label: "Email", type: "email" },
-    { name: "photo_url", label: "URL da Foto", type: "url" },
     { name: "district", label: "Distrito", type: "text" },
     { name: "credibom_email", label: "Email Credibom", type: "email" },
-    { name: "role", label: "Função do AM", type: "select", options: ["user", "admin", "editor"] }, // Updated label
+    { name: "role", label: "Função do AM", type: "select", options: ["user", "admin", "editor"] },
   ];
 
   return (
@@ -149,6 +246,71 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
               )}
             />
           ))}
+          {/* Image Upload Field */}
+          <FormItem className="md:col-span-2">
+            <FormLabel>Fotografia do AM</FormLabel>
+            <div className="flex items-center space-x-4">
+              {currentPhotoUrl && (
+                <div className="relative">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={currentPhotoUrl} alt={account.account_name || 'AM Avatar'} />
+                    <AvatarFallback>{account.account_name?.charAt(0).toUpperCase() || 'AM'}</AvatarFallback>
+                  </Avatar>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-background/80 hover:bg-background"
+                    onClick={handleRemoveImage}
+                    disabled={isSubmitting}
+                  >
+                    <XCircle className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              )}
+              <div className="flex-1">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="file:text-primary file:bg-primary/10 file:border-primary/20 file:hover:bg-primary/20"
+                  disabled={isSubmitting}
+                />
+                {selectedImage && (
+                  <div className="mt-2 flex items-center space-x-2">
+                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">{selectedImage.name}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <FormMessage />
+          </FormItem>
+          {/* Existing Photo URL (optional, if you want to allow direct URL input) */}
+          <FormField
+            control={form.control}
+            name="photo_url"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>URL da Foto Existente (se aplicável)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="url"
+                    {...field}
+                    value={field.value || ''}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      setCurrentPhotoUrl(e.target.value); // Update preview if URL is manually changed
+                      setSelectedImage(null); // Clear file input if URL is manually entered
+                    }}
+                    placeholder="https://example.com/avatar.jpg"
+                    disabled={!!selectedImage || isSubmitting} // Disable if a file is selected or submitting
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
         <div className="flex justify-end space-x-2 mt-6">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>

@@ -12,7 +12,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Image as ImageIcon } from 'lucide-react'; // Import Image icon
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface AccountCreateFormProps {
@@ -29,6 +29,8 @@ const formSchema = z.object({
   district: z.string().nullable().optional(),
   credibom_email: z.string().email("Email inválido").nullable().optional().or(z.literal('')),
   role: z.string().nullable().optional(),
+  // Add a field for the file input, but it won't be part of the final DB payload directly
+  imageFile: typeof window === 'undefined' ? z.any().optional() : z.instanceof(File).nullable().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -36,6 +38,7 @@ type FormData = z.infer<typeof formSchema>;
 const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null); // State for selected image file
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -66,8 +69,43 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
       district: '',
       credibom_email: '',
       role: 'user', // Default role
+      imageFile: null,
     },
   });
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setSelectedImage(event.target.files[0]);
+      form.setValue('imageFile', event.target.files[0]);
+    } else {
+      setSelectedImage(null);
+      form.setValue('imageFile', null);
+    }
+  };
+
+  const uploadImage = async (file: File, currentUserId: string): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `${currentUserId}/${fileName}`; // Store under user's ID
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('Error uploading image:', uploadError);
+      throw new Error(`Falha ao carregar a imagem: ${uploadError.message}`);
+    }
+
+    const { data } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  };
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
@@ -76,14 +114,20 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
     }
 
     setIsSubmitting(true);
+    let imageUrl: string | null = values.photo_url || null;
+
     try {
+      if (selectedImage) {
+        imageUrl = await uploadImage(selectedImage, userId);
+      }
+
       const newAccount: Omit<Account, 'id' | 'created_at'> = {
         user_id: userId,
         account_name: values.account_name,
         am: values.am || null,
         phone_number: values.phone_number || null,
         email: values.email || null,
-        photo_url: values.photo_url || null,
+        photo_url: imageUrl, // Use the uploaded image URL
         district: values.district || null,
         credibom_email: values.credibom_email || null,
         role: values.role || 'user',
@@ -105,10 +149,9 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
     { name: "am", label: "AM", type: "text" },
     { name: "phone_number", label: "Número de Telefone", type: "text" },
     { name: "email", label: "Email", type: "email" },
-    { name: "photo_url", label: "URL da Foto", type: "url" },
     { name: "district", label: "Distrito", type: "text" },
     { name: "credibom_email", label: "Email Credibom", type: "email" },
-    { name: "role", label: "Função do AM", type: "select", options: ["user", "admin", "editor"] }, // Updated label
+    { name: "role", label: "Função do AM", type: "select", options: ["user", "admin", "editor"] },
   ];
 
   return (
@@ -149,6 +192,46 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
               )}
             />
           ))}
+          {/* Image Upload Field */}
+          <FormItem className="md:col-span-2">
+            <FormLabel>Fotografia do AM</FormLabel>
+            <FormControl>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="file:text-primary file:bg-primary/10 file:border-primary/20 file:hover:bg-primary/20"
+              />
+            </FormControl>
+            {selectedImage && (
+              <div className="mt-2 flex items-center space-x-2">
+                <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">{selectedImage.name}</span>
+              </div>
+            )}
+            <FormMessage />
+          </FormItem>
+          {/* Existing Photo URL (optional, if you want to allow direct URL input) */}
+          <FormField
+            control={form.control}
+            name="photo_url"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>URL da Foto Existente (se aplicável)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="url"
+                    {...field}
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    placeholder="https://example.com/avatar.jpg"
+                    disabled={!!selectedImage} // Disable if a file is selected
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
         <div className="flex justify-end space-x-2 mt-6">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
