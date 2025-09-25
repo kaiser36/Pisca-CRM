@@ -5,7 +5,7 @@ import { CompanyAdditionalExcelData, Negocio } from '@/types/crm'; // Import Neg
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus, Upload, Archive, Save, ArrowRight, Download, Hourglass, XCircle as ExpiredIcon } from 'lucide-react'; // Added Download, Hourglass, ExpiredIcon
+import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus, Upload, Archive, Save, ArrowRight, Download, Hourglass, XCircle as ExpiredIcon, ListTodo } from 'lucide-react'; // Added ListTodo icon
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CompanyAdditionalEditForm from './CompanyAdditionalEditForm';
@@ -16,8 +16,10 @@ import EasyvistaCreateForm from './EasyvistaCreateForm';
 import EasyvistaList from './EasyvistaList';
 import DealCreateForm from './DealCreateForm';
 import DealList from './DealList';
-import EmployeeCreateForm from './EmployeeCreateForm'; // New import
-import EmployeeList from './EmployeeList'; // New import
+import EmployeeCreateForm from './EmployeeCreateForm';
+import EmployeeList from './EmployeeList';
+import TaskCreateForm from './TaskCreateForm'; // NEW: Import TaskCreateForm
+import TaskList from './TaskList'; // NEW: Import TaskList
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Accordion,
@@ -36,18 +38,26 @@ import { showError } from '@/utils/toast';
 interface CompanyAdditionalDetailCardProps {
   company: CompanyAdditionalExcelData | null;
   onDataUpdated: () => void;
+  initialTab?: string; // NEW: Add initialTab prop
 }
 
-const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = ({ company, onDataUpdated }) => {
+const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = ({ company, onDataUpdated, initialTab = 'details' }) => { // Set default initialTab
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateContactDialogOpen, setIsCreateContactDialogOpen] = useState(false);
   const [isCreateEasyvistaDialogOpen, setIsCreateEasyvistaDialogOpen] = useState(false);
   const [isCreateDealDialogOpen, setIsCreateDealDialogOpen] = useState(false);
-  const [isCreateEmployeeDialogOpen, setIsCreateEmployeeDialogOpen] = useState(false); // New state
+  const [isCreateEmployeeDialogOpen, setIsCreateEmployeeDialogOpen] = useState(false);
+  const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false); // NEW: State for Task dialog
   const [deals, setDeals] = useState<Negocio[]>([]);
   const [isDealsLoading, setIsDealsLoading] = useState(true);
   const [dealsError, setDealsError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState(initialTab); // NEW: Manage active tab state
+
+  // Update activeTab when initialTab prop changes
+  React.useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   // Fetch userId on component mount
   React.useEffect(() => {
@@ -317,6 +327,28 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </DialogContent>
               </Dialog>
 
+              {/* NEW: Create Task Button */}
+              <Dialog open={isCreateTaskDialogOpen} onOpenChange={setIsCreateTaskDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:text-primary">
+                    <ListTodo className="mr-2 h-4 w-4" /> Nova Tarefa
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Criar Nova Tarefa</DialogTitle>
+                  </DialogHeader>
+                  <TaskCreateForm
+                    companyExcelId={company.excel_company_id}
+                    onSave={() => {
+                      setIsCreateTaskDialogOpen(false);
+                      onDataUpdated(); // Refresh data, including tasks
+                    }}
+                    onCancel={() => setIsCreateTaskDialogOpen(false)}
+                  />
+                </DialogContent>
+              </Dialog>
+
               <Dialog open={isEditDialogOpen} onOpenChange={(open) => { console.log('Edit Dialog open change:', open); setIsEditDialogOpen(open); }}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:text-primary">
@@ -440,8 +472,8 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
           </div>
           {/* End New Overview Cards */}
 
-          <Tabs defaultValue="details" onValueChange={(value) => console.log('Tab changed to:', value)}>
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6 h-10 rounded-lg bg-muted/70 p-1"> {/* Adjusted grid-cols and added bg-muted/70 p-1 */}
+          <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}> {/* NEW: Control active tab */}
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-7 h-10 rounded-lg bg-muted/70 p-1"> {/* Adjusted grid-cols to 7 */}
               <TabsTrigger
                 value="details"
                 className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
@@ -477,6 +509,13 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
               >
                 Colaboradores
+              </TabsTrigger>
+              {/* NEW: Tasks Tab Trigger */}
+              <TabsTrigger
+                value="tasks"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+              >
+                Tarefas
               </TabsTrigger>
             </TabsList>
             <TabsContent value="details" className="mt-4 space-y-6">
@@ -659,6 +698,13 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 <Users className="mr-2 h-5 w-5" /> Colaboradores
               </h3>
               <EmployeeList companyExcelId={company.excel_company_id} onEmployeeChanged={onDataUpdated} />
+            </TabsContent>
+            {/* NEW: Tasks Tab Content */}
+            <TabsContent value="tasks" className="mt-4">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+                <ListTodo className="mr-2 h-5 w-5" /> Tarefas
+              </h3>
+              <TaskList companyExcelId={company.excel_company_id} onTaskChanged={onDataUpdated} />
             </TabsContent>
           </Tabs>
         </CardContent>

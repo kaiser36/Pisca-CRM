@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom'; // NEW: Import useLocation
 import Layout from '@/components/layout/Layout';
 import { CompanyAdditionalExcelData, Company } from '@/types/crm';
 import { fetchCompanyAdditionalExcelData, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils';
@@ -16,6 +16,7 @@ import CompanyAdditionalDetailCard from '@/components/company-additional-data/Co
 const CompanyAdditionalDetailPage: React.FC = () => {
   const { companyExcelId } = useParams<{ companyExcelId: string }>();
   const navigate = useNavigate();
+  const location = useLocation(); // NEW: Initialize useLocation
   const [company, setCompany] = useState<CompanyAdditionalExcelData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +86,10 @@ const CompanyAdditionalDetailPage: React.FC = () => {
     navigate('/company-additional-data');
   };
 
+  // NEW: Determine initial tab from URL
+  const queryParams = new URLSearchParams(location.search);
+  const initialTab = queryParams.get('tab') || 'details';
+
   if (isLoading) {
     return (
       <Layout>
@@ -119,7 +124,7 @@ const CompanyAdditionalDetailPage: React.FC = () => {
         <Button variant="outline" onClick={handleBack} className="mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar à Lista
         </Button>
-        {company && <CompanyAdditionalDetailCard company={company} onDataUpdated={loadCompanyDetails} />}
+        {company && <CompanyAdditionalDetailCard company={company} onDataUpdated={loadCompanyDetails} initialTab={initialTab} />} {/* NEW: Pass initialTab */}
       </div>
     </Layout>
   );

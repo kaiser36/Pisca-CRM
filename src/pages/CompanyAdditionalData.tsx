@@ -86,9 +86,10 @@ const CompanyAdditionalData: React.FC = () => {
 
       const params = new URLSearchParams(location.search);
       const companyIdFromUrl = params.get('companyId');
+      const tabFromUrl = params.get('tab'); // NEW: Get tab from URL
       if (companyIdFromUrl) {
         // If a companyId is in the URL, navigate to its detail page
-        navigate(`/company-additional-data/${companyIdFromUrl}`);
+        navigate(`/company-additional-data/${companyIdFromUrl}${tabFromUrl ? `?tab=${tabFromUrl}` : ''}`); // NEW: Pass tab to detail page
       }
 
     } catch (err: any) {

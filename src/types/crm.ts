@@ -261,3 +261,18 @@ export interface Employee {
   stand_name?: string | null; // Name of the stand
   created_at?: string;
 }
+
+export interface Task {
+  id?: string;
+  user_id: string;
+  company_excel_id: string;
+  title: string;
+  description?: string | null;
+  due_date?: string | null; // ISO string for timestamp
+  status?: 'Pending' | 'In Progress' | 'Completed' | 'Cancelled' | null;
+  priority?: 'Low' | 'Medium' | 'High' | null;
+  assigned_to_employee_id?: string | null; // UUID of the employee
+  assigned_to_employee_name?: string | null; // Name of the employee for display
+  created_at?: string;
+  updated_at?: string;
+}

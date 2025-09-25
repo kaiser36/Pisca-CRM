@@ -9,3 +9,4 @@ export * from './services/accountManagementService.ts';
 export * from './services/dealService.ts';
 export * from './services/productService.ts';
 export * from './services/employeeService.ts';
+export * from './services/taskService.ts'; // NEW: Export task service
