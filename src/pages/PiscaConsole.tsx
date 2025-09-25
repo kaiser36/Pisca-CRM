@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Card, CardContent } from '@/components/ui/card'; // Removido CardHeader, CardTitle, CardDescription
+import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, ExternalLink } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
@@ -26,10 +26,9 @@ const PiscaConsole: React.FC = () => {
 
   return (
     <Layout>
-      <div className="h-full flex flex-col w-full"> {/* Mantido para flexbox */}
-        <Card className="flex-1 shadow-md flex flex-col rounded-none border-none"> {/* Removido mx-6 my-6, rounded-none, border-none */}
-          {/* Removido CardHeader */}
-          <CardContent className="flex-1 flex flex-col p-0">
+      <div className="h-full flex flex-col w-full">
+        <Card className="flex-1 shadow-md flex flex-col rounded-none border-none">
+          <CardContent className="flex-1 flex flex-col p-0 h-full"> {/* Adicionado h-full aqui */}
             {isLoadingIframe && (
               <div className="flex flex-col items-center justify-center h-full w-full bg-muted/50 p-4">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
@@ -58,7 +57,7 @@ const PiscaConsole: React.FC = () => {
             <iframe
               src={PISCA_PISCA_URL}
               title="Consola Pisca"
-              className="flex-1 w-full h-full border-0" // Adicionado h-full
+              className="flex-1 w-full h-full border-0"
               onLoad={handleIframeLoad}
               onError={handleIframeError}
               style={{ display: isLoadingIframe || iframeError ? 'none' : 'block' }}
