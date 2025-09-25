@@ -34,6 +34,7 @@ const formSchema = z.object({
   priority: z.enum(['Low', 'Medium', 'High']).default('Medium'),
   assigned_to_employee_id: z.string().nullable().optional(),
   assigned_to_employee_name: z.string().nullable().optional(),
+  commercial_name: z.string().nullable().optional(), // NEW: Add commercial_name to schema
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -73,6 +74,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
       priority: task.priority || 'Medium',
       assigned_to_employee_id: task.assigned_to_employee_id || '',
       assigned_to_employee_name: task.assigned_to_employee_name || '',
+      commercial_name: task.commercial_name || '', // NEW: Default value for commercial_name
     },
   });
 
@@ -87,6 +89,11 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
         const companies = await fetchCompaniesByExcelCompanyIds(userId, [task.company_excel_id]);
         const currentCompany = companies.find(c => c.Company_id === task.company_excel_id);
         setCompanyDetails(currentCompany || null);
+
+        // NEW: Set commercial_name from fetched company details if not already set in task
+        if (!task.commercial_name && currentCompany) {
+          setValue("commercial_name", currentCompany.Commercial_Name || currentCompany.Company_Name || null);
+        }
 
         const fetchedAMs = await fetchAccounts(userId);
         setAvailableAMs(fetchedAMs);
@@ -115,7 +122,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
     if (userId) {
       loadData();
     }
-  }, [userId, task.company_excel_id, task.assigned_to_employee_id, setValue]);
+  }, [userId, task.company_excel_id, task.assigned_to_employee_id, task.commercial_name, setValue]);
 
   // Effect to sync assigned_to_employee_name when assigned_to_employee_id changes
   useEffect(() => {
@@ -152,6 +159,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
         priority: values.priority,
         assigned_to_employee_id: values.assigned_to_employee_id || null,
         assigned_to_employee_name: values.assigned_to_employee_name || null,
+        commercial_name: values.commercial_name || null, // NEW: Include commercial_name
       };
 
       await updateTask(task.id!, updatedTask);

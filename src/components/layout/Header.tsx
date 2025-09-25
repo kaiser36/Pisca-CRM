@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, Bell, ListTodo, Calendar, User } from 'lucide-react'; // Added Calendar and User icons
+import { Menu, Bell, ListTodo, Calendar, User, Building } from 'lucide-react'; // Added Building icon
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -60,9 +60,11 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                     <Link key={task.id} to={`/company-additional-data/${task.company_excel_id}?tab=tasks`} onClick={() => refreshTasks()}>
                       <div className="flex flex-col p-2 border rounded-md hover:bg-muted/50 transition-colors">
                         <p className="font-medium text-sm">{task.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Empresa: {task.company_excel_id}
-                        </p>
+                        {task.commercial_name && ( // NEW: Display commercial_name
+                          <p className="text-xs text-muted-foreground flex items-center">
+                            <Building className="mr-1 h-3 w-3" /> Empresa: {task.commercial_name}
+                          </p>
+                        )}
                         {task.due_date && (
                           <p className="text-xs text-muted-foreground flex items-center">
                             <Calendar className="mr-1 h-3 w-3" /> Data Limite: {format(parseISO(task.due_date), 'dd/MM/yyyy')}

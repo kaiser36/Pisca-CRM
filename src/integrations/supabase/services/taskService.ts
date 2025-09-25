@@ -10,6 +10,7 @@ export async function insertTask(task: Omit<Task, 'id' | 'created_at' | 'updated
     .insert({
       user_id: task.user_id,
       company_excel_id: task.company_excel_id,
+      commercial_name: task.commercial_name || null, // NEW: Include commercial_name
       title: task.title,
       description: task.description || null,
       due_date: task.due_date || null,
@@ -34,7 +35,7 @@ export async function insertTask(task: Omit<Task, 'id' | 'created_at' | 'updated
 export async function fetchTasksByCompanyExcelId(userId: string, companyExcelId: string): Promise<Task[]> {
   const { data, error } = await supabase
     .from('tasks')
-    .select('*')
+    .select('*, commercial_name') // NEW: Select commercial_name
     .eq('user_id', userId)
     .eq('company_excel_id', companyExcelId)
     .order('due_date', { ascending: true });
@@ -52,7 +53,7 @@ export async function fetchTasksByCompanyExcelId(userId: string, companyExcelId:
 export async function fetchTasksForUser(userId: string, statusFilter?: 'Pending' | 'In Progress' | 'Completed' | 'Cancelled'): Promise<Task[]> {
   let query = supabase
     .from('tasks')
-    .select('*')
+    .select('*, commercial_name') // NEW: Select commercial_name
     .eq('user_id', userId);
 
   if (statusFilter) {
@@ -82,6 +83,7 @@ export async function updateTask(id: string, task: Partial<Omit<Task, 'id' | 'cr
       priority: task.priority,
       assigned_to_employee_id: task.assigned_to_employee_id,
       assigned_to_employee_name: task.assigned_to_employee_name,
+      commercial_name: task.commercial_name, // NEW: Include commercial_name
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
@@ -117,6 +119,7 @@ export async function upsertTasks(tasks: Task[], userId: string): Promise<void> 
   const dataToUpsert = tasks.map(task => ({
     user_id: userId,
     company_excel_id: task.company_excel_id,
+    commercial_name: task.commercial_name || null, // NEW: Include commercial_name
     title: task.title,
     description: task.description || null,
     due_date: task.due_date || null,

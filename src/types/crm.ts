@@ -266,6 +266,7 @@ export interface Task {
   id?: string;
   user_id: string;
   company_excel_id: string;
+  commercial_name?: string | null; // NEW: Added commercial_name
   title: string;
   description?: string | null;
   due_date?: string | null; // ISO string for timestamp

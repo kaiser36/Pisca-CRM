@@ -73,6 +73,7 @@ const TaskExcelUploadCard: React.FC = () => {
         return {
           user_id: userId,
           company_excel_id: companyExcelId,
+          commercial_name: String(row['Nome Comercial da Empresa'] || '') || null, // NEW: Parse commercial_name
           title: title,
           description: String(row['Descrição'] || '') || null,
           due_date: String(row['Data Limite (YYYY-MM-DD HH:MM:SS)'] || '') || null,

@@ -150,7 +150,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     );
   };
 
-  const companyDisplayName = company["Nome Comercial"] || company.crmCompany?.Company_Name || "Empresa Desconhecida";
+  const companyDisplayName = company["Nome Comercial"] || company.crmCompany?.Commercial_Name || company.crmCompany?.Company_Name || "Empresa Desconhecida";
   const firstLetter = companyDisplayName.charAt(0).toUpperCase();
 
   // Utility functions for date comparisons

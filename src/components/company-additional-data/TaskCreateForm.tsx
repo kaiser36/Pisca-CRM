@@ -34,6 +34,7 @@ const formSchema = z.object({
   priority: z.enum(['Low', 'Medium', 'High']).default('Medium'),
   assigned_to_employee_id: z.string().nullable().optional(),
   assigned_to_employee_name: z.string().nullable().optional(),
+  commercial_name: z.string().nullable().optional(), // NEW: Add commercial_name to schema
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -73,6 +74,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
       priority: 'Medium',
       assigned_to_employee_id: '',
       assigned_to_employee_name: '',
+      commercial_name: '', // NEW: Default value for commercial_name
     },
   });
 
@@ -87,6 +89,9 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
         const companies = await fetchCompaniesByExcelCompanyIds(userId, [companyExcelId]);
         const currentCompany = companies.find(c => c.Company_id === companyExcelId);
         setCompanyDetails(currentCompany || null);
+        
+        // NEW: Set commercial_name from fetched company details
+        setValue("commercial_name", currentCompany?.Commercial_Name || currentCompany?.Company_Name || null);
 
         const fetchedAMs = await fetchAccounts(userId);
         setAvailableAMs(fetchedAMs);
@@ -141,6 +146,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
       const newTask: Omit<Task, 'id' | 'created_at' | 'updated_at'> = {
         user_id: userId,
         company_excel_id: companyExcelId,
+        commercial_name: values.commercial_name || null, // NEW: Include commercial_name
         title: values.title,
         description: values.description || null,
         due_date: values.due_date ? values.due_date.toISOString() : null,

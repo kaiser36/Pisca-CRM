@@ -1,6 +1,7 @@
 export const generateTaskCsvTemplate = (): string => {
   const headers = [
     "company_excel_id (OBRIGATÓRIO)",
+    "Nome Comercial da Empresa", // NEW: Added commercial name
     "Título (OBRIGATÓRIO)",
     "Descrição",
     "Data Limite (YYYY-MM-DD HH:MM:SS)",
@@ -12,6 +13,7 @@ export const generateTaskCsvTemplate = (): string => {
 
   const exampleRow = [
     "EMP001", // Deve corresponder a um Company_id existente na tabela 'companies'
+    "Comercial Lda.", // NEW: Example commercial name
     "Contactar Cliente para Renovação",
     "Ligar para o cliente para discutir a renovação do plano e apresentar novas ofertas.",
     "2024-12-31 17:00:00",

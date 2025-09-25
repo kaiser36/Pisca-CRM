@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Calendar, User, Tag, Info, Clock, Edit, Trash, MoreHorizontal, CheckCircle, XCircle } from 'lucide-react';
+import { Terminal, Calendar, User, Tag, Info, Clock, Edit, Trash, MoreHorizontal, CheckCircle, XCircle, Building } from 'lucide-react'; // Added Building icon
 import { Separator } from '@/components/ui/separator';
 import { format, parseISO, isPast } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -206,6 +206,7 @@ const TaskList: React.FC<TaskListProps> = ({ companyExcelId, onTaskChanged }) =>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {renderField(Building, "Empresa", task.commercial_name || task.company_excel_id)} {/* NEW: Display commercial_name */}
                   {renderField(Calendar, "Data Limite", task.due_date)}
                   {renderField(User, "Atribuído a", task.assigned_to_employee_name || 'N/A')}
                 </div>
