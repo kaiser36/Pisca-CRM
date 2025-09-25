@@ -232,6 +232,8 @@ export interface Negocio {
   created_at?: string;
   updated_at?: string;
   deal_products?: DealProduct[]; // Lista de produtos associados a este negócio
+  campaign_id?: string | null; // NEW: ID da campanha associada
+  campaign_name?: string | null; // NEW: Nome da campanha para exibição
 }
 
 export interface Product {

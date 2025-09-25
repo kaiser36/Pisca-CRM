@@ -4,8 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Negocio, Product, DealProduct as DealProductType } from '@/types/crm';
-import { insertDeal, fetchProducts } from '@/integrations/supabase/utils';
+import { Negocio, Product, DealProduct as DealProductType, Campaign } from '@/types/crm';
+import { insertDeal, fetchProducts, fetchCampaigns } from '@/integrations/supabase/utils'; // Import fetchCampaigns
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -16,7 +16,7 @@ import { Loader2, CalendarIcon, PlusCircle } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, parseISO, isPast } from 'date-fns'; // Import isPast and parseISO
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DealProductFormItem from './DealProductFormItem'; // NEW: Import the new component
@@ -56,6 +56,7 @@ const formSchema = z.object({
   priority: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
   deal_products: z.array(dealProductSchema).min(1, "Pelo menos um produto é obrigatório para o negócio."),
+  campaign_id: z.string().nullable().optional(), // NEW: Campaign ID
   discount_type: z.enum(['none', 'percentage', 'amount']).default('none'),
   discount_value: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
@@ -73,6 +74,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [availableCampaigns, setAvailableCampaigns] = useState<Campaign[]>([]); // NEW: State for campaigns
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -93,20 +95,21 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
   }, []);
 
   useEffect(() => {
-    const loadProducts = async () => {
+    const loadProductsAndCampaigns = async () => {
       if (!userId) return;
       try {
         const fetchedProducts = await fetchProducts(userId);
         setAllProducts(fetchedProducts);
-        // console.log("[DealCreateForm] Products loaded into state:", fetchedProducts); // Removed for less console noise
+        const fetchedCampaigns = await fetchCampaigns(userId); // Fetch campaigns
+        setAvailableCampaigns(fetchedCampaigns.filter(c => c.is_active && (!c.end_date || !isPast(parseISO(c.end_date))))); // Filter active and not expired campaigns
       } catch (err: any) {
-        console.error("Erro ao carregar produtos:", err);
-        showError(err.message || "Falha ao carregar a lista de produtos.");
+        console.error("Erro ao carregar produtos ou campanhas:", err);
+        showError(err.message || "Falha ao carregar a lista de produtos ou campanhas.");
       }
     };
 
     if (userId) {
-      loadProducts();
+      loadProductsAndCampaigns();
     }
   }, [userId]);
 
@@ -123,6 +126,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
       priority: 'Medium',
       notes: '',
       deal_products: [{ product_id: '', quantity: 1, unit_price_at_deal_time: 0, total_price_at_deal_time: 0, product_name: '', product_category: '', discount_type: 'none', discount_value: 0 }], // Initialize with one empty product
+      campaign_id: '', // NEW: Default empty
       discount_type: 'none',
       discount_value: 0,
       final_deal_value: 0,
@@ -141,7 +145,29 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
   const allProductTotals = fields.map((field, index) => watch(`deal_products.${index}.total_price_at_deal_time`));
   const discountType = watch("discount_type");
   const discountValue = watch("discount_value");
-  
+  const selectedCampaignId = watch("campaign_id"); // NEW: Watch selected campaign
+
+  // Effect to apply campaign discount
+  useEffect(() => {
+    if (selectedCampaignId) {
+      const campaign = availableCampaigns.find(c => c.id === selectedCampaignId);
+      if (campaign && campaign.type === 'discount') {
+        setValue("discount_type", campaign.discount_type || 'none', { shouldDirty: true, shouldValidate: true });
+        setValue("discount_value", campaign.discount_value || 0, { shouldDirty: true, shouldValidate: true });
+      } else {
+        // If campaign is not found, not a discount type, or no campaign selected, reset discount
+        setValue("discount_type", 'none', { shouldDirty: true, shouldValidate: true });
+        setValue("discount_value", 0, { shouldDirty: true, shouldValidate: true });
+      }
+    } else {
+      // If no campaign selected, ensure manual discount is still respected or reset if it was from a campaign
+      // For now, we'll assume if campaign_id is cleared, manual discount should also be cleared.
+      // A more complex logic might preserve manual discount if it was set before selecting a campaign.
+      setValue("discount_type", 'none', { shouldDirty: true, shouldValidate: true });
+      setValue("discount_value", 0, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [selectedCampaignId, availableCampaigns, setValue]);
+
   // Effect to calculate deal_value and final_deal_value
   useEffect(() => {
     console.log("[DealCreateForm] Parent useEffect triggered for deal calculation.");
@@ -202,6 +228,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
         priority: values.priority || 'Medium',
         notes: values.notes || null,
         deal_products: values.deal_products as DealProductType[],
+        campaign_id: values.campaign_id || null, // NEW: Include campaign_id
         discount_type: values.discount_type || null,
         discount_value: values.discount_value || null,
         final_deal_value: values.final_deal_value || null,
@@ -231,8 +258,9 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
 
   const discountFields = [
     { name: "deal_value", label: "Valor do Negócio (Pré-Desconto Geral)", type: "number", readOnly: true },
-    { name: "discount_type", label: "Tipo de Desconto Geral", type: "select", options: [{ value: 'none', label: 'Nenhum' }, { value: 'percentage', label: 'Percentagem' }, { value: 'amount', label: 'Valor Fixo' }] },
-    { name: "discount_value", label: "Valor do Desconto Geral", type: "number", conditional: (val: FormData) => val.discount_type !== 'none' },
+    { name: "campaign_id", label: "Campanha Aplicada", type: "select", options: availableCampaigns.map(c => ({ value: c.id, label: c.name })), placeholder: "Selecione uma campanha" }, // NEW: Campaign select
+    { name: "discount_type", label: "Tipo de Desconto Geral", type: "select", options: [{ value: 'none', label: 'Nenhum' }, { value: 'percentage', label: 'Percentagem' }, { value: 'amount', label: 'Valor Fixo' }], readOnly: !!selectedCampaignId }, // Read-only if campaign selected
+    { name: "discount_value", label: "Valor do Desconto Geral", type: "number", conditional: (val: FormData) => val.discount_type !== 'none', readOnly: !!selectedCampaignId }, // Read-only if campaign selected
     { name: "final_deal_value", label: "Valor Final do Negócio", type: "number", readOnly: true },
   ];
 
@@ -364,11 +392,12 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
                           if (field.name === "discount_type" && value === 'none') {
                             setValue("discount_value", 0);
                           }
-                        }} defaultValue={formField.value as string}>
+                        }} value={formField.value as string} disabled={field.readOnly}>
                           <SelectTrigger>
-                            <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
+                            <SelectValue placeholder={field.placeholder} />
                           </SelectTrigger>
                           <SelectContent>
+                            {field.name === "campaign_id" && <SelectItem value="">Nenhuma Campanha</SelectItem>}
                             {field.options?.map((option: any) => (
                               <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
                             ))}

@@ -9,9 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Calendar, DollarSign, Tag, Info, MessageSquareText, Clock, TrendingUp, Handshake, Search, FileText, CheckCircle, XCircle, MoreHorizontal, Edit, Trash, ArrowLeft, ArrowRight, Building, Package } from 'lucide-react';
+import { Terminal, Calendar, DollarSign, Tag, Info, MessageSquareText, Clock, TrendingUp, Handshake, Search, FileText, CheckCircle, XCircle, MoreHorizontal, Edit, Trash, ArrowLeft, ArrowRight, Building, Package, Gift } from 'lucide-react'; // NEW: Import Gift icon
 import { Separator } from '@/components/ui/separator';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -239,6 +239,13 @@ const DealList: React.FC<DealListProps> = ({ companyExcelId }) => {
             <Building className="mr-1 h-3 w-3 text-muted-foreground" />
             <span className="font-medium">Empresa:</span> <span className="ml-1 text-foreground">{deal.commercial_name || 'N/A'}</span>
           </div>
+
+          {deal.campaign_name && ( // NEW: Display campaign name
+            <div className="flex items-center text-xs">
+              <Gift className="mr-1 h-3 w-3 text-muted-foreground" />
+              <span className="font-medium">Campanha:</span> <span className="ml-1 text-foreground">{deal.campaign_name}</span>
+            </div>
+          )}
 
           {deal.deal_products && deal.deal_products.length > 0 && (
             <div className="mt-2 space-y-1">

@@ -53,7 +53,7 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
   // 1. Fetch deals from the 'negocios' table
   const { data: dealsData, error: dealsError } = await supabase
     .from('negocios')
-    .select('*')
+    .select('*, campaigns(name)') // NEW: Select campaign name
     .eq('user_id', userId)
     .eq('company_excel_id', companyExcelId)
     .order('created_at', { ascending: false });
@@ -173,14 +173,14 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
       });
 
     // Calculate deal_value (sum of all total_price_at_deal_time from deal_products, which are already individually discounted)
-    const calculatedDealValue = associatedDealProducts.reduce((sum, dp) => sum + (dp.total_price_at_deal_time || 0), 0);
+    const calculatedBaseDealValue = associatedDealProducts.reduce((sum, dp) => sum + (dp.total_price_at_deal_time || 0), 0);
 
     // Calculate final_deal_value based on overall deal discount
-    let calculatedFinalDealValue = calculatedDealValue;
+    let calculatedFinalDealValue = calculatedBaseDealValue;
     if (deal.discount_type === 'percentage' && deal.discount_value !== null) {
-      calculatedFinalDealValue = calculatedDealValue * (1 - (deal.discount_value / 100));
+      calculatedFinalDealValue = calculatedBaseDealValue * (1 - (deal.discount_value / 100));
     } else if (deal.discount_type === 'amount' && deal.discount_value !== null) {
-      calculatedFinalDealValue = calculatedDealValue - deal.discount_value;
+      calculatedFinalDealValue = calculatedBaseDealValue - deal.discount_value;
     }
     calculatedFinalDealValue = Math.max(0, calculatedFinalDealValue); // Ensure not negative
 
@@ -188,8 +188,9 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
       ...deal,
       commercial_name: commercialName,
       deal_products: associatedDealProducts,
-      deal_value: calculatedDealValue, // Override with calculated value (sum of individually discounted products)
+      deal_value: calculatedBaseDealValue, // Override with calculated value (sum of individually discounted products)
       final_deal_value: calculatedFinalDealValue, // Override with calculated value (after overall deal discount)
+      campaign_name: deal.campaigns?.name || null, // NEW: Add campaign name
     } as Negocio;
   });
 
@@ -286,6 +287,7 @@ export async function upsertDeals(deals: Negocio[], userId: string): Promise<voi
     discount_type: deal.discount_type || 'none',
     discount_value: deal.discount_value || 0,
     final_deal_value: deal.final_deal_value || 0, // Will be recalculated by triggers or UI
+    campaign_id: deal.campaign_id || null, // NEW: Include campaign_id
   }));
 
   if (dataToUpsert.length === 0) {
