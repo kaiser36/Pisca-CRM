@@ -93,6 +93,9 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
     // Extract Stand_Name specifically from the 'Stand' column in Excel
     const standNameFromExcel = findValue(row, ['Stand']) || '';
 
+    // NEW: Extract autobiz_info
+    const autobizInfo = findValue(row, ['Autobiz_Info', 'Autobiz Info', 'Autobiz']) || '';
+
 
     const stand: Stand = {
       Stand_ID: findValue(row, ['Stand_ID', 'Stand ID', 'StandID']) || '',
@@ -146,6 +149,7 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
           Current_Bumps: currentBumps,
           Total_Bumps: totalBumps,
           Stand_Name: standNameFromExcel, // Also update here for consistency in the Company object
+          autobiz_info: autobizInfo, // NEW: Assign autobiz_info
           stands: [],
         });
       }

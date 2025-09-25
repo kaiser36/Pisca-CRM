@@ -94,7 +94,7 @@ export async function fetchCompaniesMissingAdditionalData(userId: string): Promi
     Company_Type: company.company_type,
     Wants_CT: company.wants_ct,
     Wants_CRB_Partner: company.wants_crb_partner,
-    Autobiz_Info: company.autobiz_info,
+    autobiz_info: company.autobiz_info, // Updated to snake_case
     Stand_Name: company.stand_name, // NEW
     stands: []
   }));

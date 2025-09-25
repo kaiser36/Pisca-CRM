@@ -641,7 +641,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                     {renderField(CheckCircle, "Parceiro APDCA (CRM)", crmCompany?.Is_APDCA_Partner)}
                     {renderField(ShieldCheck, "Quer CT", company["Quer CT"])}
                     {renderField(ShieldCheck, "Quer ser Parceiro Credibom (Adicional)", company["Quer ser parceiro Credibom"])}
-                    {renderField(Info, "Autobiz", company["Autobiz"])}
+                    {renderField(Info, "Autobiz", company.crmCompany?.autobiz_info)} {/* Updated to snake_case */}
                   </AccordionContent>
                 </AccordionItem>
 

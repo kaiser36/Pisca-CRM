@@ -79,7 +79,7 @@ export interface Company {
   Company_Type?: string;
   Wants_CT?: boolean;
   Wants_CRB_Partner?: boolean;
-  Autobiz_Info?: string;
+  autobiz_info?: string; // Renamed to snake_case
   Stand_Name?: string; // Nome comercial do ponto de venda
 
   stands: Stand[];

@@ -58,7 +58,7 @@ function mapSupabaseCompanyToCrmCompany(supabaseCompany: any): Company {
     Company_Type: supabaseCompany.company_type,
     Wants_CT: supabaseCompany.wants_ct,
     Wants_CRB_Partner: supabaseCompany.wants_crb_partner,
-    Autobiz_Info: supabaseCompany.autobiz_info,
+    autobiz_info: supabaseCompany.autobiz_info, // Updated to snake_case
     Stand_Name: supabaseCompany.stand_name,
     stands: [] // Stands are populated separately
   };
@@ -259,24 +259,24 @@ export async function upsertCompanies(companies: Company[], userId: string): Pro
     logo_url: company.Logo_URL,
     classification: company.Classification,
     imported_percentage: company.Imported_Percentage,
-    Vehicle_Source: company.Vehicle_Source,
-    Competition: company.Competition,
-    Social_Media_Investment: company.Social_Media_Investment,
-    Portal_Investment: company.Portal_Investment,
-    B2B_Market: company.B2B_Market,
-    Uses_CRM: company.Uses_CRM,
-    CRM_Software: company.CRM_Software,
-    Recommended_Plan: company.Recommended_Plan,
-    Credit_Mediator: company.Credit_Mediator,
-    Bank_Of_Portugal_Link: company.Bank_Of_Portugal_Link,
-    Financing_Agreements: company.Financing_Agreements,
-    Last_Visit_Date: company.Last_Visit_Date,
-    Company_Group: company.Company_Group,
-    Represented_Brands: company.Represented_Brands,
-    Company_Type: company.Company_Type,
-    Wants_CT: company.Wants_CT,
-    Wants_CRB_Partner: company.Wants_CRB_Partner,
-    Autobiz_Info: company.Autobiz_Info,
+    vehicle_source: company.Vehicle_Source,
+    competition: company.Competition,
+    social_media_investment: company.Social_Media_Investment,
+    portal_investment: company.Portal_Investment,
+    b2b_market: company.B2B_Market,
+    uses_crm: company.Uses_CRM,
+    crm_software: company.CRM_Software,
+    recommended_plan: company.Recommended_Plan,
+    credit_mediator: company.Credit_Mediator,
+    bank_of_portugal_link: company.Bank_Of_Portugal_Link,
+    financing_agreements: company.Financing_Agreements,
+    last_visit_date: company.Last_Visit_Date,
+    company_group: company.Company_Group,
+    represented_brands: company.Represented_Brands,
+    company_type: company.Company_Type,
+    wants_ct: company.Wants_CT,
+    wants_crb_partner: company.Wants_CRB_Partner,
+    autobiz_info: company.autobiz_info, // Updated to snake_case
     stand_name: company.Stand_Name,
   }));
 
@@ -352,7 +352,7 @@ export async function updateCompanyAdditionalInfo(companyIdExcel: string, data: 
   if (data.Company_Type !== undefined) updatePayload.company_type = data.Company_Type;
   if (data.Wants_CT !== undefined) updatePayload.wants_ct = data.Wants_CT;
   if (data.Wants_CRB_Partner !== undefined) updatePayload.wants_crb_partner = data.Wants_CRB_Partner;
-  if (data.Autobiz_Info !== undefined) updatePayload.autobiz_info = data.Autobiz_Info;
+  if (data.autobiz_info !== undefined) updatePayload.autobiz_info = data.autobiz_info; // Updated to snake_case
   if (data.Stand_Name !== undefined) updatePayload.stand_name = data.Stand_Name;
 
   if (Object.keys(updatePayload).length === 0) {
