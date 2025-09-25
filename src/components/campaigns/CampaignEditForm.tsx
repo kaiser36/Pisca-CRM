@@ -4,15 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Campaign } from '@/types/crm';
-import { updateCampaign } from '@/integrations/supabase/utils';
+import { Campaign, Product } from '@/types/crm'; // Import Product
+import { updateCampaign, fetchProducts } from '@/integrations/supabase/utils'; // Import fetchProducts
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, CalendarIcon } from 'lucide-react';
+import { Loader2, CalendarIcon, Check } from 'lucide-react'; // Import Check icon
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -20,6 +20,7 @@ import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'; // Import Command components
 
 interface CampaignEditFormProps {
   campaign: Campaign;
@@ -39,6 +40,7 @@ const formSchema = z.object({
   start_date: z.date().nullable().optional(),
   end_date: z.date().nullable().optional(),
   is_active: z.boolean().default(true),
+  product_ids: z.array(z.string()).optional(), // NEW: Array of product IDs
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -46,6 +48,7 @@ type FormData = z.infer<typeof formSchema>;
 const CampaignEditForm: React.FC<CampaignEditFormProps> = ({ campaign, onSave, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]); // NEW: State for all products
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -65,6 +68,23 @@ const CampaignEditForm: React.FC<CampaignEditFormProps> = ({ campaign, onSave, o
     return () => subscription.unsubscribe();
   }, []);
 
+  // NEW: Fetch all products
+  useEffect(() => {
+    const loadProducts = async () => {
+      if (!userId) return;
+      try {
+        const products = await fetchProducts(userId);
+        setAllProducts(products);
+      } catch (err: any) {
+        console.error("Erro ao carregar produtos:", err);
+        showError(err.message || "Falha ao carregar a lista de produtos.");
+      }
+    };
+    if (userId) {
+      loadProducts();
+    }
+  }, [userId]);
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -76,12 +96,14 @@ const CampaignEditForm: React.FC<CampaignEditFormProps> = ({ campaign, onSave, o
       start_date: campaign.start_date ? parseISO(campaign.start_date) : undefined,
       end_date: campaign.end_date ? parseISO(campaign.end_date) : undefined,
       is_active: campaign.is_active ?? true,
+      product_ids: campaign.product_ids || [], // NEW: Default to existing product_ids
     },
   });
 
   const { watch, setValue } = form;
   const campaignType = watch("type");
   const discountType = watch("discount_type");
+  const selectedProductIds = watch("product_ids"); // NEW: Watch selected product IDs
 
   useEffect(() => {
     if (campaignType !== 'discount') {
@@ -113,6 +135,7 @@ const CampaignEditForm: React.FC<CampaignEditFormProps> = ({ campaign, onSave, o
         start_date: values.start_date ? values.start_date.toISOString() : null,
         end_date: values.end_date ? values.end_date.toISOString() : null,
         is_active: values.is_active,
+        product_ids: values.product_ids, // NEW: Include product_ids
       };
 
       await updateCampaign(campaign.id!, updatedCampaign);
@@ -135,6 +158,7 @@ const CampaignEditForm: React.FC<CampaignEditFormProps> = ({ campaign, onSave, o
     { name: "is_active", label: "Ativa", type: "boolean" },
     { name: "discount_type", label: "Tipo de Desconto", type: "select", options: [{ value: 'none', label: 'Nenhum' }, { value: 'percentage', label: 'Percentagem' }, { value: 'amount', label: 'Valor Fixo' }], conditional: (val: FormData) => val.type === 'discount' },
     { name: "discount_value", label: "Valor do Desconto", type: "number", conditional: (val: FormData) => val.type === 'discount' && val.discount_type !== 'none' },
+    { name: "product_ids", label: "Aplicar a Produtos", type: "multi-select", options: allProducts.map(p => ({ value: p.id, label: p.produto })) }, // NEW: Multi-select for products
   ];
 
   return (
@@ -188,6 +212,49 @@ const CampaignEditForm: React.FC<CampaignEditFormProps> = ({ campaign, onSave, o
                           value={formField.value as string || ''}
                           onChange={formField.onChange}
                         />
+                      ) : field.type === "multi-select" ? ( // NEW: Multi-select for products
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className="w-full justify-start">
+                              {selectedProductIds && selectedProductIds.length > 0
+                                ? `${selectedProductIds.length} produtos selecionados`
+                                : "Selecione produtos"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                              <CommandInput placeholder="Pesquisar produtos..." />
+                              <CommandList>
+                                <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
+                                <CommandGroup>
+                                  {field.options?.map((option) => (
+                                    <CommandItem
+                                      key={option.value}
+                                      value={option.value}
+                                      onSelect={() => {
+                                        const currentSelection = new Set(selectedProductIds);
+                                        if (currentSelection.has(option.value)) {
+                                          currentSelection.delete(option.value);
+                                        } else {
+                                          currentSelection.add(option.value);
+                                        }
+                                        formField.onChange(Array.from(currentSelection));
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          selectedProductIds?.includes(option.value) ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      {option.label}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       ) : field.type === "select" ? (
                         <Select onValueChange={formField.onChange} value={formField.value as string}>
                           <SelectTrigger>
