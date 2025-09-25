@@ -5,12 +5,13 @@ import { Stand } from '@/types/crm';
  * Upserts stand data into Supabase.
  */
 export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, string>): Promise<void> {
+  console.log(`[upsertStands] Attempting to upsert ${stands.length} stands.`);
   const uniqueStandsMap = new Map<string, any>();
 
   stands.forEach(stand => {
     const companyDbId = companyDbIdMap.get(stand.Company_id);
     if (!companyDbId) {
-      console.warn(`Company DB ID not found for Excel Company_id: ${stand.Company_id}. Skipping stand: ${stand.Stand_ID}`);
+      console.warn(`[upsertStands] Company DB ID not found for Excel Company_id: ${stand.Company_id}. Skipping stand: ${stand.Stand_ID}`);
       return;
     }
 
@@ -44,8 +45,10 @@ export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, 
   });
 
   const standsToUpsert = Array.from(uniqueStandsMap.values());
+  console.log(`[upsertStands] ${standsToUpsert.length} stands prepared for upsert after deduplication and company ID lookup.`);
 
   if (standsToUpsert.length === 0) {
+    console.log('[upsertStands] No stands to upsert.');
     return;
   }
 
@@ -54,7 +57,8 @@ export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, 
     .upsert(standsToUpsert, { onConflict: 'stand_id, company_db_id' }); // Use stand_id and company_db_id as conflict keys
 
   if (error) {
-    console.error('Error upserting stands:', error);
+    console.error('[upsertStands] Error upserting stands:', error);
     throw new Error(error.message);
   }
+  console.log(`[upsertStands] Successfully upserted ${standsToUpsert.length} stands.`);
 }

@@ -7,17 +7,24 @@ import { Company, Stand } from '@/types/crm';
  * Additional Excel data is not merged here, as per the request for independent tables.
  */
 export async function fetchCompaniesWithStands(userId: string): Promise<Company[]> {
+  console.log(`[fetchCompaniesWithStands] Fetching companies for user: ${userId}`);
   const { data: companiesData, error: companiesError } = await supabase
     .from('companies')
     .select('*')
     .eq('user_id', userId);
 
   if (companiesError) {
-    console.error('Error fetching companies:', companiesError);
+    console.error('[fetchCompaniesWithStands] Error fetching companies:', companiesError);
     throw new Error(companiesError.message);
   }
+  console.log(`[fetchCompaniesWithStands] Fetched ${companiesData.length} companies:`, companiesData.map(c => ({ id: c.id, company_id: c.company_id, name: c.company_name })));
 
   const companyIds = companiesData.map(c => c.id);
+  if (companyIds.length === 0) {
+    console.log('[fetchCompaniesWithStands] No companies found, returning empty array.');
+    return [];
+  }
+  console.log(`[fetchCompaniesWithStands] Company DB IDs to fetch stands for:`, companyIds);
 
   let allStandsData: any[] = [];
   const BATCH_SIZE = 50; // Fetch stands in batches of 50 company IDs to avoid URI Too Long error
@@ -26,19 +33,23 @@ export async function fetchCompaniesWithStands(userId: string): Promise<Company[
     const batchIds = companyIds.slice(i, i + BATCH_SIZE);
     if (batchIds.length === 0) continue;
 
+    console.log(`[fetchCompaniesWithStands] Fetching stands for batch of company IDs:`, batchIds);
     const { data: batchStandsData, error: batchStandsError } = await supabase
       .from('stands')
       .select('*, stand_name') // Select stand_name
       .in('company_db_id', batchIds);
 
     if (batchStandsError) {
-      console.error('Error fetching stands in batch:', batchStandsError);
+      console.error('[fetchCompaniesWithStands] Error fetching stands in batch:', batchStandsError);
       throw new Error(batchStandsError.message);
     }
+    console.log(`[fetchCompaniesWithStands] Fetched ${batchStandsData.length} stands in batch.`);
     allStandsData = allStandsData.concat(batchStandsData);
   }
 
-  const standsData = allStandsData;
+  console.log(`[fetchCompaniesWithStands] Total stands fetched: ${allStandsData.length}`);
+
+  // const standsData = allStandsData; // This line is redundant and caused the error
 
   const companiesMap = new Map<string, Company>();
   companiesData.forEach(company => {
@@ -102,7 +113,7 @@ export async function fetchCompaniesWithStands(userId: string): Promise<Company[
     });
   });
 
-  standsData.forEach(stand => {
+  allStandsData.forEach(stand => { // Corrected: Use allStandsData directly
     const company = companiesMap.get(stand.company_db_id);
     if (company) {
       company.stands.push({
@@ -131,10 +142,15 @@ export async function fetchCompaniesWithStands(userId: string): Promise<Company[
         Whatsapp: stand.whatsapp,
         Stand_Name: stand.stand_name, // NEW: Include stand_name
       });
+    } else {
+      console.warn(`[fetchCompaniesWithStands] Stand with company_db_id ${stand.company_db_id} found but no matching company in map. Stand:`, stand);
     }
   });
 
-  return Array.from(companiesMap.values());
+  const result = Array.from(companiesMap.values());
+  console.log(`[fetchCompaniesWithStands] Final companies with stands count: ${result.length}`);
+  result.forEach(c => console.log(`  - Company ${c.Company_Name} (${c.Company_id}) has ${c.stands.length} stands.`));
+  return result;
 }
 
 /**
@@ -146,6 +162,7 @@ export async function fetchCompaniesByExcelCompanyIds(userId: string, excelCompa
     return [];
   }
 
+  console.log(`[fetchCompaniesByExcelCompanyIds] Fetching companies by Excel IDs for user: ${userId}, IDs:`, excelCompanyIds);
   const { data: companiesData, error: companiesError } = await supabase
     .from('companies')
     .select('*')
@@ -153,9 +170,10 @@ export async function fetchCompaniesByExcelCompanyIds(userId: string, excelCompa
     .in('company_id', excelCompanyIds); // Filter by company_id (which is the excel_company_id)
 
   if (companiesError) {
-    console.error('Error fetching companies by Excel IDs:', companiesError);
+    console.error('[fetchCompaniesByExcelCompanyIds] Error fetching companies by Excel IDs:', companiesError);
     throw new Error(companiesError.message);
   }
+  console.log(`[fetchCompaniesByExcelCompanyIds] Fetched ${companiesData.length} companies by Excel IDs.`);
 
   const companyDbIds = companiesData.map(c => c.id);
 
@@ -166,19 +184,20 @@ export async function fetchCompaniesByExcelCompanyIds(userId: string, excelCompa
     const batchIds = companyDbIds.slice(i, i + BATCH_SIZE);
     if (batchIds.length === 0) continue;
 
+    console.log(`[fetchCompaniesByExcelCompanyIds] Fetching stands for batch of company DB IDs:`, batchIds);
     const { data: batchStandsData, error: batchStandsError } = await supabase
       .from('stands')
       .select('*, stand_name') // Select stand_name
       .in('company_db_id', batchIds);
 
     if (batchStandsError) {
-      console.error('Error fetching stands in batch for specific companies:', batchStandsError);
+      console.error('[fetchCompaniesByExcelCompanyIds] Error fetching stands in batch for specific companies:', batchStandsError);
       throw new Error(batchStandsError.message);
     }
     allStandsData = allStandsData.concat(batchStandsData);
   }
 
-  const standsData = allStandsData;
+  console.log(`[fetchCompaniesByExcelCompanyIds] Total stands fetched for specific companies: ${allStandsData.length}`);
 
   const companiesMap = new Map<string, Company>();
   companiesData.forEach(company => {
@@ -242,7 +261,7 @@ export async function fetchCompaniesByExcelCompanyIds(userId: string, excelCompa
     });
   });
 
-  standsData.forEach(stand => {
+  allStandsData.forEach(stand => { // Corrected: Use allStandsData directly
     // Find the company using its Excel ID (company_id_excel)
     const company = companiesMap.get(stand.company_id_excel);
     if (company) {
@@ -272,10 +291,15 @@ export async function fetchCompaniesByExcelCompanyIds(userId: string, excelCompa
         Whatsapp: stand.whatsapp,
         Stand_Name: stand.stand_name, // NEW: Include stand_name
       });
+    } else {
+      console.warn(`[fetchCompaniesByExcelCompanyIds] Stand with company_id_excel ${stand.company_id_excel} found but no matching company in map. Stand:`, stand);
     }
   });
 
-  return Array.from(companiesMap.values());
+  const result = Array.from(companiesMap.values());
+  console.log(`[fetchCompaniesByExcelCompanyIds] Final companies with stands count: ${result.length}`);
+  result.forEach(c => console.log(`  - Company ${c.Company_Name} (${c.Company_id}) has ${c.stands.length} stands.`));
+  return result;
 }
 
 /**
@@ -283,6 +307,7 @@ export async function fetchCompaniesByExcelCompanyIds(userId: string, excelCompa
  * Maps Excel Company_id to Supabase DB UUID.
  */
 export async function upsertCompanies(companies: Company[], userId: string): Promise<Map<string, string>> {
+  console.log(`[upsertCompanies] Attempting to upsert ${companies.length} companies for user: ${userId}.`);
   const companyDbIdMap = new Map<string, string>();
 
   const companiesToUpsert = companies.map(company => ({
@@ -343,22 +368,24 @@ export async function upsertCompanies(companies: Company[], userId: string): Pro
   }));
 
   if (companiesToUpsert.length === 0) {
+    console.log('[upsertCompanies] No companies to upsert.');
     return companyDbIdMap;
   }
 
   const { data, error } = await supabase
     .from('companies')
     .upsert(companiesToUpsert, { onConflict: 'company_id, user_id' })
-    .select('id, company_id'); // Select both to map Excel ID to DB ID
+    .select('id, company_id');
 
   if (error) {
-    console.error('Error upserting companies:', error);
+    console.error('[upsertCompanies] Error upserting companies:', error);
     throw new Error(error.message);
   }
 
   data?.forEach(c => {
     companyDbIdMap.set(c.company_id, c.id);
   });
+  console.log(`[upsertCompanies] Successfully upserted ${data?.length || 0} companies. Mapped Excel IDs to DB IDs:`, Array.from(companyDbIdMap.entries()));
 
   return companyDbIdMap;
 }
@@ -367,6 +394,7 @@ export async function upsertCompanies(companies: Company[], userId: string): Pro
  * Updates specific additional company information in the 'companies' table.
  */
 export async function updateCompanyAdditionalInfo(companyIdExcel: string, data: Partial<Company>, userId: string): Promise<void> {
+  console.log(`[updateCompanyAdditionalInfo] Attempting to update additional info for company Excel ID: ${companyIdExcel}`);
   const { data: existingCompany, error: fetchError } = await supabase
     .from('companies')
     .select('id')
@@ -375,9 +403,10 @@ export async function updateCompanyAdditionalInfo(companyIdExcel: string, data: 
     .single();
 
   if (fetchError) {
-    console.error(`Company with Excel ID ${companyIdExcel} not found or error fetching:`, fetchError);
+    console.error(`[updateCompanyAdditionalInfo] Company with Excel ID ${companyIdExcel} not found or error fetching:`, fetchError);
     throw new Error(`Company with Excel ID ${companyIdExcel} not found or error fetching: ${fetchError.message}`);
   }
+  console.log(`[updateCompanyAdditionalInfo] Found company DB ID: ${existingCompany.id} for Excel ID: ${companyIdExcel}`);
 
   const updatePayload: { [key: string]: any } = {};
   if (data.Commercial_Name !== undefined) updatePayload.commercial_name = data.Commercial_Name;
@@ -414,9 +443,10 @@ export async function updateCompanyAdditionalInfo(companyIdExcel: string, data: 
   if (data.Stand_Name !== undefined) updatePayload.stand_name = data.Stand_Name; // NEW
 
   if (Object.keys(updatePayload).length === 0) {
-    console.warn('No additional company data to update for company:', companyIdExcel);
+    console.warn('[updateCompanyAdditionalInfo] No additional company data to update for company:', companyIdExcel);
     return;
   }
+  console.log(`[updateCompanyAdditionalInfo] Update payload for company ${companyIdExcel}:`, updatePayload);
 
   const { error } = await supabase
     .from('companies')
@@ -424,15 +454,17 @@ export async function updateCompanyAdditionalInfo(companyIdExcel: string, data: 
     .eq('id', existingCompany.id);
 
   if (error) {
-    console.error('Error updating additional company info:', error);
+    console.error('[updateCompanyAdditionalInfo] Error updating additional company info:', error);
     throw new Error(error.message);
   }
+  console.log(`[updateCompanyAdditionalInfo] Successfully updated additional info for company ${companyIdExcel}.`);
 }
 
 /**
  * Fetches a company by its email for a given user.
  */
 export async function fetchCompanyByEmail(userId: string, email: string): Promise<Company | null> {
+  console.log(`[fetchCompanyByEmail] Fetching company by email: ${email} for user: ${userId}`);
   const { data, error } = await supabase
     .from('companies')
     .select('*')
@@ -441,14 +473,16 @@ export async function fetchCompanyByEmail(userId: string, email: string): Promis
     .single();
 
   if (error && error.code !== 'PGRST116') { // PGRST116 means "no rows found"
-    console.error('Error fetching company by email:', error);
+    console.error('[fetchCompanyByEmail] Error fetching company by email:', error);
     throw new Error(error.message);
   }
 
   if (!data) {
+    console.log(`[fetchCompanyByEmail] No company found for email: ${email}`);
     return null;
   }
 
+  console.log(`[fetchCompanyByEmail] Found company for email ${email}:`, data.company_id);
   // Map Supabase data to Company type
   return {
     Company_id: data.company_id,
