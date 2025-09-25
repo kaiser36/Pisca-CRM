@@ -220,17 +220,6 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
   return (
     <ScrollArea className="h-full w-full pr-4">
-      <div className="flex flex-col items-center mb-6">
-        <Avatar className="h-24 w-24 mb-4">
-          <AvatarImage src={company["Logotipo"] || undefined} alt={companyDisplayName} />
-          <AvatarFallback className="bg-primary text-primary-foreground text-4xl font-bold">
-            {firstLetter}
-          </AvatarFallback>
-        </Avatar>
-        <h1 className="text-3xl font-bold text-center">{companyDisplayName}</h1>
-        <p className="text-muted-foreground text-center">ID Excel: {company.excel_company_id}</p>
-      </div>
-
       <Card className="w-full shadow-md">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -340,11 +329,18 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
               </Dialog>
             </div>
           </div>
+          <CardDescription className="text-muted-foreground">ID Excel: {company.excel_company_id}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Main Overview Card */}
           <Card className="p-6 shadow-subtle border-l-4 border-primary">
             <div className="flex flex-col items-center space-y-4"> {/* Changed to flex-col and items-center */}
+              <Avatar className="h-24 w-24"> {/* Increased size */}
+                <AvatarImage src={company["Logotipo"] || undefined} alt={companyDisplayName} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-4xl font-bold"> {/* Increased text size */}
+                  {firstLetter}
+                </AvatarFallback>
+              </Avatar>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 flex-1 w-full"> {/* Added w-full */}
                 {renderField(Mail, "Email", company["Email da empresa"] || crmCompany?.Company_Email)}
                 {renderField(Globe, "Website", company["Site"] || crmCompany?.Website)}
