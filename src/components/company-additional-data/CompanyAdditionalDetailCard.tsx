@@ -441,13 +441,43 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
           {/* End New Overview Cards */}
 
           <Tabs defaultValue="details" onValueChange={(value) => console.log('Tab changed to:', value)}>
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-10 rounded-lg">
-              <TabsTrigger value="details">Detalhes</TabsTrigger>
-              <TabsTrigger value="stands">Stands</TabsTrigger>
-              <TabsTrigger value="contacts">Contactos</TabsTrigger>
-              <TabsTrigger value="easyvistas">Easyvistas</TabsTrigger>
-              <TabsTrigger value="deals">Negócios</TabsTrigger>
-              <TabsTrigger value="employees">Colaboradores</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6 h-10 rounded-lg bg-muted/70 p-1"> {/* Adjusted grid-cols and added bg-muted/70 p-1 */}
+              <TabsTrigger
+                value="details"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+              >
+                Detalhes
+              </TabsTrigger>
+              <TabsTrigger
+                value="stands"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+              >
+                Stands
+              </TabsTrigger>
+              <TabsTrigger
+                value="contacts"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+              >
+                Contactos
+              </TabsTrigger>
+              <TabsTrigger
+                value="easyvistas"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+              >
+                Easyvistas
+              </TabsTrigger>
+              <TabsTrigger
+                value="deals"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+              >
+                Negócios
+              </TabsTrigger>
+              <TabsTrigger
+                value="employees"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+              >
+                Colaboradores
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="details" className="mt-4 space-y-6">
               <Accordion type="multiple" className="w-full space-y-4">
