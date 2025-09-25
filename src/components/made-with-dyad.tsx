@@ -1,6 +1,6 @@
 export const MadeWithDyad = () => {
   return (
-    <div className="p-4 text-center">
+    <div className="py-1 text-center">
       <a
         href="https://www.dyad.sh/"
         target="_blank"
