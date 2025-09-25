@@ -37,8 +37,8 @@ export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, 
       delta_publicados_last_day_month: stand.Delta_Publicados_Last_Day_Month,
       leads_recebidas: stand.Leads_Recebidas,
       leads_pendentes: stand.Leads_Pendentes,
-      leads_expiradas: stand.Leads_Expiradas,
-      leads_financiadas: stand.Leads_Financiadas,
+      Leads_Expiradas: stand.Leads_Expiradas,
+      Leads_Financiadas: stand.Leads_Financiadas,
       whatsapp: stand.Whatsapp,
       stand_name: stand.Stand_Name, // NEW: Include stand_name
     });
@@ -64,18 +64,39 @@ export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, 
 }
 
 /**
- * Deletes all stands for a given user.
+ * Deletes all stands for a given user by first finding their associated companies.
  */
 export async function deleteStands(userId: string): Promise<void> {
-  console.log(`[deleteStands] Deleting all stands for user: ${userId}`);
-  const { error } = await supabase
+  console.log(`[deleteStands] Attempting to delete all stands for user: ${userId}`);
+
+  // 1. Fetch all company_db_ids associated with this user
+  const { data: companyIdsData, error: companyFetchError } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('user_id', userId);
+
+  if (companyFetchError) {
+    console.error('[deleteStands] Error fetching company IDs for user:', companyFetchError);
+    throw new Error(companyFetchError.message);
+  }
+
+  const companyDbIds = companyIdsData.map(c => c.id);
+
+  if (companyDbIds.length === 0) {
+    console.log(`[deleteStands] No companies found for user ${userId}, so no stands to delete.`);
+    return;
+  }
+
+  // 2. Delete stands where company_db_id is in the list of user's company IDs
+  console.log(`[deleteStands] Deleting stands associated with ${companyDbIds.length} companies for user: ${userId}`);
+  const { error: deleteError } = await supabase
     .from('stands')
     .delete()
-    .eq('user_id', userId); // Assuming 'stands' table has a user_id column
+    .in('company_db_id', companyDbIds);
 
-  if (error) {
-    console.error('[deleteStands] Error deleting stands:', error);
-    throw new Error(error.message);
+  if (deleteError) {
+    console.error('[deleteStands] Error deleting stands:', deleteError);
+    throw new Error(deleteError.message);
   }
   console.log(`[deleteStands] Successfully deleted stands for user: ${userId}`);
 }
