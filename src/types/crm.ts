@@ -277,3 +277,18 @@ export interface Task {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface Campaign {
+  id?: string;
+  user_id: string;
+  name: string;
+  description?: string | null;
+  type: 'discount' | 'offer' | 'other';
+  discount_type?: 'percentage' | 'amount' | 'none' | null;
+  discount_value?: number | null;
+  start_date?: string | null; // ISO string for timestamp
+  end_date?: string | null; // ISO string for timestamp
+  is_active?: boolean | null;
+  created_at?: string;
+  updated_at?: string;
+}

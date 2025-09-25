@@ -12,6 +12,7 @@ import CompanyAdditionalDetailPage from "./pages/CompanyAdditionalDetailPage"; /
 import Accounts from "./pages/Accounts";
 import AmView from "./pages/AmView";
 import Products from "./pages/Products";
+import Campaigns from "./pages/Campaigns"; // NEW: Import Campaigns page
 import { CrmDataProvider } from "@/context/CrmDataContext";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/accounts" element={<Accounts />} />
             <Route path="/am-view" element={<AmView />} />
             <Route path="/products" element={<Products />} />
+            <Route path="/campaigns" element={<Campaigns />} /> {/* NEW: Add Campaigns route */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
