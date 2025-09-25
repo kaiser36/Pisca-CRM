@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Task, Employee } from '@/types/crm';
-import { updateTask, fetchEmployeesByCompanyExcelId } from '@/integrations/supabase/utils';
+import { Task, Employee, Account, Company } from '@/types/crm'; // Import Company and Account
+import { updateTask, fetchEmployeesByCompanyExcelId, fetchAccounts, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils'; // Import fetchAccounts and fetchCompaniesByExcelCompanyIds
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -32,8 +32,8 @@ const formSchema = z.object({
   due_date: z.date().nullable().optional(),
   status: z.enum(['Pending', 'In Progress', 'Completed', 'Cancelled']).default('Pending'),
   priority: z.enum(['Low', 'Medium', 'High']).default('Medium'),
-  assigned_to_employee_id: z.string().nullable().optional(),
-  assigned_to_employee_name: z.string().nullable().optional(),
+  assigned_to_employee_id: z.string().nullable().optional(), // Now refers to AM ID
+  assigned_to_employee_name: z.string().nullable().optional(), // Now refers to AM Name
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -41,8 +41,9 @@ type FormData = z.infer<typeof formSchema>;
 const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [isEmployeesLoading, setIsEmployeesLoading] = useState(true);
+  const [companyDetails, setCompanyDetails] = useState<Company | null>(null); // State for company details
+  const [availableAMs, setAvailableAMs] = useState<Account[]>([]); // State for available AMs
+  const [isAMsLoading, setIsAMsLoading] = useState(true); // Loading state for AMs
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -63,24 +64,44 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
   }, []);
 
   useEffect(() => {
-    const loadEmployees = async () => {
+    const loadData = async () => {
       if (!userId || !task.company_excel_id) return;
-      setIsEmployeesLoading(true);
+      setIsAMsLoading(true);
       try {
-        const fetchedEmployees = await fetchEmployeesByCompanyExcelId(userId, task.company_excel_id);
-        setEmployees(fetchedEmployees);
+        // Fetch company details
+        const companies = await fetchCompaniesByExcelCompanyIds(userId, [task.company_excel_id]);
+        const currentCompany = companies.find(c => c.Company_id === task.company_excel_id);
+        setCompanyDetails(currentCompany || null);
+
+        // Fetch all AMs
+        const fetchedAMs = await fetchAccounts(userId);
+        setAvailableAMs(fetchedAMs);
+
+        // Set default AM if task has one, otherwise try company's AM
+        if (task.assigned_to_employee_id) {
+          const defaultAM = fetchedAMs.find(am => am.id === task.assigned_to_employee_id);
+          if (defaultAM) {
+            form.setValue("assigned_to_employee_name", defaultAM.account_name || defaultAM.am || null);
+          }
+        } else if (currentCompany?.AM_Current) {
+          const defaultAM = fetchedAMs.find(am => am.am === currentCompany.AM_Current);
+          if (defaultAM) {
+            form.setValue("assigned_to_employee_id", defaultAM.id);
+            form.setValue("assigned_to_employee_name", defaultAM.account_name || defaultAM.am || null);
+          }
+        }
       } catch (err: any) {
-        console.error("Erro ao carregar colaboradores:", err);
-        showError(err.message || "Falha ao carregar a lista de colaboradores.");
+        console.error("Erro ao carregar dados para o formulário de tarefa:", err);
+        showError(err.message || "Falha ao carregar dados necessários.");
       } finally {
-        setIsEmployeesLoading(false);
+        setIsAMsLoading(false);
       }
     };
 
     if (userId) {
-      loadEmployees();
+      loadData();
     }
-  }, [userId, task.company_excel_id]);
+  }, [userId, task.company_excel_id, task.assigned_to_employee_id]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -132,17 +153,17 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
     { name: "priority", label: "Prioridade", type: "select", options: ['Low', 'Medium', 'High'] },
     {
       name: "assigned_to_employee_id",
-      label: "Atribuído a (Colaborador)",
+      label: "Atribuído a (AM)", // Changed label
       type: "select",
-      options: employees.map(emp => ({ value: emp.id, label: emp.nome_colaborador })),
-      placeholder: "Selecione um colaborador",
+      options: availableAMs.map(am => ({ value: am.id, label: am.account_name || am.am || 'N/A' })), // Map AMs
+      placeholder: "Selecione um AM",
       onValueChange: (value: string) => {
-        const selectedEmployee = employees.find(emp => emp.id === value);
-        form.setValue("assigned_to_employee_name", selectedEmployee?.nome_colaborador || null);
+        const selectedAM = availableAMs.find(am => am.id === value);
+        form.setValue("assigned_to_employee_name", selectedAM?.account_name || selectedAM?.am || null);
         form.setValue("assigned_to_employee_id", value);
       },
       value: form.watch("assigned_to_employee_id") || '',
-      disabled: isEmployeesLoading || employees.length === 0,
+      disabled: isAMsLoading || availableAMs.length === 0,
     },
   ];
 
@@ -150,7 +171,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4">
         <p className="text-sm text-muted-foreground">
-          A editar tarefa para a empresa com ID Excel: <span className="font-semibold">{task.company_excel_id}</span>
+          A editar tarefa para a empresa <span className="font-semibold">{companyDetails?.Commercial_Name || task.company_excel_id}</span> (ID Excel: <span className="font-semibold">{task.company_excel_id}</span>)
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {fields.map((field) => (
