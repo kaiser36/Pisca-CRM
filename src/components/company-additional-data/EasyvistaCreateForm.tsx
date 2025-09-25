@@ -226,7 +226,17 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           {field.options?.map(option => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
+                            <SelectItem key={option} value={option}>
+                              <div className="flex items-center">
+                                <span className={cn(
+                                  "h-3 w-3 rounded-full mr-2",
+                                  option === 'Alto' && "bg-red-500",
+                                  option === 'Médio' && "bg-blue-500",
+                                  option === 'Baixo' && "bg-green-500"
+                                )}></span>
+                                {option}
+                              </div>
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
