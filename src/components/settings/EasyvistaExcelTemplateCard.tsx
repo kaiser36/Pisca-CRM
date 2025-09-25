@@ -28,7 +28,7 @@ const EasyvistaExcelTemplateCard: React.FC = () => {
         <CardTitle className="text-lg font-semibold">Modelo de Easyvistas</CardTitle>
         <CardDescription className="text-muted-foreground">
           Descarregue um modelo CSV para a tabela de Easyvistas.
-          As colunas "company_excel_id" e "EV_ID" são obrigatórias.
+          A coluna "company_excel_id" é obrigatória.
           O campo "Status" aceita os valores: Criado, Em validação, Em tratamento, Resolvido, Cancelado.
           O campo "Account" deve corresponder ao nome de um Account Manager existente.
         </CardDescription>

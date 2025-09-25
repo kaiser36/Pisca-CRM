@@ -2,10 +2,10 @@ export const generateEasyvistaCsvTemplate = (): string => {
   const headers = [
     "company_excel_id (OBRIGATÓRIO)",
     "Nome comercial",
-    "EV_ID (OBRIGATÓRIO)",
+    // "EV_ID (OBRIGATÓRIO)", // REMOVED: EV_ID
     "Data Criação (YYYY-MM-DD HH:MM:SS)",
     "Status (Criado, Em validação, Em tratamento, Resolvido, Cancelado)",
-    "Account", // UPDATED: Example AM name
+    "Account",
     "Titulo",
     "Descrição",
     "Anexos (URLs separados por ';')",
@@ -31,10 +31,10 @@ export const generateEasyvistaCsvTemplate = (): string => {
   const exampleRow = [
     "EMP001", // Deve corresponder a um Company_id existente na tabela 'companies'
     "Comercial Lda.",
-    "EV001",
+    // "EV001", // REMOVED: EV_ID
     "2023-10-26 10:00:00",
     "Criado",
-    "João Silva (AM)", // UPDATED: Example AM name
+    "Account Manager A",
     "Implementação de Nova Funcionalidade",
     "Detalhes sobre a implementação da funcionalidade X para o cliente Y.",
     "https://example.com/anexo1.pdf;https://example.com/anexo2.jpg",

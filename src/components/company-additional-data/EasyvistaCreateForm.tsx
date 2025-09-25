@@ -30,7 +30,7 @@ interface EasyvistaCreateFormProps {
 
 const formSchema = z.object({
   "Nome comercial": z.string().nullable().optional(),
-  "EV_ID": z.string().min(1, "EV_ID é obrigatório").nullable().optional(),
+  // "EV_ID": z.string().min(1, "EV_ID é obrigatório").nullable().optional(), // REMOVED: EV_ID
   "Status": z.enum(['Criado', 'Em validação', 'Em tratamento', 'Resolvido', 'Cancelado']).nullable().optional(),
   "Account": z.string().nullable().optional(), // UPDATED: Account is now a string from AMs
   "Titulo": z.string().nullable().optional(),
@@ -58,6 +58,18 @@ const formSchema = z.object({
 });
 
 type FormData = z.infer<typeof formSchema>;
+
+// Define a type for the fields array to explicitly include 'required' as optional
+interface FormFieldConfig {
+  name: keyof FormData;
+  label: string;
+  type: "text" | "number" | "textarea" | "email" | "url" | "boolean" | "select";
+  required?: boolean; // Explicitly optional
+  colSpan?: number;
+  options?: (string | { value: string; label: string; color?: string; icon?: React.ElementType })[];
+  placeholder?: string;
+  disabled?: boolean;
+}
 
 const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
   companyExcelId,
@@ -112,7 +124,6 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
     resolver: zodResolver(formSchema),
     defaultValues: {
       "Nome comercial": commercialName || '',
-      "EV_ID": '',
       "Status": 'Criado',
       "Account": '', // Default to empty string
       "Titulo": '',
@@ -142,10 +153,10 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
       showError("Utilizador não autenticado. Por favor, faça login para criar o Easyvista.");
       return;
     }
-    if (!values["EV_ID"]) {
-      showError("EV_ID é obrigatório.");
-      return;
-    }
+    // if (!values["EV_ID"]) { // REMOVED: EV_ID validation
+    //   showError("EV_ID é obrigatório.");
+    //   return;
+    // }
 
     setIsSubmitting(true);
     try {
@@ -153,12 +164,11 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
         user_id: userId,
         company_excel_id: companyExcelId,
         "Nome comercial": values["Nome comercial"] || null,
-        "EV_ID": values["EV_ID"],
         "Status": values["Status"] || null,
-        "Account": values["Account"] || null, // NEW: Use selected AM
+        "Account": values["Account"] || null,
         "Titulo": values["Titulo"] || null,
         "Descrição": values["Descrição"] || null,
-        "Anexos": values["Anexos"] ? [values["Anexos"]] : null,
+        "Anexos": values["Anexos"] ? [values["Anexos"]] : null, // Convert single string to array
         "Tipo de report": values["Tipo de report"] || null,
         "PV": values["PV"] || false,
         "Tipo EVS": values["Tipo EVS"] || null,
@@ -202,12 +212,12 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
     { value: 'Baixo', label: 'Baixo', color: 'bg-green-500' },
   ];
 
-  const fields = [
+  const fields: FormFieldConfig[] = [
     { name: "Nome comercial", label: "Nome Comercial", type: "text" },
     { name: "Urgência", label: "Urgência", type: "select", options: urgencyOptions },
-    { name: "EV_ID", label: "EV_ID", type: "text", required: true },
+    // { name: "EV_ID", label: "EV_ID", type: "text", required: true }, // REMOVED: EV_ID
     { name: "Status", label: "Status", type: "select", options: statusOptions },
-    { name: "Account", label: "Account", type: "select", options: availableAMs.map(am => am.account_name || am.am).filter((name): name is string => name !== null && name.trim() !== ''), placeholder: "Selecione um AM", disabled: isAMsLoading || availableAMs.length === 0 }, // UPDATED: Select for Account
+    { name: "Account", label: "Account", type: "select", options: availableAMs.map(am => ({ value: am.account_name || am.am || '', label: am.account_name || am.am || 'N/A' })).filter(opt => opt.value !== ''), placeholder: "Selecione um AM", disabled: isAMsLoading || availableAMs.length === 0 }, // UPDATED: Select for Account
     { name: "Titulo", label: "Título", type: "text" },
     { name: "Descrição", label: "Descrição", type: "textarea", colSpan: 2 },
     { name: "Anexos", label: "Anexos (URL)", type: "url" },
@@ -242,7 +252,7 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
               name={field.name as keyof FormData}
               render={({ field: formField }) => (
                 <FormItem className={field.colSpan === 2 ? "md:col-span-2" : ""}>
-                  <FormLabel>{field.label} {field.required && <span className="text-red-500">*</span>}</FormLabel>
+                  <FormLabel>{field.label}</FormLabel> {/* REMOVED: field.required check */}
                   <FormControl>
                     {field.type === "boolean" ? (
                       <Switch
@@ -262,7 +272,7 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           {field.name === "Urgência" ? (
-                            urgencyOptions.map(option => (
+                            (field.options as { value: string; label: string; color: string }[]).map(option => (
                               <SelectItem key={option.value} value={option.value}>
                                 <div className="flex items-center">
                                   <span className={cn("h-3 w-3 rounded-full mr-2", option.color)}></span>
@@ -271,7 +281,7 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
                               </SelectItem>
                             ))
                           ) : field.name === "Status" ? (
-                            statusOptions.map(option => {
+                            (field.options as { value: string; label: string; icon: React.ElementType; color: string }[]).map(option => {
                               const Icon = option.icon;
                               return (
                                 <SelectItem key={option.value} value={option.value}>
@@ -282,8 +292,8 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
                                 </SelectItem>
                               );
                             })
-                          ) : ( // For "Account" select
-                            field.options?.map((option: any) => (
+                          ) : ( // For "Account" select and other generic selects
+                            (field.options as { value: string; label: string }[]).map((option: any) => (
                               <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
                             ))
                           )}

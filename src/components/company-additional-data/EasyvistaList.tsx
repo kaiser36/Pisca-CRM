@@ -171,13 +171,13 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
             <Card key={easyvista.id} className="w-full shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-semibold">{easyvista["Titulo"] || 'Easyvista sem Título'}</CardTitle>
-                <CardDescription className="text-muted-foreground">EV_ID: {easyvista["EV_ID"]}</CardDescription>
+                {/* <CardDescription className="text-muted-foreground">EV_ID: {easyvista["EV_ID"]}</CardDescription> */} {/* REMOVED: EV_ID */}
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {renderField(Building, "Nome Comercial", easyvista["Nome comercial"])}
                   {renderField(Calendar, "Data Criação", easyvista["Data Criação"])}
-                  {renderField(Tag, "Status", easyvista["Status"])} {/* UPDATED: Status will now render with badge */}
+                  {renderField(Tag, "Status", easyvista["Status"])}
                   {renderField(User, "Account", easyvista["Account"])}
                   {renderField(Clock, "Última Atualização", easyvista["Ultima actualização"])}
                   {renderField(Info, "Tipo de Report", easyvista["Tipo de report"])}

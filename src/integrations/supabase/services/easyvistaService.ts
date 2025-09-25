@@ -45,12 +45,13 @@ export async function fetchEasyvistasByCompanyExcelId(userId: string, companyExc
  */
 export async function upsertEasyvistas(easyvistas: Easyvista[], userId: string): Promise<void> {
   const dataToUpsert = easyvistas.map(easyvista => ({
+    id: easyvista.id, // Include id for upsert to work on existing records
     user_id: userId,
     company_excel_id: easyvista.company_excel_id,
     "Nome comercial": easyvista["Nome comercial"] || null,
-    "EV_ID": easyvista["EV_ID"], // EV_ID is required for uniqueness
+    // "EV_ID": easyvista["EV_ID"], // REMOVED: EV_ID
     "Data Criação": easyvista["Data Criação"] || new Date().toISOString(),
-    "Status": easyvista["Status"] || 'Criado', // UPDATED: Default status to 'Criado'
+    "Status": easyvista["Status"] || 'Criado',
     "Account": easyvista["Account"] || null,
     "Titulo": easyvista["Titulo"] || null,
     "Descrição": easyvista["Descrição"] || null,
@@ -80,10 +81,25 @@ export async function upsertEasyvistas(easyvistas: Easyvista[], userId: string):
 
   const { error } = await supabase
     .from('Easyvistas')
-    .upsert(dataToUpsert, { onConflict: 'company_excel_id, "EV_ID", user_id' }); // Ensure uniqueness per user and EV_ID
+    .upsert(dataToUpsert, { onConflict: 'id' }); // UPDATED: Use 'id' as onConflict key
 
   if (error) {
     console.error('Error upserting Easyvistas:', error);
+    throw new Error(error.message);
+  }
+}
+
+/**
+ * Deletes an Easyvista record from the Easyvistas table.
+ */
+export async function deleteEasyvista(id: number): Promise<void> {
+  const { error } = await supabase
+    .from('Easyvistas')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error(`Error deleting Easyvista with id ${id}:`, error);
     throw new Error(error.message);
   }
 }

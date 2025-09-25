@@ -161,7 +161,7 @@ export interface Easyvista {
   user_id: string;
   company_excel_id?: string | null; // New field to link to CompanyAdditionalExcelData
   "Nome comercial"?: string | null;
-  "EV_ID"?: string | null;
+  // "EV_ID"?: string | null; // REMOVED: EV_ID
   "Data Criação"?: string | null;
   "Status"?: EasyvistaStatus | null; // UPDATED: Use EasyvistaStatus type
   "Account"?: string | null;

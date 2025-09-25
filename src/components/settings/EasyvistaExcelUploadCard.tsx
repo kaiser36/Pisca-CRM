@@ -64,17 +64,17 @@ const EasyvistaExcelUploadCard: React.FC = () => {
       
       const dataToUpsert: Easyvista[] = parsedData.map((row: Record<string, any>) => {
         const companyExcelId = String(row['company_excel_id'] || '');
-        const evId = String(row['EV_ID'] || '');
+        // const evId = String(row['EV_ID'] || ''); // REMOVED: EV_ID
 
-        if (!companyExcelId || !evId) {
-          throw new Error(`Linha inválida: 'company_excel_id' ou 'EV_ID' em falta. Linha: ${JSON.stringify(row)}`);
+        if (!companyExcelId) { // UPDATED: Removed EV_ID from validation
+          throw new Error(`Linha inválida: 'company_excel_id' em falta. Linha: ${JSON.stringify(row)}`);
         }
 
         return {
           user_id: userId,
           company_excel_id: companyExcelId,
           "Nome comercial": String(row['Nome comercial'] || '') || null,
-          "EV_ID": evId,
+          // "EV_ID": evId, // REMOVED: EV_ID
           "Data Criação": String(row['Data Criação (YYYY-MM-DD HH:MM:SS)'] || '') || null,
           "Status": String(row['Status'] || '') || null,
           "Account": String(row['Account'] || '') || null,
@@ -121,7 +121,7 @@ const EasyvistaExcelUploadCard: React.FC = () => {
         <CardTitle className="text-lg font-semibold">Carregar Dados de Easyvistas</CardTitle>
         <CardDescription className="text-muted-foreground">
           Carregue um ficheiro Excel/CSV com informações sobre os registos Easyvista.
-          As colunas 'company_excel_id' e 'EV_ID' são obrigatórias.
+          A coluna 'company_excel_id' é obrigatória.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
