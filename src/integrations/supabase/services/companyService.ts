@@ -114,8 +114,7 @@ async function fetchStandsForCompanyDbIds(userId: string, companyDbIds: string[]
     const { data: batchStandsData, error: batchStandsError } = await supabase
       .from('stands')
       .select('*')
-      .in('company_db_id', batchIds)
-      .eq('user_id', userId); // Ensure RLS is applied
+      .in('company_db_id', batchIds); // Removed .eq('user_id', userId)
 
     if (batchStandsError) {
       console.error('[fetchStandsForCompanyDbIds] Error fetching stands in batch:', batchStandsError);
@@ -245,7 +244,7 @@ export async function upsertCompanies(companies: Company[], userId: string): Pro
     plan_active: company.Plan_Active,
     plan_auto_renewal: company.Plan_Auto_Renewal,
     current_bumps: company.Current_Bumps,
-    total_bumps: company.Total_Bumps,
+    Total_Bumps: company.Total_Bumps,
     commercial_name: company.Commercial_Name,
     company_postal_code: company.Company_Postal_Code,
     district: company.District,
@@ -259,15 +258,15 @@ export async function upsertCompanies(companies: Company[], userId: string): Pro
     logo_url: company.Logo_URL,
     classification: company.Classification,
     imported_percentage: company.Imported_Percentage,
-    vehicle_source: company.Vehicle_Source,
-    competition: company.Competition,
-    social_media_investment: company.Social_Media_Investment,
-    portal_investment: company.Portal_Investment,
-    b2b_market: company.B2B_Market,
-    uses_crm: company.Uses_CRM,
-    crm_software: company.CRM_Software,
-    recommended_plan: company.Recommended_Plan,
-    credit_mediator: company.Credit_Mediator,
+    Vehicle_Source: company.Vehicle_Source,
+    Competition: company.Competition,
+    Social_Media_Investment: company.Social_Media_Investment,
+    Portal_Investment: company.Portal_Investment,
+    B2B_Market: company.B2B_Market,
+    Uses_CRM: company.Uses_CRM,
+    CRM_Software: company.CRM_Software,
+    Recommended_Plan: company.Recommended_Plan,
+    Credit_Mediator: company.Credit_Mediator,
     Bank_Of_Portugal_Link: company.Bank_Of_Portugal_Link,
     Financing_Agreements: company.Financing_Agreements,
     Last_Visit_Date: company.Last_Visit_Date,
