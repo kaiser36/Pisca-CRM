@@ -46,6 +46,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
   const [additionalCompanyDetails, setAdditionalCompanyDetails] = useState<CompanyAdditionalExcelData | null>(null); // NEW: State for additional company data
   const [availableAMs, setAvailableAMs] = useState<Account[]>([]);
   const [isAMsLoading, setIsAMsLoading] = useState(true);
+  const [companyDbId, setCompanyDbId] = useState<string | null>(null); // NEW: State for company_db_id
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -91,6 +92,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
         const companies = await fetchCompaniesByExcelCompanyIds(userId, [task.company_excel_id]);
         const currentCompany = companies.find(c => c.Company_id === task.company_excel_id);
         setCompanyDetails(currentCompany || null);
+        setCompanyDbId(currentCompany?.id || null); // NEW: Set company_db_id
 
         // Fetch additional company data
         const { data: additionalData } = await fetchCompanyAdditionalExcelData(userId, 1, 1, task.company_excel_id);
@@ -157,6 +159,10 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
       showError("Utilizador não autenticado. Por favor, faça login para guardar os dados.");
       return;
     }
+    if (!companyDbId) { // NEW: Check if companyDbId is available
+      showError("Não foi possível associar a tarefa a uma empresa válida. Por favor, verifique o ID Excel da empresa.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -169,6 +175,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
         assigned_to_employee_id: values.assigned_to_employee_id || null,
         assigned_to_employee_name: values.assigned_to_employee_name || null,
         commercial_name: values.commercial_name || null,
+        company_db_id: companyDbId, // NEW: Include company_db_id
       };
 
       await updateTask(task.id!, updatedTask);
@@ -211,6 +218,11 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
         <p className="text-sm text-muted-foreground">
           A editar tarefa para a empresa <span className="font-semibold">{companyDisplayName}</span> (ID Excel: <span className="font-semibold">{task.company_excel_id}</span>)
         </p>
+        {!companyDbId && ( // NEW: Alert if companyDbId is missing
+          <p className="text-sm text-red-500">
+            Não foi possível encontrar a empresa no CRM principal com o ID Excel fornecido. A tarefa não poderá ser atualizada.
+          </p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {fields.map((field) => (
             <FormField
@@ -295,7 +307,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting || !userId || !form.formState.isValid}>
+          <Button type="submit" disabled={isSubmitting || !userId || !companyDbId || !form.formState.isValid}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

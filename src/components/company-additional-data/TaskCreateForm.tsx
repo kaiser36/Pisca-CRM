@@ -46,6 +46,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
   const [additionalCompanyDetails, setAdditionalCompanyDetails] = useState<CompanyAdditionalExcelData | null>(null); // NEW: State for additional company data
   const [availableAMs, setAvailableAMs] = useState<Account[]>([]);
   const [isAMsLoading, setIsAMsLoading] = useState(true);
+  const [companyDbId, setCompanyDbId] = useState<string | null>(null); // NEW: State for company_db_id
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -91,6 +92,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
         const companies = await fetchCompaniesByExcelCompanyIds(userId, [companyExcelId]);
         const currentCompany = companies.find(c => c.Company_id === companyExcelId);
         setCompanyDetails(currentCompany || null);
+        setCompanyDbId(currentCompany?.id || null); // NEW: Set company_db_id
 
         // Fetch additional company data
         const { data: additionalData } = await fetchCompanyAdditionalExcelData(userId, 1, 1, companyExcelId);
@@ -148,12 +150,17 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
       showError("Utilizador não autenticado. Por favor, faça login para criar a tarefa.");
       return;
     }
+    if (!companyDbId) { // NEW: Check if companyDbId is available
+      showError("Não foi possível associar a tarefa a uma empresa válida. Por favor, verifique o ID Excel da empresa.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       const newTask: Omit<Task, 'id' | 'created_at' | 'updated_at'> = {
         user_id: userId,
         company_excel_id: companyExcelId,
+        company_db_id: companyDbId, // NEW: Include company_db_id
         commercial_name: values.commercial_name || null,
         title: values.title,
         description: values.description || null,
@@ -204,6 +211,11 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
         <p className="text-sm text-muted-foreground">
           A criar tarefa para a empresa <span className="font-semibold">{companyDisplayName}</span> (ID Excel: <span className="font-semibold">{companyExcelId}</span>)
         </p>
+        {!companyDbId && ( // NEW: Alert if companyDbId is missing
+          <p className="text-sm text-red-500">
+            Não foi possível encontrar a empresa no CRM principal com o ID Excel fornecido. A tarefa não poderá ser criada.
+          </p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {fields.map((field) => (
             <FormField
@@ -288,7 +300,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting || !userId || !form.formState.isValid}>
+          <Button type="submit" disabled={isSubmitting || !userId || !companyDbId || !form.formState.isValid}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
