@@ -224,9 +224,9 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Avatar className="h-12 w-12 mr-3"> {/* Increased size to h-12 w-12 */}
+              <Avatar className="h-16 w-16 mr-3"> {/* Increased size to h-16 w-16 */}
                 <AvatarImage src={company["Logotipo"] || undefined} alt={companyDisplayName} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold"> {/* Adjusted fallback text size */}
+                <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold"> {/* Adjusted fallback text size */}
                   {firstLetter}
                 </AvatarFallback>
               </Avatar>
