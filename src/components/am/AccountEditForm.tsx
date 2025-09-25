@@ -108,7 +108,7 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
     { name: "photo_url", label: "URL da Foto", type: "url" },
     { name: "district", label: "Distrito", type: "text" },
     { name: "credibom_email", label: "Email Credibom", type: "email" },
-    { name: "role", label: "Função", type: "select", options: ["user", "admin", "editor"] },
+    { name: "role", label: "Função do AM", type: "select", options: ["user", "admin", "editor"] }, // Updated label
   ];
 
   return (
