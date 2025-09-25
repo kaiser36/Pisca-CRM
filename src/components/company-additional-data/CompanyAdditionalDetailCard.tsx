@@ -334,14 +334,14 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
         <CardContent className="space-y-6">
           {/* Main Overview Card */}
           <Card className="p-6 shadow-subtle border-l-4 border-primary">
-            <div className="flex flex-col sm:flex-row items-center space-x-4">
-              <Avatar className="h-16 w-16">
+            <div className="flex flex-col items-center space-y-4"> {/* Changed to flex-col and items-center */}
+              <Avatar className="h-24 w-24"> {/* Increased size */}
                 <AvatarImage src={company["Logotipo"] || undefined} alt={companyDisplayName} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
+                <AvatarFallback className="bg-primary text-primary-foreground text-4xl font-bold"> {/* Increased text size */}
                   {firstLetter}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 flex-1 w-full"> {/* Added w-full */}
                 {renderField(Mail, "Email", company["Email da empresa"] || crmCompany?.Company_Email)}
                 {renderField(Globe, "Website", company["Site"] || crmCompany?.Website)}
                 {renderField(Landmark, "NIF", crmCompany?.NIF)}
