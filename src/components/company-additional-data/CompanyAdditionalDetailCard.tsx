@@ -169,7 +169,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   // Calculate aggregated leads data
   const totalLeadsRecebidas = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Leads_Recebidas || 0), 0) || 0;
   const totalLeadsPendentes = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Leads_Pendentes || 0), 0) || 0;
-  const totalLeadsExpiradas = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Leads_Expiradas || 0), 0) || 0;
+  const totalLeadsExpiradas = crmCompany?.stands.reduce((sum, stand) => sum + (stand.leads_expiradas || 0), 0) || 0; // Corrected here
 
   // Alert logic
   const alerts: string[] = [];

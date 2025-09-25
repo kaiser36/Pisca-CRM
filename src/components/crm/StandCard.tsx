@@ -46,7 +46,7 @@ const StandCard: React.FC<StandCardProps> = ({ stand }) => {
           {renderDetail(TrendingUp, "Δ Mês Passado", stand.Delta_Publicados_Last_Day_Month)}
           {renderDetail(MessageSquareText, "Leads Recebidas", stand.Leads_Recebidas)}
           {renderDetail(Clock, "Leads Pendentes", stand.Leads_Pendentes)}
-          {renderDetail(XOctagon, "Leads Expiradas", stand.Leads_Expiradas)}
+          {renderDetail(XOctagon, "Leads Expiradas", stand.leads_expiradas)} {/* Corrected here */}
           {renderDetail(DollarSign, "Leads Financiadas", stand.Leads_Financiadas)}
         </div>
       </CardContent>

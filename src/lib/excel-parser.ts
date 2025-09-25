@@ -117,7 +117,7 @@ export const parseStandsExcel = async (source: string | ArrayBuffer): Promise<Co
       Delta_Publicados_Last_Day_Month: findNumericValue(row, ['Δ Publicados_Last_Day_Month(-1)', 'Delta Publicados Last Day Month(-1)', 'Delta_Publicados_Last_Day_Month']),
       Leads_Recebidas: findNumericValue(row, ['Leads Recebidas', 'LeadsRecebidas']),
       Leads_Pendentes: findNumericValue(row, ['Leads Pendentes', 'LeadsPendentes']),
-      Leads_Expiradas: findNumericValue(row, ['Leads Expiradas', 'LeadsExpiradas']),
+      leads_expiradas: findNumericValue(row, ['Leads Expiradas', 'LeadsExpiradas']), // Corrected here
       Leads_Financiadas: findNumericValue(row, ['Leads Financiadas', 'LeadsFinanciadas']),
       Whatsapp: findValue(row, ['Whatsapp']) || '',
       Stand_Name: standNameFromExcel, // Use the value explicitly extracted from 'Stand' column

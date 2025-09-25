@@ -88,7 +88,7 @@ function mapSupabaseStandToCrmStand(supabaseStand: any): Stand {
     Delta_Publicados_Last_Day_Month: supabaseStand.delta_publicados_last_day_month,
     Leads_Recebidas: supabaseStand.leads_recebidas,
     Leads_Pendentes: supabaseStand.leads_pendentes,
-    Leads_Expiradas: supabaseStand.leads_expiradas,
+    leads_expiradas: supabaseStand.leads_expiradas, // Corrected here
     Leads_Financiadas: supabaseStand.leads_financiadas,
     Whatsapp: supabaseStand.whatsapp,
     Stand_Name: supabaseStand.stand_name,

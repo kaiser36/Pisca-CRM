@@ -1,22 +1,50 @@
 import { supabase } from '../client';
-import { Stand } from '@/types/crm';
+import { Stand, Company } from '@/types/crm'; // Import Company
+
+/**
+ * Maps a Supabase stand object to the CRM Stand interface.
+ */
+function mapSupabaseStandToCrmStand(supabaseStand: any): Stand {
+  return {
+    Stand_ID: supabaseStand.stand_id,
+    Company_id: supabaseStand.company_id_excel,
+    Company_Name: supabaseStand.company_name,
+    NIF: supabaseStand.nif,
+    Address: supabaseStand.address,
+    City: supabaseStand.city,
+    Postal_Code: supabaseStand.postal_code,
+    Phone: supabaseStand.phone,
+    Email: supabaseStand.email,
+    Contact_Person: supabaseStand.contact_person,
+    Anuncios: supabaseStand.anuncios,
+    API: supabaseStand.api,
+    Publicados: supabaseStand.publicados,
+    Arquivados: supabaseStand.arquivados,
+    Guardados: supabaseStand.guardados,
+    Tipo: supabaseStand.tipo,
+    Delta_Publicados_Last_Day_Month: supabaseStand.delta_publicados_last_day_month,
+    Leads_Recebidas: supabaseStand.leads_recebidas,
+    Leads_Pendentes: supabaseStand.leads_pendentes,
+    leads_expiradas: supabaseStand.leads_expiradas,
+    Leads_Financiadas: supabaseStand.leads_financiadas,
+    Whatsapp: supabaseStand.whatsapp,
+    Stand_Name: supabaseStand.stand_name,
+  };
+}
 
 /**
  * Upserts stand data into Supabase.
  */
 export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, string>): Promise<void> {
   console.log(`[upsertStands] Attempting to upsert ${stands.length} stands.`);
-  const uniqueStandsMap = new Map<string, any>();
-
-  stands.forEach(stand => {
+  const standsToUpsert = stands.map(stand => {
     const companyDbId = companyDbIdMap.get(stand.Company_id);
     if (!companyDbId) {
-      console.warn(`[upsertStands] Company DB ID not found for Excel Company_id: ${stand.Company_id}. Skipping stand: ${stand.Stand_ID}`);
-      return;
+      console.warn(`Company DB ID not found for Excel Company_id: ${stand.Company_id}. Skipping stand: ${stand.Stand_ID}`);
+      return null; // Skip stands that cannot be linked to a company
     }
 
-    const key = `${stand.Stand_ID}-${companyDbId}`; // Unique key for deduplication
-    uniqueStandsMap.set(key, {
+    return {
       company_db_id: companyDbId,
       stand_id: stand.Stand_ID,
       company_id_excel: stand.Company_id,
@@ -37,24 +65,21 @@ export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, 
       delta_publicados_last_day_month: stand.Delta_Publicados_Last_Day_Month,
       leads_recebidas: stand.Leads_Recebidas,
       leads_pendentes: stand.Leads_Pendentes,
-      Leads_Expiradas: stand.Leads_Expiradas,
-      Leads_Financiadas: stand.Leads_Financiadas,
+      leads_expiradas: stand.leads_expiradas,
+      leads_financiadas: stand.Leads_Financiadas,
       whatsapp: stand.Whatsapp,
-      stand_name: stand.Stand_Name, // NEW: Include stand_name
-    });
-  });
-
-  const standsToUpsert = Array.from(uniqueStandsMap.values());
-  console.log(`[upsertStands] ${standsToUpsert.length} stands prepared for upsert after deduplication and company ID lookup.`);
+      stand_name: stand.Stand_Name,
+    };
+  }).filter(Boolean); // Filter out nulls
 
   if (standsToUpsert.length === 0) {
-    console.log('[upsertStands] No stands to upsert.');
+    console.log('[upsertStands] No stands to upsert after filtering.');
     return;
   }
 
   const { error } = await supabase
     .from('stands')
-    .upsert(standsToUpsert, { onConflict: 'stand_id, company_db_id' }); // Use stand_id and company_db_id as conflict keys
+    .upsert(standsToUpsert, { onConflict: 'stand_id, company_db_id' }); // Ensure uniqueness per stand_id and company_db_id
 
   if (error) {
     console.error('[upsertStands] Error upserting stands:', error);
@@ -64,46 +89,37 @@ export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, 
 }
 
 /**
- * Deletes all stands for a given user by first finding their associated companies.
- * Deletes in batches to avoid URL length limits.
+ * Deletes all stands for a given user's companies.
  */
 export async function deleteStands(userId: string): Promise<void> {
-  console.log(`[deleteStands] Attempting to delete all stands for user: ${userId}`);
-
-  // 1. Fetch all company_db_ids associated with this user
-  const { data: companyIdsData, error: companyFetchError } = await supabase
+  console.log(`[deleteStands] Deleting all stands for user: ${userId}`);
+  // First, get all company_db_ids for the user
+  const { data: companyIds, error: companyFetchError } = await supabase
     .from('companies')
     .select('id')
     .eq('user_id', userId);
 
   if (companyFetchError) {
-    console.error('[deleteStands] Error fetching company IDs for user:', companyFetchError);
+    console.error('[deleteStands] Error fetching company IDs for stand deletion:', companyFetchError);
     throw new Error(companyFetchError.message);
   }
 
-  const companyDbIds = companyIdsData.map(c => c.id);
+  const companyDbIds = companyIds.map(c => c.id);
 
   if (companyDbIds.length === 0) {
-    console.log(`[deleteStands] No companies found for user ${userId}, so no stands to delete.`);
+    console.log('[deleteStands] No companies found for user, no stands to delete.');
     return;
   }
 
-  // 2. Delete stands in batches
-  const BATCH_SIZE = 100; // Define batch size
-  for (let i = 0; i < companyDbIds.length; i += BATCH_SIZE) {
-    const batchIds = companyDbIds.slice(i, i + BATCH_SIZE);
-    if (batchIds.length === 0) continue;
+  // Then, delete all stands associated with these company_db_ids
+  const { error: deleteError } = await supabase
+    .from('stands')
+    .delete()
+    .in('company_db_id', companyDbIds);
 
-    console.log(`[deleteStands] Deleting stands for batch of company DB IDs (${i / BATCH_SIZE + 1}/${Math.ceil(companyDbIds.length / BATCH_SIZE)}):`, batchIds);
-    const { error: deleteError } = await supabase
-      .from('stands')
-      .delete()
-      .in('company_db_id', batchIds);
-
-    if (deleteError) {
-      console.error(`[deleteStands] Error deleting stands in batch ${i / BATCH_SIZE + 1}:`, deleteError);
-      throw new Error(deleteError.message);
-    }
+  if (deleteError) {
+    console.error('[deleteStands] Error deleting stands:', deleteError);
+    throw new Error(deleteError.message);
   }
-  console.log(`[deleteStands] Successfully deleted all stands for user: ${userId}`);
+  console.log(`[deleteStands] Successfully deleted stands for user: ${userId}`);
 }

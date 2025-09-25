@@ -18,7 +18,7 @@ export interface Stand {
   Delta_Publicados_Last_Day_Month: number; // diferença entre os anuncios que estão publicados no stand este mês para o mês passado
   Leads_Recebidas: number; // Numero de leads recebidas no Pisca Pisca pelo stand
   Leads_Pendentes: number; // Numero de leads pendentes pelo stand
-  Leads_Expiradas: number; // Numero de leads expiradas pelo stand
+  leads_expiradas: number; // Numero de leads expiradas pelo stand
   Leads_Financiadas: number; // Numero de leads financiadas pelo stand
   Whatsapp: string; // Numero de Whatsapp de cada stand
   Stand_Name?: string; // Nome comercial do ponto de venda
