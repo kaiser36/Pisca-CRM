@@ -47,7 +47,7 @@
     --sidebar-ring: 207 77% 47%; /* Match primary */
 
     --header-height: 64px;
-    --footer-height: 64px;
+    --footer-height: 40px; /* Altura do rodapé diminuída */
   }
 
   .dark {
