@@ -63,6 +63,19 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
     return () => subscription.unsubscribe();
   }, []);
 
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: task.title || '',
+      description: task.description || '',
+      due_date: task.due_date ? parseISO(task.due_date) : undefined,
+      status: task.status || 'Pending',
+      priority: task.priority || 'Medium',
+      assigned_to_employee_id: task.assigned_to_employee_id || '',
+      assigned_to_employee_name: task.assigned_to_employee_name || '',
+    },
+  });
+
   useEffect(() => {
     const loadData = async () => {
       if (!userId || !task.company_excel_id) return;
@@ -102,19 +115,6 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
       loadData();
     }
   }, [userId, task.company_excel_id, task.assigned_to_employee_id]);
-
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: task.title || '',
-      description: task.description || '',
-      due_date: task.due_date ? parseISO(task.due_date) : undefined,
-      status: task.status || 'Pending',
-      priority: task.priority || 'Medium',
-      assigned_to_employee_id: task.assigned_to_employee_id || '',
-      assigned_to_employee_name: task.assigned_to_employee_name || '',
-    },
-  });
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
@@ -162,7 +162,8 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
         form.setValue("assigned_to_employee_name", selectedAM?.account_name || selectedAM?.am || null);
         form.setValue("assigned_to_employee_id", value);
       },
-      value: form.watch("assigned_to_employee_id") || '',
+      // Corrected: Use formField.value for the Select component's value prop
+      // value: form.watch("assigned_to_employee_id") || '', // This was the old incorrect line
       disabled: isAMsLoading || availableAMs.length === 0,
     },
   ];
@@ -225,7 +226,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
                             formField.onChange(value);
                           }
                         }}
-                        value={field.value}
+                        value={formField.value as string} // Corrected line
                         disabled={field.disabled}
                       >
                         <SelectTrigger>

@@ -63,6 +63,19 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
     return () => subscription.unsubscribe();
   }, []);
 
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      due_date: undefined,
+      status: 'Pending',
+      priority: 'Medium',
+      assigned_to_employee_id: '',
+      assigned_to_employee_name: '',
+    },
+  });
+
   useEffect(() => {
     const loadData = async () => {
       if (!userId || !companyExcelId) return;
@@ -97,19 +110,6 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
       loadData();
     }
   }, [userId, companyExcelId]);
-
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      due_date: undefined,
-      status: 'Pending',
-      priority: 'Medium',
-      assigned_to_employee_id: '',
-      assigned_to_employee_name: '',
-    },
-  });
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
@@ -159,7 +159,8 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
         form.setValue("assigned_to_employee_name", selectedAM?.account_name || selectedAM?.am || null);
         form.setValue("assigned_to_employee_id", value);
       },
-      value: form.watch("assigned_to_employee_id") || '',
+      // Corrected: Use formField.value for the Select component's value prop
+      // value: form.watch("assigned_to_employee_id") || '', // This was the old incorrect line
       disabled: isAMsLoading || availableAMs.length === 0,
     },
   ];
@@ -222,7 +223,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
                             formField.onChange(value);
                           }
                         }}
-                        value={field.value}
+                        value={formField.value as string} // Corrected line
                         disabled={field.disabled}
                       >
                         <SelectTrigger>
