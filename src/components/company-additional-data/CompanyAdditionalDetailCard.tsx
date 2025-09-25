@@ -1,47 +1,40 @@
 "use client";
 
-import React, { useState } from 'react';
-import { CompanyAdditionalExcelData, Negocio } from '@/types/crm'; // Import Negocio type
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import React, { useState, useEffect, useCallback } from 'react';
+import { CompanyAdditionalExcelData, Negocio, Company } from '@/types/crm';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus, Upload, Archive, Save, ArrowRight, Download, Hourglass, XCircle as ExpiredIcon, ListTodo } from 'lucide-react'; // Added ListTodo icon
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import CompanyAdditionalEditForm from './CompanyAdditionalEditForm';
-import StandCard from '@/components/crm/StandCard';
-import AccountContactCreateForm from './AccountContactCreateForm';
-import AccountContactList from './AccountContactList';
-import EasyvistaCreateForm from './EasyvistaCreateForm';
-import EasyvistaList from './EasyvistaList';
-import DealCreateForm from './DealCreateForm';
-import DealList from './DealList';
-import EmployeeCreateForm from './EmployeeCreateForm';
-import EmployeeList from './EmployeeList';
-import TaskCreateForm from './TaskCreateForm';
-import TaskList from './TaskList';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+  Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus, Upload, Archive, Save, ArrowRight, Download, Hourglass, XCircle as ExpiredIcon, ListTodo
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isPast, parseISO, differenceInMonths, differenceInDays, format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchDealsByCompanyExcelId } from '@/integrations/supabase/utils';
 import { showError } from '@/utils/toast';
 
+// Import new modular components
+import CompanyAdditionalHeader from './CompanyAdditionalHeader';
+import CompanyAdditionalOverviewCards from './CompanyAdditionalOverviewCards';
+import CompanyAdditionalDetailsAccordion from './CompanyAdditionalDetailsAccordion';
+
+// Child list components (already modular)
+import StandCard from '@/components/crm/StandCard';
+import AccountContactList from './AccountContactList';
+import EasyvistaList from './EasyvistaList';
+import DealList from './DealList';
+import EmployeeList from './EmployeeList';
+import TaskList from './TaskList';
+
 interface CompanyAdditionalDetailCardProps {
   company: CompanyAdditionalExcelData | null;
   onDataUpdated: () => void;
-  initialTab?: string; // NEW: Add initialTab prop
+  initialTab?: string;
 }
 
-const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = ({ company, onDataUpdated, initialTab = 'details' }) => { // Set default initialTab
+const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = ({ company, onDataUpdated, initialTab = 'details' }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateContactDialogOpen, setIsCreateContactDialogOpen] = useState(false);
   const [isCreateEasyvistaDialogOpen, setIsCreateEasyvistaDialogOpen] = useState(false);
@@ -52,15 +45,15 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   const [isDealsLoading, setIsDealsLoading] = useState(true);
   const [dealsError, setDealsError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState(initialTab); // NEW: Manage active tab state
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   // Update activeTab when initialTab prop changes
-  React.useEffect(() => {
+  useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
 
   // Fetch userId on component mount
-  React.useEffect(() => {
+  useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUserId(session.user.id);
@@ -79,7 +72,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   }, []);
 
   // Fetch deals when company or userId changes
-  React.useEffect(() => {
+  useEffect(() => {
     const loadDeals = async () => {
       if (!userId || !company?.excel_company_id) {
         setIsDealsLoading(false);
@@ -111,7 +104,10 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     );
   }
 
-  const renderField = (Icon: React.ElementType, label: string, value: string | number | boolean | null | undefined) => {
+  const crmCompany = company.crmCompany;
+
+  // Helper to render fields consistently
+  const renderField = useCallback((Icon: React.ElementType, label: string, value: string | number | boolean | null | undefined) => {
     if (value === null || value === undefined || value === '' || (typeof value === 'number' && value === 0 && !label.includes('Plafond') && !label.includes('Preço') && !label.includes('Bumps') && !label.includes('Investimento') && !label.includes('Stock') && !label.includes('Percentagem'))) return null;
 
     let displayValue: React.ReactNode = value;
@@ -133,7 +129,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
       try {
         const date = parseISO(String(value));
         if (!isNaN(date.getTime())) {
-          displayValue = date.toLocaleDateString('pt-PT', { year: 'numeric', month: '2-digit', day: '2-digit' });
+          displayValue = format(date, 'dd/MM/yyyy');
         } else {
           displayValue = String(value);
         }
@@ -148,13 +144,14 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
         <span className="font-medium">{label}:</span> <span className="ml-1 text-foreground">{displayValue}</span>
       </div>
     );
-  };
+  }, []);
 
-  const companyDisplayName = company["Nome Comercial"] || company.crmCompany?.Commercial_Name || company.crmCompany?.Company_Name || "Empresa Desconhecida";
+  const companyDisplayName = company["Nome Comercial"] || crmCompany?.Commercial_Name || crmCompany?.Company_Name || "Empresa Desconhecida";
   const firstLetter = companyDisplayName.charAt(0).toUpperCase();
+  const isCompanyClosed = company["Classificação"] === "Empresa encerrada";
 
   // Utility functions for date comparisons
-  const isVisitOld = (dateString: string | null | undefined): boolean => {
+  const isVisitOld = useCallback((dateString: string | null | undefined): boolean => {
     if (!dateString) return false;
     try {
       const date = parseISO(dateString);
@@ -162,10 +159,9 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     } catch {
       return false;
     }
-  };
+  }, []);
 
   // Calculate aggregated stand data
-  const crmCompany = company.crmCompany;
   const totalPublicados = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Publicados || 0), 0) || 0;
   const totalArquivados = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Arquivados || 0), 0) || 0;
   const totalGuardados = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Guardados || 0), 0) || 0;
@@ -175,10 +171,8 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   const totalLeadsPendentes = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Leads_Pendentes || 0), 0) || 0;
   const totalLeadsExpiradas = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Leads_Expiradas || 0), 0) || 0;
 
-
   // Alert logic
   const alerts: string[] = [];
-  
 
   // 1. Se o plano estiver expirado
   const planExpirationDate = crmCompany?.Plan_Expiration_Date || null;
@@ -187,18 +181,31 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   }
 
   // 2. Se o plano ativo estiver não (incluindo null/undefined)
-  if (!crmCompany?.Plan_Active) { // This condition now covers false, null, and undefined
+  if (!crmCompany?.Plan_Active) {
     alerts.push("O plano da empresa não está ativo!");
   }
 
   // 3. Se a data da ultima visita for mais de 3 meses
   const lastVisitDate = company["Data ultima visita"] || crmCompany?.Last_Visit_Date || null;
-  if (isVisitOld(lastVisitDate)) { // Using the new utility function
+  if (isVisitOld(lastVisitDate)) {
     alerts.push("A última visita foi há mais de 3 meses.");
   }
 
-  // 4. Se o ultimo login foi à mais de uma semana atras
-  if (!isDealsLoading && !dealsError) { // Only check deals if loaded successfully
+  // 4. Se o ultimo login foi à mais de uma semana atras (This alert was missing in the original logic, adding it based on previous context)
+  const lastLoginDate = crmCompany?.Last_Login_Date;
+  if (lastLoginDate) {
+    try {
+      const loginDate = parseISO(lastLoginDate);
+      if (differenceInDays(new Date(), loginDate) > 7) {
+        alerts.push(`Último login há mais de uma semana: ${format(loginDate, 'dd/MM/yyyy')}`);
+      }
+    } catch (e) {
+      console.warn(`Could not parse Last_Login_Date for CRM Company ${crmCompany?.Company_id}: ${lastLoginDate}`);
+    }
+  }
+
+  // 5. Negócios com data de fecho esperada expirada
+  if (!isDealsLoading && !dealsError) {
     deals.forEach(deal => {
       if (deal.expected_close_date) {
         try {
@@ -213,18 +220,17 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     });
   }
 
-  // 5. Se ele for Parceiro Credibom e o Simulador Financiamento = Não
+  // 6. Se ele for Parceiro Credibom e o Simulador Financiamento = Não
   if (crmCompany?.Is_CRB_Partner === true && crmCompany?.Financing_Simulator_On === false) {
     alerts.push("É Parceiro Credibom, mas o Simulador de Financiamento está desativado.");
   }
 
-  // 6. Se ele tiver Plano ativo = Sim e Renovação Automática= Não
+  // 7. Se ele tiver Plano ativo = Sim e Renovação Automática= Não
   if (crmCompany?.Plan_Active === true && crmCompany?.Plan_Auto_Renewal === false) {
     alerts.push("Plano ativo, mas a Renovação Automática está desativada.");
   }
 
-  // 7. Se a classificação for "Empresa encerrada"
-  const isCompanyClosed = company["Classificação"] === "Empresa encerrada";
+  // 8. Se a classificação for "Empresa encerrada"
   if (isCompanyClosed) {
     alerts.push("⛔ Empresa encerrada.");
   }
@@ -233,244 +239,39 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     <ScrollArea className="h-full w-full pr-4">
       <Card className="w-full shadow-md rounded-lg">
         <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Avatar className="h-16 w-16 mr-3">
-                <AvatarImage src={company["Logotipo"] || undefined} alt={companyDisplayName} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
-                  {firstLetter}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <CardTitle className="text-2xl font-bold">{companyDisplayName}</CardTitle>
-                <CardDescription className="text-muted-foreground">ID Excel: {company.excel_company_id}</CardDescription>
-              </div>
-              {isCompanyClosed && (
-                <Badge variant="destructive" className="text-sm px-3 py-1">Empresa Encerrada</Badge>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Dialog open={isCreateContactDialogOpen} onOpenChange={(open) => { console.log('Create Contact Dialog open change:', open); setIsCreateContactDialogOpen(open); }}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:text-primary">
-                    <PlusCircle className="mr-2 h-4 w-4" /> Novo Contacto
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Adicionar Novo Contacto de Conta</DialogTitle>
-                  </DialogHeader>
-                  <AccountContactCreateForm
-                    companyExcelId={company.excel_company_id}
-                    commercialName={company["Nome Comercial"]}
-                    companyName={company.crmCompany?.Company_Name || company["Nome Comercial"]}
-                    onSave={() => setIsCreateContactDialogOpen(false)}
-                    onCancel={() => setIsCreateContactDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
-
-              <Dialog open={isCreateEasyvistaDialogOpen} onOpenChange={(open) => { console.log('Create Easyvista Dialog open change:', open); setIsCreateEasyvistaDialogOpen(open); }}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:text-primary">
-                    <Eye className="mr-2 h-4 w-4" /> Novo Easyvista
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Criar Novo Registo Easyvista</DialogTitle>
-                  </DialogHeader>
-                  <EasyvistaCreateForm
-                    companyExcelId={company.excel_company_id}
-                    commercialName={company["Nome Comercial"]}
-                    onSave={() => setIsCreateEasyvistaDialogOpen(false)}
-                    onCancel={() => setIsCreateEasyvistaDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
-
-              <Dialog open={isCreateDealDialogOpen} onOpenChange={(open) => { console.log('Create Deal Dialog open change:', open); setIsCreateDealDialogOpen(open); }}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:text-primary">
-                    <Handshake className="mr-2 h-4 w-4" /> Novo Negócio
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Criar Novo Negócio</DialogTitle>
-                  </DialogHeader>
-                  <DealCreateForm
-                    companyExcelId={company.excel_company_id}
-                    commercialName={company["Nome Comercial"] || company.crmCompany?.Commercial_Name}
-                    onSave={() => setIsCreateDealDialogOpen(false)}
-                    onCancel={() => setIsCreateDealDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
-
-              <Dialog open={isCreateEmployeeDialogOpen} onOpenChange={setIsCreateEmployeeDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:text-primary">
-                    <UserPlus className="mr-2 h-4 w-4" /> Novo Colaborador
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Adicionar Novo Colaborador</DialogTitle>
-                  </DialogHeader>
-                  <EmployeeCreateForm
-                    companyExcelId={company.excel_company_id}
-                    commercialName={company["Nome Comercial"] || company.crmCompany?.Commercial_Name}
-                    onSave={() => setIsCreateEmployeeDialogOpen(false)}
-                    onCancel={() => setIsCreateEmployeeDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
-
-              {/* NEW: Create Task Button */}
-              <Dialog open={isCreateTaskDialogOpen} onOpenChange={setIsCreateTaskDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:text-primary">
-                    <ListTodo className="mr-2 h-4 w-4" /> Nova Tarefa
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Criar Nova Tarefa</DialogTitle>
-                  </DialogHeader>
-                  <TaskCreateForm
-                    companyExcelId={company.excel_company_id}
-                    onSave={() => {
-                      setIsCreateTaskDialogOpen(false);
-                      onDataUpdated(); // Refresh data, including tasks
-                    }}
-                    onCancel={() => setIsCreateTaskDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
-
-              <Dialog open={isEditDialogOpen} onOpenChange={(open) => { console.log('Edit Dialog open change:', open); setIsEditDialogOpen(open); }}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:text-primary">
-                    <Pencil className="mr-2 h-4 w-4" /> Editar
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Editar Dados Adicionais da Empresa</DialogTitle>
-                  </DialogHeader>
-                  <CompanyAdditionalEditForm
-                    company={company}
-                    onSave={() => {
-                      setIsEditDialogOpen(false);
-                      onDataUpdated();
-                    }}
-                    onCancel={() => setIsEditDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
+          <CompanyAdditionalHeader
+            company={company}
+            companyDisplayName={companyDisplayName}
+            firstLetter={firstLetter}
+            isCompanyClosed={isCompanyClosed}
+            onDataUpdated={onDataUpdated}
+            isEditDialogOpen={isEditDialogOpen}
+            setIsEditDialogOpen={setIsEditDialogOpen}
+            isCreateContactDialogOpen={isCreateContactDialogOpen}
+            setIsCreateContactDialogOpen={setIsCreateContactDialogOpen}
+            isCreateEasyvistaDialogOpen={isCreateEasyvistaDialogOpen}
+            setIsCreateEasyvistaDialogOpen={setIsCreateEasyvistaDialogOpen}
+            isCreateDealDialogOpen={isCreateDealDialogOpen}
+            setIsCreateDealDialogOpen={setIsCreateDealDialogOpen}
+            isCreateEmployeeDialogOpen={isCreateEmployeeDialogOpen}
+            setIsCreateEmployeeDialogOpen={setIsCreateEmployeeDialogOpen}
+            isCreateTaskDialogOpen={isCreateTaskDialogOpen}
+            setIsCreateTaskDialogOpen={setIsCreateTaskDialogOpen}
+          />
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Main Overview Card */}
-          <Card className="p-6 shadow-subtle border-l-4 border-primary rounded-lg">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 flex-1 w-full">
-                {renderField(Mail, "Email", company["Email da empresa"] || crmCompany?.Company_Email)}
-                {renderField(Globe, "Website", company["Site"] || crmCompany?.Website)}
-                {renderField(Landmark, "NIF", crmCompany?.NIF)}
-                {renderField(User, "AM Atual", company["AM"] || crmCompany?.AM_Current)}
-                {/* Aggregated Stand Data - Anúncios Pipeline */}
-                <div className="flex items-center text-sm md:col-span-2 flex-wrap gap-x-2">
-                  <span className="font-medium flex items-center">
-                    <Upload className="mr-1 h-4 w-4 text-muted-foreground" /> Publicados: <span className="ml-1 text-foreground">{totalPublicados}</span>
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium flex items-center">
-                    <Archive className="mr-1 h-4 w-4 text-muted-foreground" /> Arquivados: <span className="ml-1 text-foreground">{totalArquivados}</span>
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium flex items-center">
-                    <Save className="mr-1 h-4 w-4 text-muted-foreground" /> Guardados: <span className="ml-1 text-foreground">{totalGuardados}</span>
-                  </span>
-                </div>
-                {/* Aggregated Stand Data - Leads Pipeline */}
-                <div className="flex items-center text-sm md:col-span-2 flex-wrap gap-x-2 mt-2">
-                  <span className="font-medium flex items-center text-blue-700">
-                    <Download className="mr-1 h-4 w-4 text-blue-700" /> Leads Recebidas: <span className="ml-1">{totalLeadsRecebidas}</span>
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium flex items-center text-orange-700">
-                    <Hourglass className="mr-1 h-4 w-4 text-orange-700" /> Leads Pendentes: <span className="ml-1">{totalLeadsPendentes}</span>
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium flex items-center text-red-700">
-                    <ExpiredIcon className="mr-1 h-4 w-4 text-red-700" /> Leads Expiradas: <span className="ml-1">{totalLeadsExpiradas}</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </Card>
-          {/* End Main Overview Card */}
-
-          {/* New Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Pisca Card */}
-            <Card className="p-4 shadow-subtle border-l-4 border-primary/50 bg-primary/5 rounded-lg">
-              <CardTitle className="text-lg font-semibold mb-3 flex items-center text-primary">
-                <Package className="mr-2 h-5 w-5" /> Pisca
-              </CardTitle>
-              <div className="space-y-2">
-                {renderField(Package, "Último Plano", company["Plano Indicado"] || crmCompany?.Last_Plan)}
-                {renderField(CheckCircle, "Plano Ativo", crmCompany?.Plan_Active)}
-                {renderField(Calendar, "Expiração do Plano", crmCompany?.Plan_Expiration_Date)}
-                {renderField(Repeat, "Renovação Automática", crmCompany?.Plan_Auto_Renewal)}
-                {renderField(TrendingUp, "Bumps Totais", crmCompany?.Total_Bumps)}
-                {renderField(TrendingUp, "Bumps Atuais", crmCompany?.Current_Bumps)}
-                {renderField(Wallet, "Plafond", crmCompany?.Plafond)}
-              </div>
-            </Card>
-
-            {/* Resumo Card */}
-            <Card className="p-4 shadow-subtle border-l-4 border-success/50 bg-success/5 rounded-lg">
-              <CardTitle className="text-lg font-semibold mb-3 flex items-center text-success">
-                <Info className="mr-2 h-5 w-5" /> Resumo
-              </CardTitle>
-              <div className="space-y-2">
-                {renderField(Tag, "Classificação", company["Classificação"])}
-                {renderField(CheckCircle, "Parceiro Credibom", crmCompany?.Is_CRB_Partner)}
-                {renderField(Car, "Simulador Financiamento", crmCompany?.Financing_Simulator_On)}
-                {renderField(Clock, "Último Login", crmCompany?.Last_Login_Date)}
-                {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
-              </div>
-            </Card>
-
-            {/* Alertas Card */}
-            <Card className={`p-4 shadow-subtle border-l-4 ${alerts.length > 0 ? 'border-destructive/50 bg-destructive/5' : 'border-yellow-200 bg-yellow-50'} rounded-lg`}>
-              <CardTitle className={`text-lg font-semibold mb-3 flex items-center ${alerts.length > 0 ? 'text-destructive' : 'text-yellow-800'}`}>
-                <BellRing className="mr-2 h-5 w-5" /> Alertas
-              </CardTitle>
-              <div className="space-y-2">
-                {alerts.length === 0 ? (
-                  <Alert className="bg-transparent border-none p-0 text-yellow-800">
-                    <AlertDescription className="flex items-center">
-                      <CheckCircle className="mr-2 h-4 w-4" /> Sem alertas pendentes.
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  alerts.map((alert, index) => (
-                    <Alert key={index} variant="destructive" className="bg-destructive/10 border-destructive/50 text-destructive p-2">
-                      <AlertDescription className="flex items-center">
-                        <Info className="mr-2 h-4 w-4" /> {alert}
-                      </AlertDescription>
-                    </Alert>
-                  ))
-                )}
-              </div>
-            </Card>
-          </div>
-          {/* End New Overview Cards */}
+          <CompanyAdditionalOverviewCards
+            companyAdditional={company}
+            crmCompany={crmCompany}
+            alerts={alerts}
+            totalPublicados={totalPublicados}
+            totalArquivados={totalArquivados}
+            totalGuardados={totalGuardados}
+            totalLeadsRecebidas={totalLeadsRecebidas}
+            totalLeadsPendentes={totalLeadsPendentes}
+            totalLeadsExpiradas={totalLeadsExpiradas}
+            renderField={renderField}
+          />
 
           <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-7 h-10 rounded-lg bg-muted/70 p-1">
@@ -510,7 +311,6 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
               >
                 Colaboradores
               </TabsTrigger>
-              {/* NEW: Tasks Tab Trigger */}
               <TabsTrigger
                 value="tasks"
                 className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
@@ -519,146 +319,11 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
               </TabsTrigger>
             </TabsList>
             <TabsContent value="details" className="mt-4 space-y-6">
-              <Accordion type="multiple" className="w-full space-y-4">
-                <AccordionItem value="essential-info" className="border rounded-lg shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:no-underline">
-                    <div className="flex items-center">
-                      <Info className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Informações Essenciais da Empresa
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Building, "Nome Fiscal", crmCompany?.Company_Name)}
-                    {renderField(Building, "Nome Comercial", company["Nome Comercial"])}
-                    {renderField(Landmark, "NIF", crmCompany?.NIF)}
-                    {renderField(Mail, "Email Principal", company["Email da empresa"] || crmCompany?.Company_Email)}
-                    {renderField(Globe, "Website", company["Site"] || crmCompany?.Website)}
-                    {renderField(Car, "Logotipo (URL)", company["Logotipo"])}
-                    {renderField(Building, "Tipo de Empresa", company["Tipo de empresa"])}
-                    {renderField(Factory, "Grupo", company["Grupo"])}
-                    {renderField(Tag, "Marcas Representadas", company["Marcas representadas"])}
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="location-address" className="border rounded-lg shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:no-underline">
-                    <div className="flex items-center">
-                      <MapPin className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Localização e Morada
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(MapPin, "Morada", company["Morada"] || crmCompany?.Company_Address)}
-                    {renderField(MapPin, "Código Postal", company["STAND_POSTAL_CODE"] || crmCompany?.Company_Postal_Code)}
-                    {renderField(MapPin, "Distrito", company["Distrito"] || crmCompany?.District)}
-                    {renderField(MapPin, "Cidade", company["Cidade"] || crmCompany?.Company_City)}
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="account-management" className="border rounded-lg shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:no-underline">
-                    <div className="flex items-center">
-                      <User className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Gestão de Conta (AM)
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(User, "Pessoa de Contacto (CRM)", crmCompany?.Company_Contact_Person)}
-                    {renderField(Briefcase, "Supervisor (CRM)", crmCompany?.Supervisor)}
-                    {renderField(User, "AM Antigo", company["AM_OLD"])}
-                    {renderField(User, "AM Atual", company["AM"])}
-                    {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="stock-api" className="border rounded-lg shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:no-underline">
-                    <div className="flex items-center">
-                      <Package className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Dados de Stock e API
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Package, "Stock STV", company["Stock STV"] || crmCompany?.Stock_STV)}
-                    {renderField(Package, "Stock na Empresa", company["Stock na empresa"] || crmCompany?.Company_Stock)}
-                    {renderField(Info, "API Info", company["API"] || crmCompany?.Company_API_Info)}
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="plan-financing" className="border rounded-lg shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:no-underline">
-                    <div className="flex items-center">
-                      <DollarSign className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Detalhes do Plano e Financiamento
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Wallet, "Plafond", crmCompany?.Plafond)}
-                    {renderField(Package, "Último Plano", company["Plano Indicado"] || crmCompany?.Last_Plan)}
-                    {renderField(DollarSign, "Preço do Plano", crmCompany?.Plan_Price)}
-                    {renderField(Calendar, "Expiração do Plano", crmCompany?.Plan_Expiration_Date)}
-                    {renderField(CheckCircle, "Plano Ativo", crmCompany?.Plan_Active)}
-                    {renderField(Repeat, "Renovação Automática", crmCompany?.Plan_Auto_Renewal)}
-                    {renderField(TrendingUp, "Bumps Atuais", crmCompany?.Current_Bumps)}
-                    {renderField(TrendingUp, "Bumps Totais", crmCompany?.Total_Bumps)}
-                    {renderField(Banknote, "Mediador de Crédito", company["Mediador de credito"])}
-                    {renderField(LinkIcon, "Link Banco de Portugal", company["Link do Banco de Portugal"])}
-                    {renderField(ShieldCheck, "Financeiras com Acordo", company["Financeiras com acordo"])}
-                    {renderField(Car, "Simulador Financiamento", crmCompany?.Financing_Simulator_On)}
-                    {renderField(Car, "Cor do Simulador", crmCompany?.Simulator_Color)}
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="marketing-competition" className="border rounded-lg shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:no-underline">
-                    <div className="flex items-center">
-                      <TrendingUp className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Marketing e Concorrência
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Tag, "Classificação", company["Classificação"])}
-                    {renderField(TrendingUp, "Percentagem de Importados", company["Percentagem de Importados"])}
-                    {renderField(Car, "Onde compra as viaturas", company["Onde compra as viaturas"])}
-                    {renderField(Users, "Concorrência", company["Concorrencia"])}
-                    {renderField(DollarSign, "Investimento Redes Sociais", company["Investimento redes sociais"])}
-                    {renderField(DollarSign, "Investimento em Portais", company["Investimento em portais"])}
-                    {renderField(Building, "Mercado B2B", company["Mercado b2b"])}
-                    {renderField(ShieldCheck, "Utiliza CRM", company["Utiliza CRM"])}
-                    {renderField(Info, "Qual o CRM", company["Qual o CRM"])}
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="partnerships-other" className="border rounded-lg shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:no-underline">
-                    <div className="flex items-center">
-                      <ShieldCheck className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Parcerias e Outros
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(CheckCircle, "Parceiro Credibom (CRM)", crmCompany?.Is_CRB_Partner)}
-                    {renderField(CheckCircle, "Parceiro APDCA (CRM)", crmCompany?.Is_APDCA_Partner)}
-                    {renderField(ShieldCheck, "Quer CT", company["Quer CT"])}
-                    {renderField(ShieldCheck, "Quer ser Parceiro Credibom (Adicional)", company["Quer ser parceiro Credibom"])}
-                    {renderField(Info, "Autobiz", company.crmCompany?.autobiz_info)} {/* Updated to snake_case */}
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="important-dates" className="border rounded-lg shadow-sm">
-                  <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:no-underline">
-                    <div className="flex items-center">
-                      <Calendar className="mr-2 h-5 w-5 text-muted-foreground" />
-                      Datas Importantes
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 py-3 border-t bg-muted/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderField(Calendar, "Data de Criação (CRM)", crmCompany?.Creation_Date)}
-                    {renderField(Clock, "Último Login (CRM)", crmCompany?.Last_Login_Date)}
-                    {renderField(Calendar, "Data Última Visita", company["Data ultima visita"])}
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+              <CompanyAdditionalDetailsAccordion
+                companyAdditional={company}
+                crmCompany={crmCompany}
+                renderField={renderField}
+              />
               <Separator className="my-6" />
               <p className="text-xs text-muted-foreground">
                 Criado em: {company.created_at ? new Date(company.created_at).toLocaleString() : 'N/A'}
@@ -699,7 +364,6 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
               </h3>
               <EmployeeList companyExcelId={company.excel_company_id} onEmployeeChanged={onDataUpdated} />
             </TabsContent>
-            {/* NEW: Tasks Tab Content */}
             <TabsContent value="tasks" className="mt-4">
               <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
                 <ListTodo className="mr-2 h-5 w-5" /> Tarefas

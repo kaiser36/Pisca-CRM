@@ -245,7 +245,7 @@ export async function upsertCompanies(companies: Company[], userId: string): Pro
     plan_active: company.Plan_Active,
     plan_auto_renewal: company.Plan_Auto_Renewal,
     current_bumps: company.Current_Bumps,
-    Total_Bumps: company.Total_Bumps,
+    total_bumps: company.Total_Bumps, // Corrected column name here
     commercial_name: company.Commercial_Name,
     company_postal_code: company.Company_Postal_Code,
     district: company.District,
