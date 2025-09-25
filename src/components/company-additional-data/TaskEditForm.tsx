@@ -76,6 +76,9 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
     },
   });
 
+  const { setValue, watch } = form;
+  const assignedToEmployeeId = watch("assigned_to_employee_id");
+
   useEffect(() => {
     const loadData = async () => {
       if (!userId || !task.company_excel_id) return;
@@ -94,13 +97,14 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
         if (task.assigned_to_employee_id) {
           const defaultAM = fetchedAMs.find(am => am.id === task.assigned_to_employee_id);
           if (defaultAM) {
-            form.setValue("assigned_to_employee_name", defaultAM.account_name || defaultAM.am || null);
+            setValue("assigned_to_employee_id", defaultAM.id); // Ensure ID is set
+            setValue("assigned_to_employee_name", defaultAM.account_name || defaultAM.am || null);
           }
         } else if (currentCompany?.AM_Current) {
           const defaultAM = fetchedAMs.find(am => am.am === currentCompany.AM_Current);
           if (defaultAM) {
-            form.setValue("assigned_to_employee_id", defaultAM.id);
-            form.setValue("assigned_to_employee_name", defaultAM.account_name || defaultAM.am || null);
+            setValue("assigned_to_employee_id", defaultAM.id); // Ensure ID is set
+            setValue("assigned_to_employee_name", defaultAM.account_name || defaultAM.am || null);
           }
         }
       } catch (err: any) {
@@ -114,7 +118,17 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
     if (userId) {
       loadData();
     }
-  }, [userId, task.company_excel_id, task.assigned_to_employee_id]);
+  }, [userId, task.company_excel_id, task.assigned_to_employee_id, setValue]);
+
+  // Effect to sync assigned_to_employee_name when assigned_to_employee_id changes
+  useEffect(() => {
+    if (assignedToEmployeeId && availableAMs.length > 0) {
+      const selectedAM = availableAMs.find(am => am.id === assignedToEmployeeId);
+      setValue("assigned_to_employee_name", selectedAM?.account_name || selectedAM?.am || null);
+    } else if (!assignedToEmployeeId) {
+      setValue("assigned_to_employee_name", null);
+    }
+  }, [assignedToEmployeeId, availableAMs, setValue]);
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
@@ -157,11 +171,6 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
       type: "select",
       options: availableAMs.map(am => ({ value: am.id, label: am.account_name || am.am || 'N/A' })), // Map AMs
       placeholder: "Selecione um AM",
-      onValueChange: (value: string) => {
-        const selectedAM = availableAMs.find(am => am.id === value);
-        form.setValue("assigned_to_employee_name", selectedAM?.account_name || selectedAM?.am || null);
-        form.setValue("assigned_to_employee_id", value);
-      },
       disabled: isAMsLoading || availableAMs.length === 0,
     },
   ];
@@ -217,14 +226,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
                       />
                     ) : field.type === "select" ? (
                       <Select
-                        onValueChange={(value) => {
-                          formField.onChange(value); // Always update react-hook-form state
-                          if (field.onValueChange) {
-                            // Manually call the side effect logic
-                            const selectedAM = availableAMs.find(am => am.id === value);
-                            form.setValue("assigned_to_employee_name", selectedAM?.account_name || selectedAM?.am || null);
-                          }
-                        }}
+                        onValueChange={formField.onChange} // Only call formField.onChange here
                         value={formField.value as string}
                         disabled={field.disabled}
                       >
