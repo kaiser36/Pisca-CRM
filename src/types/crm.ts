@@ -88,6 +88,7 @@ export interface CompanyAdditionalExcelData {
   id?: string;
   user_id: string;
   excel_company_id: string;
+  company_db_id?: string; // NEW: Add company_db_id
   "Nome Comercial"?: string | null;
   "Email da empresa"?: string | null;
   "STAND_POSTAL_CODE"?: string | null;
@@ -128,6 +129,7 @@ export interface CompanyAdditionalExcelData {
 export interface AccountContact {
   id?: string;
   user_id: string;
+  company_db_id: string; // NEW: Add company_db_id
   account_am?: string | null;
   contact_type?: string | null;
   report_text?: string | null;
@@ -168,6 +170,7 @@ export interface Easyvista {
   created_at?: string;
   user_id: string;
   company_excel_id?: string | null; // New field to link to CompanyAdditionalExcelData
+  company_db_id?: string; // NEW: Add company_db_id
   "Nome comercial"?: string | null;
   "Data Criação"?: string | null;
   "Status"?: EasyvistaStatus | null; // UPDATED: Use EasyvistaStatus type
@@ -226,6 +229,7 @@ export interface Negocio {
   id?: string;
   user_id: string;
   company_excel_id: string;
+  company_db_id?: string; // NEW: Add company_db_id
   commercial_name?: string | null; // Adicionado para exibir o nome comercial da empresa
   deal_name: string;
   deal_status?: string | null;
@@ -260,12 +264,13 @@ export interface Product {
 export interface Employee {
   id?: string;
   user_id: string;
+  company_excel_id: string;
+  company_db_id?: string; // NEW: Add company_db_id
   id_people?: string | null; // Made optional
   nome_colaborador: string;
   telemovel?: string | null;
   email?: string | null;
   cargo?: string | null;
-  company_excel_id: string;
   commercial_name?: string | null;
   image_url?: string | null;
   stand_id?: string | null; // Excel ID of the stand
@@ -277,6 +282,7 @@ export interface Task {
   id?: string;
   user_id: string;
   company_excel_id: string;
+  company_db_id?: string; // NEW: Add company_db_id
   commercial_name?: string | null; // NEW: Added commercial_name
   title: string;
   description?: string | null;

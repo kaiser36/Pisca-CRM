@@ -64,6 +64,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [companyDbId, setCompanyDbId] = useState<string | null>(null); // NEW: State for company_db_id
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -82,6 +83,34 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // NEW: Fetch company_db_id based on companyExcelId and userId
+  useEffect(() => {
+    const fetchCompanyDbId = async () => {
+      if (userId && companyExcelId) {
+        const { data, error } = await supabase
+          .from('companies')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('company_id', companyExcelId)
+          .single();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+          console.error('Error fetching company_db_id:', error);
+          showError(`Falha ao obter o ID interno da empresa: ${error.message}`);
+          setCompanyDbId(null);
+        } else if (data) {
+          setCompanyDbId(data.id);
+        } else {
+          showError(`Empresa com ID Excel '${companyExcelId}' não encontrada no CRM principal.`);
+          setCompanyDbId(null);
+        }
+      }
+    };
+
+    fetchCompanyDbId();
+  }, [userId, companyExcelId]);
+
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -115,11 +144,16 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
       showError("Utilizador não autenticado. Por favor, faça login para criar o contacto.");
       return;
     }
+    if (!companyDbId) { // NEW: Check if companyDbId is available
+      showError("Não foi possível associar o contacto a uma empresa válida. Por favor, verifique o ID Excel da empresa.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       const newContact: Omit<AccountContact, 'id' | 'created_at'> = {
         user_id: userId,
+        company_db_id: companyDbId, // NEW: Use companyDbId
         company_excel_id: companyExcelId,
         account_am: values.account_am || null,
         contact_type: values.contact_type || null,
@@ -185,6 +219,11 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
         <p className="text-sm text-muted-foreground">
           A criar contacto para a empresa com ID Excel: <span className="font-semibold">{companyExcelId}</span>
         </p>
+        {!companyDbId && (
+          <p className="text-sm text-red-500">
+            Não foi possível encontrar a empresa no CRM principal com o ID Excel fornecido. O contacto não poderá ser criado.
+          </p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {fields.map((field) => (
             <FormField
@@ -259,7 +298,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting || !userId}>
+          <Button type="submit" disabled={isSubmitting || !userId || !companyDbId}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
