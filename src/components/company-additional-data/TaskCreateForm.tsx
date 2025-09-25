@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useState, useEffect, useCallback, useMemo } from 'react'; // Import useMemo
+import { useForm } from 'react-hook-form'; // Corrigido: useForm vem de react-hook-form
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Task, Account, Company } from '@/types/crm'; // Import Company and Account
-import { insertTask, fetchEmployeesByCompanyExcelId, fetchAccounts, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils'; // Import fetchAccounts and fetchCompaniesByExcelCompanyIds
+import { Task, Account, Company } from '@/types/crm';
+import { insertTask, fetchEmployeesByCompanyExcelId, fetchAccounts, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -32,8 +32,8 @@ const formSchema = z.object({
   due_date: z.date().nullable().optional(),
   status: z.enum(['Pending', 'In Progress', 'Completed', 'Cancelled']).default('Pending'),
   priority: z.enum(['Low', 'Medium', 'High']).default('Medium'),
-  assigned_to_employee_id: z.string().nullable().optional(), // Now refers to AM ID
-  assigned_to_employee_name: z.string().nullable().optional(), // Now refers to AM Name
+  assigned_to_employee_id: z.string().nullable().optional(),
+  assigned_to_employee_name: z.string().nullable().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -41,9 +41,9 @@ type FormData = z.infer<typeof formSchema>;
 const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [companyDetails, setCompanyDetails] = useState<Company | null>(null); // State for company details
-  const [availableAMs, setAvailableAMs] = useState<Account[]>([]); // State for available AMs
-  const [isAMsLoading, setIsAMsLoading] = useState(true); // Loading state for AMs
+  const [companyDetails, setCompanyDetails] = useState<Company | null>(null);
+  const [availableAMs, setAvailableAMs] = useState<Account[]>([]);
+  const [isAMsLoading, setIsAMsLoading] = useState(true);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -84,16 +84,13 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
       if (!userId || !companyExcelId) return;
       setIsAMsLoading(true);
       try {
-        // Fetch company details
         const companies = await fetchCompaniesByExcelCompanyIds(userId, [companyExcelId]);
         const currentCompany = companies.find(c => c.Company_id === companyExcelId);
         setCompanyDetails(currentCompany || null);
 
-        // Fetch all AMs
         const fetchedAMs = await fetchAccounts(userId);
         setAvailableAMs(fetchedAMs);
 
-        // Set default AM if company has one
         if (currentCompany?.AM_Current) {
           const defaultAM = fetchedAMs.find(am => am.am === currentCompany.AM_Current);
           if (defaultAM) {
@@ -124,6 +121,14 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
     }
   }, [assignedToEmployeeId, availableAMs, setValue]);
 
+  // Memoized value for displaying the selected AM's name
+  const selectedAMDisplayName = useMemo(() => {
+    if (assignedToEmployeeId && availableAMs.length > 0) {
+      const selectedAM = availableAMs.find(am => am.id === assignedToEmployeeId);
+      return selectedAM?.account_name || selectedAM?.am || null;
+    }
+    return null;
+  }, [assignedToEmployeeId, availableAMs]);
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
@@ -164,9 +169,9 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
     { name: "priority", label: "Prioridade", type: "select", options: ['Low', 'Medium', 'High'] },
     {
       name: "assigned_to_employee_id",
-      label: "Atribuído a (AM)", // Changed label
+      label: "Atribuído a (AM)",
       type: "select",
-      options: availableAMs.map(am => ({ value: am.id, label: am.account_name || am.am || 'N/A' })), // Map AMs
+      options: availableAMs.map(am => ({ value: am.id, label: am.account_name || am.am || 'N/A' })),
       placeholder: "Selecione um AM",
       disabled: isAMsLoading || availableAMs.length === 0,
     },
@@ -223,12 +228,18 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
                       />
                     ) : field.type === "select" ? (
                       <Select
-                        onValueChange={formField.onChange} // Only call formField.onChange here
+                        onValueChange={formField.onChange}
                         value={formField.value as string}
                         disabled={field.disabled}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder={field.placeholder} />
+                          {field.name === "assigned_to_employee_id" ? (
+                            <SelectValue>
+                              {selectedAMDisplayName || field.placeholder}
+                            </SelectValue>
+                          ) : (
+                            <SelectValue placeholder={field.placeholder} />
+                          )}
                         </SelectTrigger>
                         <SelectContent>
                           {field.options?.length === 0 ? (
