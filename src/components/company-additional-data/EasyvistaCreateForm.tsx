@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Easyvista, EasyvistaStatus } from '@/types/crm'; // Import EasyvistaStatus
-import { insertEasyvista } from '@/integrations/supabase/utils';
+import { Easyvista, EasyvistaStatus, Account } from '@/types/crm'; // Import Account type
+import { insertEasyvista, fetchAccounts } from '@/integrations/supabase/utils'; // Import fetchAccounts
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, CalendarIcon, PlusCircle, CheckCircle2, Hourglass, XCircle, FilePen, CircleDotDashed } from 'lucide-react'; // Import new icons
+import { Loader2, CalendarIcon, PlusCircle, CheckCircle2, Hourglass, XCircle, FilePen, CircleDotDashed } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -31,8 +31,8 @@ interface EasyvistaCreateFormProps {
 const formSchema = z.object({
   "Nome comercial": z.string().nullable().optional(),
   "EV_ID": z.string().min(1, "EV_ID é obrigatório").nullable().optional(),
-  "Status": z.enum(['Criado', 'Em validação', 'Em tratamento', 'Resolvido', 'Cancelado']).nullable().optional(), // UPDATED: Use z.enum
-  "Account": z.string().nullable().optional(),
+  "Status": z.enum(['Criado', 'Em validação', 'Em tratamento', 'Resolvido', 'Cancelado']).nullable().optional(),
+  "Account": z.string().nullable().optional(), // UPDATED: Account is now a string from AMs
   "Titulo": z.string().nullable().optional(),
   "Descrição": z.string().nullable().optional(),
   "Anexos": z.string().nullable().optional(), // Simplified for now, can be extended to array input
@@ -67,6 +67,8 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [availableAMs, setAvailableAMs] = useState<Account[]>([]); // State for available AMs
+  const [isAMsLoading, setIsAMsLoading] = useState(true);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -86,13 +88,33 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const loadAMs = async () => {
+      if (!userId) return;
+      setIsAMsLoading(true);
+      try {
+        const fetchedAMs = await fetchAccounts(userId);
+        setAvailableAMs(fetchedAMs.filter(am => am.am !== null && am.am.trim() !== '')); // Filter out empty AMs
+      } catch (err: any) {
+        console.error("Erro ao carregar AMs:", err);
+        showError(err.message || "Falha ao carregar a lista de AMs.");
+      } finally {
+        setIsAMsLoading(false);
+      }
+    };
+
+    if (userId) {
+      loadAMs();
+    }
+  }, [userId]);
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       "Nome comercial": commercialName || '',
       "EV_ID": '',
-      "Status": 'Criado', // NEW: Default status
-      "Account": '',
+      "Status": 'Criado',
+      "Account": '', // Default to empty string
       "Titulo": '',
       "Descrição": '',
       "Anexos": '',
@@ -133,10 +155,10 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
         "Nome comercial": values["Nome comercial"] || null,
         "EV_ID": values["EV_ID"],
         "Status": values["Status"] || null,
-        "Account": values["Account"] || null,
+        "Account": values["Account"] || null, // NEW: Use selected AM
         "Titulo": values["Titulo"] || null,
         "Descrição": values["Descrição"] || null,
-        "Anexos": values["Anexos"] ? [values["Anexos"]] : null, // Convert single string to array
+        "Anexos": values["Anexos"] ? [values["Anexos"]] : null,
         "Tipo de report": values["Tipo de report"] || null,
         "PV": values["PV"] || false,
         "Tipo EVS": values["Tipo EVS"] || null,
@@ -184,11 +206,11 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
     { name: "Nome comercial", label: "Nome Comercial", type: "text" },
     { name: "Urgência", label: "Urgência", type: "select", options: urgencyOptions },
     { name: "EV_ID", label: "EV_ID", type: "text", required: true },
-    { name: "Status", label: "Status", type: "select", options: statusOptions }, // UPDATED: Use statusOptions
-    { name: "Account", label: "Account", type: "text" },
+    { name: "Status", label: "Status", type: "select", options: statusOptions },
+    { name: "Account", label: "Account", type: "select", options: availableAMs.map(am => am.account_name || am.am).filter((name): name is string => name !== null && name.trim() !== ''), placeholder: "Selecione um AM", disabled: isAMsLoading || availableAMs.length === 0 }, // UPDATED: Select for Account
     { name: "Titulo", label: "Título", type: "text" },
     { name: "Descrição", label: "Descrição", type: "textarea", colSpan: 2 },
-    { name: "Anexos", label: "Anexos (URL)", type: "url" }, // Single URL for now
+    { name: "Anexos", label: "Anexos (URL)", type: "url" },
     { name: "Tipo de report", label: "Tipo de Report", type: "select", options: ["Geral", "Específico a um cliente"] },
     { name: "PV", label: "PV (Informado ou não informado)", type: "boolean" },
     { name: "Tipo EVS", label: "Tipo EVS", type: "text" },
@@ -233,39 +255,38 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
                         value={formField.value as string || ''}
                         onChange={formField.onChange}
                       />
-                    ) : field.name === "Urgência" ? ( // Specific rendering for Urgência
-                      <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
+                    ) : field.type === "select" ? (
+                      <Select onValueChange={formField.onChange} defaultValue={formField.value as string} disabled={field.disabled}>
                         <SelectTrigger>
-                          <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
+                          <SelectValue placeholder={field.placeholder || `Selecione um ${field.label.toLowerCase()}`} />
                         </SelectTrigger>
                         <SelectContent>
-                          {urgencyOptions.map(option => (
-                            <SelectItem key={option.value} value={option.value}>
-                              <div className="flex items-center">
-                                <span className={cn("h-3 w-3 rounded-full mr-2", option.color)}></span>
-                                {option.label}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : field.name === "Status" ? ( // Specific rendering for Status
-                      <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {statusOptions.map(option => {
-                            const Icon = option.icon;
-                            return (
+                          {field.name === "Urgência" ? (
+                            urgencyOptions.map(option => (
                               <SelectItem key={option.value} value={option.value}>
                                 <div className="flex items-center">
-                                  <Icon className={cn("h-4 w-4 mr-2", option.color)} />
+                                  <span className={cn("h-3 w-3 rounded-full mr-2", option.color)}></span>
                                   {option.label}
                                 </div>
                               </SelectItem>
-                            );
-                          })}
+                            ))
+                          ) : field.name === "Status" ? (
+                            statusOptions.map(option => {
+                              const Icon = option.icon;
+                              return (
+                                <SelectItem key={option.value} value={option.value}>
+                                  <div className="flex items-center">
+                                    <Icon className={cn("h-4 w-4 mr-2", option.color)} />
+                                    {option.label}
+                                  </div>
+                                </SelectItem>
+                              );
+                            })
+                          ) : ( // For "Account" select
+                            field.options?.map((option: any) => (
+                              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                     ) : (

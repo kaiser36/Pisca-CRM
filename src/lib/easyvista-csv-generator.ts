@@ -4,8 +4,8 @@ export const generateEasyvistaCsvTemplate = (): string => {
     "Nome comercial",
     "EV_ID (OBRIGATÓRIO)",
     "Data Criação (YYYY-MM-DD HH:MM:SS)",
-    "Status (Criado, Em validação, Em tratamento, Resolvido, Cancelado)", // UPDATED: Status options
-    "Account",
+    "Status (Criado, Em validação, Em tratamento, Resolvido, Cancelado)",
+    "Account", // UPDATED: Example AM name
     "Titulo",
     "Descrição",
     "Anexos (URLs separados por ';')",
@@ -33,8 +33,8 @@ export const generateEasyvistaCsvTemplate = (): string => {
     "Comercial Lda.",
     "EV001",
     "2023-10-26 10:00:00",
-    "Criado", // UPDATED: Example status
-    "Account Manager A",
+    "Criado",
+    "João Silva (AM)", // UPDATED: Example AM name
     "Implementação de Nova Funcionalidade",
     "Detalhes sobre a implementação da funcionalidade X para o cliente Y.",
     "https://example.com/anexo1.pdf;https://example.com/anexo2.jpg",
