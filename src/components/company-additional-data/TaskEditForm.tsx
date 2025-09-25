@@ -127,7 +127,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
     }
   }, [assignedToEmployeeId, availableAMs, setValue]);
 
-  // Memoized value for displaying the selected AM's name (kept for potential future use or debugging, not directly used by SelectValue anymore)
+  // Memoized value for displaying the selected AM's name
   const selectedAMDisplayName = useMemo(() => {
     if (assignedToEmployeeId && availableAMs.length > 0) {
       const selectedAM = availableAMs.find(am => am.id === assignedToEmployeeId);
@@ -237,7 +237,9 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
                         disabled={field.disabled}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder={field.placeholder} /> {/* Use placeholder, let Select handle display */}
+                          <SelectValue>
+                            {selectedAMDisplayName || field.placeholder}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {field.options?.length === 0 ? (
