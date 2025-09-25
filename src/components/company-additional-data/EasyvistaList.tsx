@@ -12,6 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Calendar, User, Mail, Tag, FileText, LinkIcon, DollarSign, Building, Clock, Info, ShieldCheck, Package, Repeat, TrendingUp, Banknote, Factory, Users } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge'; // Import Badge component
 
 interface EasyvistaListProps {
   companyExcelId: string;
@@ -87,6 +88,15 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
     );
   }
 
+  const getUrgencyBadgeVariant = (urgency: Easyvista['Urgência']) => {
+    switch (urgency) {
+      case 'Alto': return 'destructive'; // Red
+      case 'Médio': return 'secondary'; // Blue/Grey
+      case 'Baixo': return 'default'; // Green
+      default: return 'outline'; // Default grey
+    }
+  };
+
   const renderField = (Icon: React.ElementType, label: string, value: string | number | boolean | string[] | null | undefined) => {
     if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '') || (Array.isArray(value) && value.length === 0) || (typeof value === 'number' && value === 0 && !label.includes('Valor'))) return null;
 
@@ -119,6 +129,8 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
       }
     } else if (typeof value === 'number') {
       displayValue = value.toLocaleString('pt-PT');
+    } else if (label === 'Urgência' && typeof value === 'string') { // NEW: Handle Urgência with Badge
+      displayValue = <Badge variant={getUrgencyBadgeVariant(value as Easyvista['Urgência'])}>{value}</Badge>;
     }
 
     return (
@@ -151,7 +163,7 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
                   {renderField(Info, "Tipo de Report", easyvista["Tipo de report"])}
                   {renderField(ShieldCheck, "PV", easyvista["PV"])}
                   {renderField(Tag, "Tipo EVS", easyvista["Tipo EVS"])}
-                  {renderField(Alert, "Urgência", easyvista["Urgência"])}
+                  {renderField(Alert, "Urgência", easyvista["Urgência"])} {/* NEW: Render Urgência with color */}
                   {renderField(Mail, "Email Pisca", easyvista["Email Pisca"])}
                   {renderField(Info, "Pass Pisca", easyvista["Pass Pisca"])}
                   {renderField(Info, "Client ID", easyvista["Client ID"])}

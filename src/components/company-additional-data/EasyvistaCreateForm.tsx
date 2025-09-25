@@ -39,7 +39,7 @@ const formSchema = z.object({
   "Tipo de report": z.string().nullable().optional(),
   "PV": z.boolean().optional(),
   "Tipo EVS": z.string().nullable().optional(),
-  "Urgência": z.string().nullable().optional(),
+  "Urgência": z.enum(['Alto', 'Médio', 'Baixo']).nullable().optional(), // NEW: Enum for Urgência
   "Email Pisca": z.string().email("Email inválido").nullable().optional().or(z.literal('')),
   "Pass Pisca": z.string().nullable().optional(),
   "Client ID": z.string().nullable().optional(),
@@ -99,7 +99,7 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
       "Tipo de report": '',
       "PV": false,
       "Tipo EVS": '',
-      "Urgência": '',
+      "Urgência": 'Médio', // NEW: Default urgency
       "Email Pisca": '',
       "Pass Pisca": '',
       "Client ID": '',
@@ -140,7 +140,7 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
         "Tipo de report": values["Tipo de report"] || null,
         "PV": values["PV"] || false,
         "Tipo EVS": values["Tipo EVS"] || null,
-        "Urgência": values["Urgência"] || null,
+        "Urgência": values["Urgência"] || null, // NEW: Include urgency
         "Email Pisca": values["Email Pisca"] || null,
         "Pass Pisca": values["Pass Pisca"] || null,
         "Client ID": values["Client ID"] || null,
@@ -177,7 +177,7 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
     { name: "Tipo de report", label: "Tipo de Report", type: "select", options: ["Geral", "Específico a um cliente"] },
     { name: "PV", label: "PV (Informado ou não informado)", type: "boolean" },
     { name: "Tipo EVS", label: "Tipo EVS", type: "text" },
-    { name: "Urgência", label: "Urgência", type: "text" },
+    { name: "Urgência", label: "Urgência", type: "select", options: ["Alto", "Médio", "Baixo"] }, // NEW: Select for Urgência
     { name: "Email Pisca", label: "Email Pisca", type: "email" },
     { name: "Pass Pisca", label: "Pass Pisca", type: "text" },
     { name: "Client ID", label: "Client ID", type: "text" },
