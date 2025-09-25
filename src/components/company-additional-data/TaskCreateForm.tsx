@@ -164,11 +164,15 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
     },
   ];
 
+  const companyDisplayName = companyDetails?.Commercial_Name && companyDetails.Commercial_Name.trim() !== ''
+    ? companyDetails.Commercial_Name
+    : (companyDetails?.Company_Name ? `${companyDetails.Company_Name} (Nome Fiscal)` : companyExcelId);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4">
         <p className="text-sm text-muted-foreground">
-          A criar tarefa para a empresa <span className="font-semibold">{companyDetails?.Commercial_Name || (companyDetails?.Company_Name ? `${companyDetails.Company_Name} (Nome Fiscal)` : companyExcelId)}</span> (ID Excel: <span className="font-semibold">{companyExcelId}</span>)
+          A criar tarefa para a empresa <span className="font-semibold">{companyDisplayName}</span> (ID Excel: <span className="font-semibold">{companyExcelId}</span>)
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {fields.map((field) => (
