@@ -462,4 +462,4 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
   );
 };
 
-export default DealCreateForm;
+export default DealEditForm;
