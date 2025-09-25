@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -31,13 +31,13 @@ interface EasyvistaCreateFormProps {
 const formSchema = z.object({
   "Nome comercial": z.string().nullable().optional(),
   "Status": z.enum(['Criado', 'Em validação', 'Em tratamento', 'Resolvido', 'Cancelado']).nullable().optional(),
-  "Account": z.string().nullable().optional(), // UPDATED: Account is now a string from AMs
+  "Account": z.string().nullable().optional(),
   "Titulo": z.string().nullable().optional(),
   "Descrição": z.string().nullable().optional(),
   "Anexos": z.string().nullable().optional(), // Simplified for now, can be extended to array input
   "Tipo de report": z.string().nullable().optional(),
   "PV": z.boolean().optional(),
-  "Tipo EVS": z.string().nullable().optional(), // UPDATED: Now uses string for dynamic types
+  "Tipo EVS": z.string().nullable().optional(),
   "Urgência": z.enum(['Alto', 'Médio', 'Baixo']).nullable().optional(),
   "Email Pisca": z.string().email("Email inválido").nullable().optional().or(z.literal('')),
   "Pass Pisca": z.string().nullable().optional(),
@@ -62,13 +62,20 @@ type FormData = z.infer<typeof formSchema>;
 interface FormFieldConfig {
   name: keyof FormData;
   label: string;
-  type: "text" | "number" | "textarea" | "email" | "url" | "boolean" | "select";
+  type: "text" | "number" | "textarea" | "email" | "url" | "boolean" | "select" | "date";
   required?: boolean; // Explicitly optional
   colSpan?: number;
   options?: (string | { value: string; label: string; color?: string; icon?: React.ElementType })[];
   placeholder?: string;
   disabled?: boolean;
+  alwaysVisible?: boolean; // NEW: Flag for fields that are always visible
 }
+
+const optionalEasyvistaFieldsList = [ // List of all optional fields that can be displayed
+  "Email Pisca", "Pass Pisca", "Client ID", "Client Secret", "Integração",
+  "NIF da empresa", "Campanha", "Duração do acordo", "Plano do acordo",
+  "Valor sem iva", "ID_Proposta"
+];
 
 const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
   companyExcelId,
@@ -78,10 +85,11 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [availableAMs, setAvailableAMs] = useState<Account[]>([]); // State for available AMs
+  const [availableAMs, setAvailableAMs] = useState<Account[]>([]);
   const [isAMsLoading, setIsAMsLoading] = useState(true);
-  const [easyvistaTypes, setEasyvistaTypes] = useState<EasyvistaType[]>([]); // NEW: State for Easyvista types
-  const [isTypesLoading, setIsTypesLoading] = useState(true); // NEW: Loading state for types
+  const [easyvistaTypes, setEasyvistaTypes] = useState<EasyvistaType[]>([]);
+  const [isTypesLoading, setIsTypesLoading] = useState(true);
+  const [selectedEasyvistaTypeFields, setSelectedEasyvistaTypeFields] = useState<string[] | null>(null); // NEW: State for dynamically displayed fields
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -101,43 +109,18 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const loadData = async () => {
-      if (!userId) return;
-      setIsAMsLoading(true);
-      setIsTypesLoading(true);
-      try {
-        const fetchedAMs = await fetchAccounts(userId);
-        setAvailableAMs(fetchedAMs.filter(am => am.am !== null && am.am.trim() !== '')); // Filter out empty AMs
-
-        const fetchedTypes = await fetchEasyvistaTypes(userId);
-        setEasyvistaTypes(fetchedTypes);
-      } catch (err: any) {
-        console.error("Erro ao carregar dados para o formulário Easyvista:", err);
-        showError(err.message || "Falha ao carregar dados necessários.");
-      } finally {
-        setIsAMsLoading(false);
-        setIsTypesLoading(false);
-      }
-    };
-
-    if (userId) {
-      loadData();
-    }
-  }, [userId]);
-
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       "Nome comercial": commercialName || '',
       "Status": 'Criado',
-      "Account": '', // Default to empty string
+      "Account": '',
       "Titulo": '',
       "Descrição": '',
       "Anexos": '',
       "Tipo de report": '',
       "PV": false,
-      "Tipo EVS": '', // Default to empty string
+      "Tipo EVS": '',
       "Urgência": 'Médio',
       "Email Pisca": '',
       "Pass Pisca": '',
@@ -153,6 +136,53 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
       "Account Armatis": '',
     },
   });
+
+  const { watch, setValue } = form;
+  const selectedTipoEVS = watch("Tipo EVS");
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!userId) return;
+      setIsAMsLoading(true);
+      setIsTypesLoading(true);
+      try {
+        const fetchedAMs = await fetchAccounts(userId);
+        setAvailableAMs(fetchedAMs.filter(am => am.am !== null && am.am.trim() !== ''));
+
+        const fetchedTypes = await fetchEasyvistaTypes(userId);
+        setEasyvistaTypes(fetchedTypes);
+
+        // Set initial display fields if a default Tipo EVS is already selected or exists
+        if (selectedTipoEVS) {
+          const initialType = fetchedTypes.find(type => type.name === selectedTipoEVS);
+          setSelectedEasyvistaTypeFields(initialType?.display_fields || null);
+        } else {
+          setSelectedEasyvistaTypeFields(null); // No type selected, no optional fields shown
+        }
+
+      } catch (err: any) {
+        console.error("Erro ao carregar dados para o formulário Easyvista:", err);
+        showError(err.message || "Falha ao carregar dados necessários.");
+      } finally {
+        setIsAMsLoading(false);
+        setIsTypesLoading(false);
+      }
+    };
+
+    if (userId) {
+      loadData();
+    }
+  }, [userId]); // Removed selectedTipoEVS from dependencies to avoid re-fetching types on type change
+
+  // Effect to update displayed fields when selected Tipo EVS changes
+  useEffect(() => {
+    if (selectedTipoEVS && easyvistaTypes.length > 0) {
+      const type = easyvistaTypes.find(t => t.name === selectedTipoEVS);
+      setSelectedEasyvistaTypeFields(type?.display_fields || null);
+    } else {
+      setSelectedEasyvistaTypeFields(null);
+    }
+  }, [selectedTipoEVS, easyvistaTypes]);
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
@@ -170,10 +200,10 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
         "Account": values["Account"] || null,
         "Titulo": values["Titulo"] || null,
         "Descrição": values["Descrição"] || null,
-        "Anexos": values["Anexos"] ? [values["Anexos"]] : null, // Convert single string to array
+        "Anexos": values["Anexos"] ? [values["Anexos"]] : null,
         "Tipo de report": values["Tipo de report"] || null,
         "PV": values["PV"] || false,
-        "Tipo EVS": values["Tipo EVS"] || null, // Use selected dynamic type
+        "Tipo EVS": values["Tipo EVS"] || null,
         "Urgência": values["Urgência"] || null,
         "Email Pisca": values["Email Pisca"] || null,
         "Pass Pisca": values["Pass Pisca"] || null,
@@ -214,17 +244,18 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
     { value: 'Baixo', label: 'Baixo', color: 'bg-green-500' },
   ];
 
-  const fields: FormFieldConfig[] = [
-    { name: "Nome comercial", label: "Nome Comercial", type: "text" },
-    { name: "Urgência", label: "Urgência", type: "select", options: urgencyOptions },
-    { name: "Status", label: "Status", type: "select", options: statusOptions },
-    { name: "Account", label: "Account", type: "select", options: availableAMs.map(am => ({ value: am.account_name || am.am || '', label: am.account_name || am.am || 'N/A' })).filter(opt => opt.value !== ''), placeholder: "Selecione um AM", disabled: isAMsLoading || availableAMs.length === 0 },
-    { name: "Tipo de report", label: "Tipo de Report", type: "select", options: ["Geral", "Específico a um cliente"] },
-    { name: "Tipo EVS", label: "Tipo EVS", type: "select", options: easyvistaTypes.map(type => type.name), placeholder: "Selecione um Tipo EVS", disabled: isTypesLoading || easyvistaTypes.length === 0 }, // UPDATED: Dynamic options
-    { name: "Titulo", label: "Título", type: "text" },
-    { name: "Descrição", label: "Descrição", type: "textarea", colSpan: 2 },
-    { name: "Anexos", label: "Anexos (URL)", type: "url" },
-    { name: "PV", label: "PV (Informado ou não informado)", type: "boolean" },
+  const allFormFields: FormFieldConfig[] = useMemo(() => [
+    { name: "Nome comercial", label: "Nome Comercial", type: "text", alwaysVisible: true },
+    { name: "Urgência", label: "Urgência", type: "select", options: urgencyOptions, alwaysVisible: true },
+    { name: "Status", label: "Status", type: "select", options: statusOptions, alwaysVisible: true },
+    { name: "Account", label: "Account", type: "select", options: availableAMs.map(am => ({ value: am.account_name || am.am || '', label: am.account_name || am.am || 'N/A' })).filter(opt => opt.value !== ''), placeholder: "Selecione um AM", disabled: isAMsLoading || availableAMs.length === 0, alwaysVisible: true },
+    { name: "Tipo de report", label: "Tipo de Report", type: "select", options: ["Geral", "Específico a um cliente"], alwaysVisible: true },
+    { name: "Tipo EVS", label: "Tipo EVS", type: "select", options: easyvistaTypes.map(type => type.name), placeholder: "Selecione um Tipo EVS", disabled: isTypesLoading || easyvistaTypes.length === 0, alwaysVisible: true },
+    { name: "Titulo", label: "Título", type: "text", alwaysVisible: true },
+    { name: "Descrição", label: "Descrição", type: "textarea", colSpan: 2, alwaysVisible: true },
+    { name: "Anexos", label: "Anexos (URL)", type: "url", alwaysVisible: true },
+    { name: "PV", label: "PV (Informado ou não informado)", type: "boolean", alwaysVisible: true },
+    // Optional fields, their visibility depends on selectedEasyvistaTypeFields
     { name: "Email Pisca", label: "Email Pisca", type: "email" },
     { name: "Pass Pisca", label: "Pass Pisca", type: "text" },
     { name: "Client ID", label: "Client ID", type: "text" },
@@ -237,7 +268,13 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
     { name: "Valor sem iva", label: "Valor sem IVA", type: "number" },
     { name: "ID_Proposta", label: "ID Proposta", type: "text" },
     { name: "Account Armatis", label: "Account Armatis", type: "text" },
-  ];
+  ], [availableAMs, isAMsLoading, easyvistaTypes, isTypesLoading, urgencyOptions, statusOptions]);
+
+  const fieldsToRender = useMemo(() => {
+    return allFormFields.filter(field => 
+      field.alwaysVisible || (selectedEasyvistaTypeFields && selectedEasyvistaTypeFields.includes(field.label))
+    );
+  }, [allFormFields, selectedEasyvistaTypeFields]);
 
   return (
     <Form {...form}>
@@ -246,7 +283,7 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
           A criar Easyvista para a empresa com ID Excel: <span className="font-semibold">{companyExcelId}</span>
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {fields.map((field) => (
+          {fieldsToRender.map((field) => (
             <FormField
               key={field.name}
               control={form.control}
