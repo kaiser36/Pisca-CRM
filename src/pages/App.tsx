@@ -3,15 +3,17 @@ import { Toaster as Sonner } from "@/components/ui/sonner"; // Este é o Toaster
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "@/pages/Index";
-import NotFound from "@/pages/NotFound";
-import CRM from "@/pages/CRM";
-import Settings from "@/pages/Settings";
-import CompanyAdditionalData from "@/pages/CompanyAdditionalData";
-import CompanyAdditionalDetailPage from "@/pages/CompanyAdditionalDetailPage"; // New import
-import Accounts from "@/pages/Accounts";
-import AmView from "@/pages/AmView";
-import Products from "@/pages/Products";
+import Index from "../pages/Index";
+import NotFound from "../pages/NotFound";
+import CRM from "../pages/CRM";
+import Settings from "../pages/Settings";
+import CompanyAdditionalData from "../pages/CompanyAdditionalData";
+import CompanyAdditionalDetailPage from "../pages/CompanyAdditionalDetailPage"; // New import
+import Accounts from "../pages/Accounts";
+import AmView from "../pages/AmView";
+import Products from "../pages/Products";
+import Campaigns from "../pages/Campaigns"; // NEW: Import Campaigns page
+import EasyvistaTypeManagement from "../pages/EasyvistaTypeManagement"; // NEW: Import EasyvistaTypeManagement
 import { CrmDataProvider } from "@/context/CrmDataContext";
 
 const queryClient = new QueryClient();
@@ -30,9 +32,11 @@ const App = () => (
             <Route path="/company-additional-data" element={<CompanyAdditionalData />} />
             <Route path="/company-additional-data/:companyExcelId" element={<CompanyAdditionalDetailPage />} /> {/* New route */}
             <Route path="/settings" element={<Settings />} />
+            <Route path="/settings/easyvista-types" element={<EasyvistaTypeManagement />} /> {/* NEW: Easyvista Type Management route */}
             <Route path="/accounts" element={<Accounts />} />
             <Route path="/am-view" element={<AmView />} />
             <Route path="/products" element={<Products />} />
+            <Route path="/campaigns" element={<Campaigns />} /> {/* NEW: Add Campaigns route */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

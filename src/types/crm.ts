@@ -155,13 +155,19 @@ export interface AccountContact {
 
 export type EasyvistaStatus = 'Criado' | 'Em validação' | 'Em tratamento' | 'Resolvido' | 'Cancelado'; // NEW: Define EasyvistaStatus type
 
+export interface EasyvistaType { // NEW: Interface for custom Easyvista types
+  id?: string;
+  user_id: string;
+  name: string;
+  created_at?: string;
+}
+
 export interface Easyvista {
   id?: number;
   created_at?: string;
   user_id: string;
   company_excel_id?: string | null; // New field to link to CompanyAdditionalExcelData
   "Nome comercial"?: string | null;
-  // "EV_ID"?: string | null; // REMOVED: EV_ID
   "Data Criação"?: string | null;
   "Status"?: EasyvistaStatus | null; // UPDATED: Use EasyvistaStatus type
   "Account"?: string | null;
@@ -171,7 +177,7 @@ export interface Easyvista {
   "Ultima actualização"?: string | null;
   "Tipo de report"?: string | null;
   "PV"?: boolean | null;
-  "Tipo EVS"?: string | null;
+  "Tipo EVS"?: string | null; // UPDATED: Now references EasyvistaType.name
   "Urgência"?: 'Alto' | 'Médio' | 'Baixo' | null;
   "Email Pisca"?: string | null;
   "Pass Pisca"?: string | null;

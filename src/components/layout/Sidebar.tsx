@@ -4,7 +4,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2, UserCog, Info, Users, Package, ListTodo, Gift } from 'lucide-react'; // Added Gift icon
+import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2, UserCog, Info, Users, Package, ListTodo, Gift, Settings2 } from 'lucide-react'; // Added Settings2 icon
 import {
   Accordion,
   AccordionContent,
@@ -25,7 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const [accordionValue, setAccordionValue] = React.useState<string | undefined>(undefined);
 
   React.useEffect(() => {
-    if (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view') || isPathActive('/products') || isPathActive('/campaigns')) { // Updated to include /campaigns
+    if (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view') || isPathActive('/products') || isPathActive('/campaigns')) {
       setAccordionValue('settings-accordion');
     } else {
       setAccordionValue(undefined);
@@ -91,7 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             <AccordionTrigger className={cn(
               "flex items-center w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground py-2 px-4 rounded-md transition-colors",
               isCollapsed ? "px-2" : "px-4",
-              (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view') || isPathActive('/products') || isPathActive('/campaigns')) && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90" // Updated condition
+              (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view') || isPathActive('/products') || isPathActive('/campaigns') || isPathActive('/settings/easyvista-types')) && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90" // Updated condition
             )}>
               <Settings className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
               {!isCollapsed && "Configurações"}
@@ -153,7 +153,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                   {!isCollapsed && "Produtos"}
                 </Button>
               </Link>
-              <Link to="/campaigns"> {/* NEW submenu item */}
+              <Link to="/campaigns">
                 <Button
                   variant="ghost"
                   className={cn(
@@ -163,8 +163,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                     isActive('/campaigns') && "bg-sidebar-accent text-sidebar-accent-foreground"
                   )}
                 >
-                  <Gift className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} /> {/* Icon for campaigns */}
+                  <Gift className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
                   {!isCollapsed && "Campanhas"}
+                </Button>
+              </Link>
+              {/* NEW submenu item for Easyvista Types */}
+              <Link to="/settings/easyvista-types">
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    isCollapsed ? "px-2" : "px-4",
+                    "pl-8",
+                    isActive('/settings/easyvista-types') && "bg-sidebar-accent text-sidebar-accent-foreground"
+                  )}
+                >
+                  <Settings2 className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
+                  {!isCollapsed && "Tipos de Easyvista"}
                 </Button>
               </Link>
             </AccordionContent>

@@ -64,9 +64,8 @@ const EasyvistaExcelUploadCard: React.FC = () => {
       
       const dataToUpsert: Easyvista[] = parsedData.map((row: Record<string, any>) => {
         const companyExcelId = String(row['company_excel_id'] || '');
-        // const evId = String(row['EV_ID'] || ''); // REMOVED: EV_ID
 
-        if (!companyExcelId) { // UPDATED: Removed EV_ID from validation
+        if (!companyExcelId) {
           throw new Error(`Linha inválida: 'company_excel_id' em falta. Linha: ${JSON.stringify(row)}`);
         }
 
@@ -74,7 +73,6 @@ const EasyvistaExcelUploadCard: React.FC = () => {
           user_id: userId,
           company_excel_id: companyExcelId,
           "Nome comercial": String(row['Nome comercial'] || '') || null,
-          // "EV_ID": evId, // REMOVED: EV_ID
           "Data Criação": String(row['Data Criação (YYYY-MM-DD HH:MM:SS)'] || '') || null,
           "Status": String(row['Status'] || '') || null,
           "Account": String(row['Account'] || '') || null,
@@ -84,7 +82,7 @@ const EasyvistaExcelUploadCard: React.FC = () => {
           "Ultima actualização": String(row['Ultima actualização (YYYY-MM-DD HH:MM:SS)'] || '') || null,
           "Tipo de report": String(row['Tipo de report'] || '') || null,
           "PV": row['PV (1 para Sim, 0 para Não)'] === '1' || row['PV'] === true,
-          "Tipo EVS": String(row['Tipo EVS'] || '') || null,
+          "Tipo EVS": String(row['Tipo EVS'] || '') || null, // UPDATED: Use the new field
           "Urgência": String(row['Urgência'] || '') || null,
           "Email Pisca": String(row['Email Pisca'] || '') || null,
           "Pass Pisca": String(row['Pass Pisca'] || '') || null,

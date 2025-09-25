@@ -18,8 +18,8 @@ import DealCreateForm from './DealCreateForm';
 import DealList from './DealList';
 import EmployeeCreateForm from './EmployeeCreateForm';
 import EmployeeList from './EmployeeList';
-import TaskCreateForm from './TaskCreateForm'; // NEW: Import TaskCreateForm
-import TaskList from './TaskList'; // NEW: Import TaskList
+import TaskCreateForm from './TaskCreateForm';
+import TaskList from './TaskList';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Accordion,
@@ -47,7 +47,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   const [isCreateEasyvistaDialogOpen, setIsCreateEasyvistaDialogOpen] = useState(false);
   const [isCreateDealDialogOpen, setIsCreateDealDialogOpen] = useState(false);
   const [isCreateEmployeeDialogOpen, setIsCreateEmployeeDialogOpen] = useState(false);
-  const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false); // NEW: State for Task dialog
+  const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false);
   const [deals, setDeals] = useState<Negocio[]>([]);
   const [isDealsLoading, setIsDealsLoading] = useState(true);
   const [dealsError, setDealsError] = useState<string | null>(null);
@@ -472,8 +472,8 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
           </div>
           {/* End New Overview Cards */}
 
-          <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}> {/* NEW: Control active tab */}
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-7 h-10 rounded-lg bg-muted/70 p-1"> {/* Adjusted grid-cols to 7 */}
+          <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-7 h-10 rounded-lg bg-muted/70 p-1">
               <TabsTrigger
                 value="details"
                 className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"

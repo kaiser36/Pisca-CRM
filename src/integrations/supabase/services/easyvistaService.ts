@@ -49,7 +49,6 @@ export async function upsertEasyvistas(easyvistas: Easyvista[], userId: string):
     user_id: userId,
     company_excel_id: easyvista.company_excel_id,
     "Nome comercial": easyvista["Nome comercial"] || null,
-    // "EV_ID": easyvista["EV_ID"], // REMOVED: EV_ID
     "Data Criação": easyvista["Data Criação"] || new Date().toISOString(),
     "Status": easyvista["Status"] || 'Criado',
     "Account": easyvista["Account"] || null,
@@ -59,7 +58,7 @@ export async function upsertEasyvistas(easyvistas: Easyvista[], userId: string):
     "Ultima actualização": easyvista["Ultima actualização"] || new Date().toISOString(),
     "Tipo de report": easyvista["Tipo de report"] || null,
     "PV": easyvista["PV"] || false,
-    "Tipo EVS": easyvista["Tipo EVS"] || null,
+    "Tipo EVS": easyvista["Tipo EVS"] || null, // UPDATED: Use the new field
     "Urgência": easyvista["Urgência"] || null,
     "Email Pisca": easyvista["Email Pisca"] || null,
     "Pass Pisca": easyvista["Pass Pisca"] || null,
@@ -81,7 +80,7 @@ export async function upsertEasyvistas(easyvistas: Easyvista[], userId: string):
 
   const { error } = await supabase
     .from('Easyvistas')
-    .upsert(dataToUpsert, { onConflict: 'id' }); // UPDATED: Use 'id' as onConflict key
+    .upsert(dataToUpsert, { onConflict: 'id' });
 
   if (error) {
     console.error('Error upserting Easyvistas:', error);

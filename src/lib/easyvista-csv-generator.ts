@@ -2,7 +2,6 @@ export const generateEasyvistaCsvTemplate = (): string => {
   const headers = [
     "company_excel_id (OBRIGATÓRIO)",
     "Nome comercial",
-    // "EV_ID (OBRIGATÓRIO)", // REMOVED: EV_ID
     "Data Criação (YYYY-MM-DD HH:MM:SS)",
     "Status (Criado, Em validação, Em tratamento, Resolvido, Cancelado)",
     "Account",
@@ -12,7 +11,7 @@ export const generateEasyvistaCsvTemplate = (): string => {
     "Ultima actualização (YYYY-MM-DD HH:MM:SS)",
     "Tipo de report",
     "PV (1 para Sim, 0 para Não)",
-    "Tipo EVS",
+    "Tipo EVS", // UPDATED: Now a string field
     "Urgência (Alto, Médio, Baixo)",
     "Email Pisca",
     "Pass Pisca",
@@ -31,7 +30,6 @@ export const generateEasyvistaCsvTemplate = (): string => {
   const exampleRow = [
     "EMP001", // Deve corresponder a um Company_id existente na tabela 'companies'
     "Comercial Lda.",
-    // "EV001", // REMOVED: EV_ID
     "2023-10-26 10:00:00",
     "Criado",
     "Account Manager A",
@@ -41,7 +39,7 @@ export const generateEasyvistaCsvTemplate = (): string => {
     "2023-10-26 11:30:00",
     "Geral",
     "1", // PV
-    "EVS Tipo A",
+    "Bug", // UPDATED: Example of a custom Easyvista Type
     "Médio",
     "email@pisca.com",
     "password123",

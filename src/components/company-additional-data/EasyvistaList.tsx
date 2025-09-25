@@ -1,15 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Easyvista, EasyvistaStatus } from '@/types/crm'; // Import EasyvistaStatus
-import { fetchEasyvistasByCompanyExcelId } from '@/integrations/supabase/utils';
+import { Easyvista, EasyvistaStatus, EasyvistaType } from '@/types/crm'; // Import EasyvistaType
+import { fetchEasyvistasByCompanyExcelId, fetchEasyvistaTypes } from '@/integrations/supabase/utils'; // Import fetchEasyvistaTypes
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Calendar, User, Mail, Tag, FileText, LinkIcon, DollarSign, Building, Clock, Info, ShieldCheck, Package, Repeat, TrendingUp, Banknote, Factory, Users, PlusCircle, CheckCircle2, Hourglass, XCircle, FilePen, CircleDotDashed } from 'lucide-react'; // Import new icons
+import { Terminal, Calendar, User, Mail, Tag, FileText, LinkIcon, DollarSign, Building, Clock, Info, ShieldCheck, Package, Repeat, TrendingUp, Banknote, Factory, Users, PlusCircle, CheckCircle2, Hourglass, XCircle, FilePen, CircleDotDashed } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,7 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [easyvistaTypes, setEasyvistaTypes] = useState<EasyvistaType[]>([]); // NEW: State for Easyvista types
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -43,7 +44,7 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const loadEasyvistas = async () => {
+  const loadEasyvistasAndTypes = async () => {
     if (!userId) {
       setError("Utilizador não autenticado. Por favor, faça login para ver os Easyvistas.");
       setIsLoading(false);
@@ -54,8 +55,11 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
     try {
       const fetchedEasyvistas = await fetchEasyvistasByCompanyExcelId(userId, companyExcelId);
       setEasyvistas(fetchedEasyvistas);
+
+      const fetchedTypes = await fetchEasyvistaTypes(userId);
+      setEasyvistaTypes(fetchedTypes);
     } catch (err: any) {
-      console.error("Erro ao carregar Easyvistas:", err);
+      console.error("Erro ao carregar Easyvistas ou tipos:", err);
       setError(err.message || "Falha ao carregar os registos Easyvista.");
       showError(err.message || "Falha ao carregar os registos Easyvista.");
     } finally {
@@ -65,7 +69,7 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
 
   useEffect(() => {
     if (userId && companyExcelId) {
-      loadEasyvistas();
+      loadEasyvistasAndTypes();
     }
   }, [userId, companyExcelId]);
 
@@ -143,7 +147,7 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
       displayValue = value.toLocaleString('pt-PT');
     } else if (label === 'Urgência' && typeof value === 'string') {
       displayValue = <Badge variant={getUrgencyBadgeVariant(value as Easyvista['Urgência'])}>{value}</Badge>;
-    } else if (label === 'Status' && typeof value === 'string') { // UPDATED: Handle Status with Badge and Icon
+    } else if (label === 'Status' && typeof value === 'string') {
       const statusDisplay = getStatusDisplay(value as EasyvistaStatus);
       const StatusIcon = statusDisplay.icon;
       displayValue = (
@@ -171,7 +175,6 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
             <Card key={easyvista.id} className="w-full shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-semibold">{easyvista["Titulo"] || 'Easyvista sem Título'}</CardTitle>
-                {/* <CardDescription className="text-muted-foreground">EV_ID: {easyvista["EV_ID"]}</CardDescription> */} {/* REMOVED: EV_ID */}
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -180,8 +183,8 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
                   {renderField(Tag, "Status", easyvista["Status"])}
                   {renderField(User, "Account", easyvista["Account"])}
                   {renderField(Clock, "Última Atualização", easyvista["Ultima actualização"])}
-                  {renderField(Info, "Tipo de Report", easyvista["Tipo de report"])} {/* MOVED */}
-                  {renderField(Tag, "Tipo EVS", easyvista["Tipo EVS"])} {/* MOVED */}
+                  {renderField(Info, "Tipo de Report", easyvista["Tipo de report"])}
+                  {renderField(Tag, "Tipo EVS", easyvista["Tipo EVS"])} {/* Display dynamic type */}
                   {renderField(Alert, "Urgência", easyvista["Urgência"])}
                   {renderField(Mail, "Email Pisca", easyvista["Email Pisca"])}
                   {renderField(Info, "Pass Pisca", easyvista["Pass Pisca"])}

@@ -11,3 +11,4 @@ export * from './services/productService.ts';
 export * from './services/employeeService.ts';
 export * from './services/taskService.ts';
 export * from './services/campaignService.ts';
+export * from './services/easyvistaTypeService.ts';
