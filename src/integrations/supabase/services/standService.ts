@@ -33,6 +33,38 @@ function mapSupabaseStandToCrmStand(supabaseStand: any): Stand {
 }
 
 /**
+ * Fetches stands for a given list of company database IDs.
+ * Handles batching to avoid URL too long errors.
+ */
+export async function fetchStandsForCompanyDbIds(userId: string, companyDbIds: string[]): Promise<any[]> {
+  if (companyDbIds.length === 0) {
+    return [];
+  }
+
+  let allStandsData: any[] = [];
+  const BATCH_SIZE = 50; // Fetch stands in batches of 50 company IDs
+
+  for (let i = 0; i < companyDbIds.length; i += BATCH_SIZE) {
+    const batchIds = companyDbIds.slice(i, i + BATCH_SIZE);
+    if (batchIds.length === 0) continue;
+
+    console.log(`[fetchStandsForCompanyDbIds] Fetching stands for batch of company DB IDs:`, batchIds);
+    const { data: batchStandsData, error: batchStandsError } = await supabase
+      .from('stands')
+      .select('*')
+      .in('company_db_id', batchIds); 
+
+    if (batchStandsError) {
+      console.error('[fetchStandsForCompanyDbIds] Error fetching stands in batch:', batchStandsError);
+      throw new Error(batchStandsError.message);
+    }
+    console.log(`[fetchStandsForCompanyDbIds] Fetched ${batchStandsData.length} stands in batch.`);
+    allStandsData = allStandsData.concat(batchStandsData);
+  }
+  return allStandsData;
+}
+
+/**
  * Upserts stand data into Supabase.
  */
 export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, string>): Promise<void> {

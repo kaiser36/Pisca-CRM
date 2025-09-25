@@ -1,5 +1,6 @@
 import { supabase } from '../client';
 import { Company, Stand } from '@/types/crm';
+import { fetchStandsForCompanyDbIds } from './standService'; // Import the function
 
 /**
  * Maps a Supabase company object to the CRM Company interface.
@@ -27,7 +28,7 @@ function mapSupabaseCompanyToCrmCompany(supabaseCompany: any): Company {
     Plan_Active: supabaseCompany.plan_active,
     Plan_Auto_Renewal: supabaseCompany.plan_auto_renewal,
     Current_Bumps: supabaseCompany.current_bumps,
-    Total_Bumps: supabaseCompany.total_bumps,
+    Total_Bumps: supabaseCompany.total_bumps, // Corrected column name here
     Commercial_Name: supabaseCompany.commercial_name,
     Company_Postal_Code: supabaseCompany.company_postal_code,
     District: supabaseCompany.district,
@@ -96,38 +97,6 @@ function mapSupabaseStandToCrmStand(supabaseStand: any): Stand {
 }
 
 /**
- * Fetches stands for a given list of company database IDs.
- * Handles batching to avoid URL too long errors.
- */
-async function fetchStandsForCompanyDbIds(userId: string, companyDbIds: string[]): Promise<any[]> {
-  if (companyDbIds.length === 0) {
-    return [];
-  }
-
-  let allStandsData: any[] = [];
-  const BATCH_SIZE = 50; // Fetch stands in batches of 50 company IDs
-
-  for (let i = 0; i < companyDbIds.length; i += BATCH_SIZE) {
-    const batchIds = companyDbIds.slice(i, i + BATCH_SIZE);
-    if (batchIds.length === 0) continue;
-
-    console.log(`[fetchStandsForCompanyDbIds] Fetching stands for batch of company DB IDs:`, batchIds);
-    const { data: batchStandsData, error: batchStandsError } = await supabase
-      .from('stands')
-      .select('*')
-      .in('company_db_id', batchIds); 
-
-    if (batchStandsError) {
-      console.error('[fetchStandsForCompanyDbIds] Error fetching stands in batch:', batchStandsError);
-      throw new Error(batchStandsError.message);
-    }
-    console.log(`[fetchStandsForCompanyDbIds] Fetched ${batchStandsData.length} stands in batch.`);
-    allStandsData = allStandsData.concat(batchStandsData);
-  }
-  return allStandsData;
-}
-
-/**
  * Fetches all companies and their associated stands for the current authenticated user.
  */
 export async function fetchCompaniesWithStands(userId: string): Promise<Company[]> {
@@ -144,7 +113,7 @@ export async function fetchCompaniesWithStands(userId: string): Promise<Company[
   console.log(`[fetchCompaniesWithStands] Fetched ${companiesData.length} companies.`);
 
   const companyDbIds = companiesData.map(c => c.id);
-  const allStandsData = await fetchStandsForCompanyDbIds(userId, companyDbIds);
+  const allStandsData = await fetchStandsForCompanyDbIds(userId, companyDbIds); // Use imported function
   console.log(`[fetchCompaniesWithStands] Total stands fetched: ${allStandsData.length}`);
 
   const companiesMap = new Map<string, Company>();
@@ -190,7 +159,7 @@ export async function fetchCompaniesByExcelCompanyIds(userId: string, excelCompa
   console.log(`[fetchCompaniesByExcelCompanyIds] Fetched ${companiesData.length} companies by Excel IDs.`);
 
   const companyDbIds = companiesData.map(c => c.id);
-  const allStandsData = await fetchStandsForCompanyDbIds(userId, companyDbIds);
+  const allStandsData = await fetchStandsForCompanyDbIds(userId, companyDbIds); // Use imported function
   console.log(`[fetchCompaniesByExcelCompanyIds] Total stands fetched for specific companies: ${allStandsData.length}`);
 
   const companiesMap = new Map<string, Company>();
