@@ -12,7 +12,10 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Check } from 'lucide-react'; // Import Check icon
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'; // Import Popover components
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'; // Import Command components
+import { cn } from '@/lib/utils'; // Import cn utility
 
 interface EasyvistaTypeCreateFormProps {
   onSave: () => void;
@@ -21,9 +24,24 @@ interface EasyvistaTypeCreateFormProps {
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome do Tipo é obrigatório"),
+  display_fields: z.array(z.string()).optional(), // NEW: Add display_fields to schema
 });
 
 type FormData = z.infer<typeof formSchema>;
+
+const optionalEasyvistaFields = [
+  { value: "Email Pisca", label: "Email Pisca" },
+  { value: "Pass Pisca", label: "Pass Pisca" },
+  { value: "Client ID", label: "Client ID" },
+  { value: "Client Secret", label: "Client Secret" },
+  { value: "Integração", label: "Integração" },
+  { value: "NIF da empresa", label: "NIF da Empresa" },
+  { value: "Campanha", label: "Campanha" },
+  { value: "Duração do acordo", label: "Duração do Acordo" },
+  { value: "Plano do acordo", label: "Plano do Acordo" },
+  { value: "Valor sem iva", label: "Valor sem IVA" },
+  { value: "ID_Proposta", label: "ID Proposta" },
+];
 
 const EasyvistaTypeCreateForm: React.FC<EasyvistaTypeCreateFormProps> = ({ onSave, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,8 +69,11 @@ const EasyvistaTypeCreateForm: React.FC<EasyvistaTypeCreateFormProps> = ({ onSav
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
+      display_fields: [], // Initialize as empty array
     },
   });
+
+  const selectedDisplayFields = form.watch("display_fields");
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
@@ -65,6 +86,7 @@ const EasyvistaTypeCreateForm: React.FC<EasyvistaTypeCreateFormProps> = ({ onSav
       const newType: Omit<EasyvistaType, 'id' | 'created_at'> = {
         user_id: userId,
         name: values.name,
+        display_fields: values.display_fields && values.display_fields.length > 0 ? values.display_fields : null,
       };
 
       await insertEasyvistaType(newType);
@@ -94,6 +116,61 @@ const EasyvistaTypeCreateForm: React.FC<EasyvistaTypeCreateFormProps> = ({ onSav
             </FormItem>
           )}
         />
+
+        {/* NEW: Multi-select for display_fields */}
+        <FormField
+          control={form.control}
+          name="display_fields"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Campos Opcionais a Exibir</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start">
+                    {selectedDisplayFields && selectedDisplayFields.length > 0
+                      ? `${selectedDisplayFields.length} campos selecionados`
+                      : "Selecione os campos a exibir"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                  <Command>
+                    <CommandInput placeholder="Pesquisar campos..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhum campo encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        {optionalEasyvistaFields.map((option) => (
+                          <CommandItem
+                            key={option.value}
+                            value={option.value}
+                            onSelect={() => {
+                              const currentSelection = new Set(field.value);
+                              if (currentSelection.has(option.value)) {
+                                currentSelection.delete(option.value);
+                              } else {
+                                currentSelection.add(option.value);
+                              }
+                              field.onChange(Array.from(currentSelection));
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                field.value?.includes(option.value) ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {option.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="flex justify-end space-x-2 mt-6">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
