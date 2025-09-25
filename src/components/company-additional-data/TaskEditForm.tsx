@@ -171,7 +171,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4">
         <p className="text-sm text-muted-foreground">
-          A editar tarefa para a empresa <span className="font-semibold">{companyDetails?.Commercial_Name || task.company_excel_id}</span> (ID Excel: <span className="font-semibold">{task.company_excel_id}</span>)
+          A editar tarefa para a empresa <span className="font-semibold">{companyDetails?.Commercial_Name || companyDetails?.Company_Name || task.company_excel_id}</span> (ID Excel: <span className="font-semibold">{task.company_excel_id}</span>)
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {fields.map((field) => (
