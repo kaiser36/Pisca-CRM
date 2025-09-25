@@ -2,9 +2,133 @@ import { supabase } from '../client';
 import { Company, Stand } from '@/types/crm';
 
 /**
+ * Maps a Supabase company object to the CRM Company interface.
+ */
+function mapSupabaseCompanyToCrmCompany(supabaseCompany: any): Company {
+  return {
+    Company_id: supabaseCompany.company_id,
+    Company_Name: supabaseCompany.company_name,
+    NIF: supabaseCompany.nif,
+    Company_Email: supabaseCompany.company_email,
+    Company_Contact_Person: supabaseCompany.company_contact_person,
+    Website: supabaseCompany.website,
+    Plafond: supabaseCompany.plafond,
+    Supervisor: supabaseCompany.supervisor,
+    Is_CRB_Partner: supabaseCompany.is_crb_partner,
+    Is_APDCA_Partner: supabaseCompany.is_apdca_partner,
+    Creation_Date: supabaseCompany.creation_date,
+    Last_Login_Date: supabaseCompany.last_login_date,
+    Financing_Simulator_On: supabaseCompany.financing_simulator_on,
+    Simulator_Color: supabaseCompany.simulator_color,
+    Last_Plan: supabaseCompany.last_plan,
+    Plan_Price: supabaseCompany.plan_price,
+    Plan_Expiration_Date: supabaseCompany.plan_expiration_date,
+    Plan_Active: supabaseCompany.plan_active,
+    Plan_Auto_Renewal: supabaseCompany.plan_auto_renewal,
+    Current_Bumps: supabaseCompany.current_bumps,
+    Total_Bumps: supabaseCompany.total_bumps,
+    Commercial_Name: supabaseCompany.commercial_name,
+    Company_Postal_Code: supabaseCompany.company_postal_code,
+    District: supabaseCompany.district,
+    Company_City: supabaseCompany.company_city,
+    Company_Address: supabaseCompany.company_address,
+    AM_Old: supabaseCompany.am_old,
+    AM_Current: supabaseCompany.am_current,
+    Stock_STV: supabaseCompany.stock_stv,
+    Company_API_Info: supabaseCompany.company_api_info,
+    Company_Stock: supabaseCompany.company_stock,
+    Logo_URL: supabaseCompany.logo_url,
+    Classification: supabaseCompany.classification,
+    Imported_Percentage: supabaseCompany.imported_percentage,
+    Vehicle_Source: supabaseCompany.vehicle_source,
+    Competition: supabaseCompany.competition,
+    Social_Media_Investment: supabaseCompany.social_media_investment,
+    Portal_Investment: supabaseCompany.portal_investment,
+    B2B_Market: supabaseCompany.b2b_market,
+    Uses_CRM: supabaseCompany.uses_crm,
+    CRM_Software: supabaseCompany.crm_software,
+    Recommended_Plan: supabaseCompany.recommended_plan,
+    Credit_Mediator: supabaseCompany.credit_mediator,
+    Bank_Of_Portugal_Link: supabaseCompany.bank_of_portugal_link,
+    Financing_Agreements: supabaseCompany.financing_agreements,
+    Last_Visit_Date: supabaseCompany.last_visit_date,
+    Company_Group: supabaseCompany.company_group,
+    Represented_Brands: supabaseCompany.represented_brands,
+    Company_Type: supabaseCompany.company_type,
+    Wants_CT: supabaseCompany.wants_ct,
+    Wants_CRB_Partner: supabaseCompany.wants_crb_partner,
+    Autobiz_Info: supabaseCompany.autobiz_info,
+    Stand_Name: supabaseCompany.stand_name,
+    stands: [] // Stands are populated separately
+  };
+}
+
+/**
+ * Maps a Supabase stand object to the CRM Stand interface.
+ */
+function mapSupabaseStandToCrmStand(supabaseStand: any): Stand {
+  return {
+    Stand_ID: supabaseStand.stand_id,
+    Company_id: supabaseStand.company_id_excel,
+    Company_Name: supabaseStand.company_name,
+    NIF: supabaseStand.nif,
+    Address: supabaseStand.address,
+    City: supabaseStand.city,
+    Postal_Code: supabaseStand.postal_code,
+    Phone: supabaseStand.phone,
+    Email: supabaseStand.email,
+    Contact_Person: supabaseStand.contact_person,
+    Anuncios: supabaseStand.anuncios,
+    API: supabaseStand.api,
+    Publicados: supabaseStand.publicados,
+    Arquivados: supabaseStand.arquivados,
+    Guardados: supabaseStand.guardados,
+    Tipo: supabaseStand.tipo,
+    Delta_Publicados_Last_Day_Month: supabaseStand.delta_publicados_last_day_month,
+    Leads_Recebidas: supabaseStand.leads_recebidas,
+    Leads_Pendentes: supabaseStand.leads_pendentes,
+    Leads_Expiradas: supabaseStand.leads_expiradas,
+    Leads_Financiadas: supabaseStand.leads_financiadas,
+    Whatsapp: supabaseStand.whatsapp,
+    Stand_Name: supabaseStand.stand_name,
+  };
+}
+
+/**
+ * Fetches stands for a given list of company database IDs.
+ * Handles batching to avoid URL too long errors.
+ */
+async function fetchStandsForCompanyDbIds(userId: string, companyDbIds: string[]): Promise<any[]> {
+  if (companyDbIds.length === 0) {
+    return [];
+  }
+
+  let allStandsData: any[] = [];
+  const BATCH_SIZE = 50; // Fetch stands in batches of 50 company IDs
+
+  for (let i = 0; i < companyDbIds.length; i += BATCH_SIZE) {
+    const batchIds = companyDbIds.slice(i, i + BATCH_SIZE);
+    if (batchIds.length === 0) continue;
+
+    console.log(`[fetchStandsForCompanyDbIds] Fetching stands for batch of company DB IDs:`, batchIds);
+    const { data: batchStandsData, error: batchStandsError } = await supabase
+      .from('stands')
+      .select('*')
+      .in('company_db_id', batchIds)
+      .eq('user_id', userId); // Ensure RLS is applied
+
+    if (batchStandsError) {
+      console.error('[fetchStandsForCompanyDbIds] Error fetching stands in batch:', batchStandsError);
+      throw new Error(batchStandsError.message);
+    }
+    console.log(`[fetchStandsForCompanyDbIds] Fetched ${batchStandsData.length} stands in batch.`);
+    allStandsData = allStandsData.concat(batchStandsData);
+  }
+  return allStandsData;
+}
+
+/**
  * Fetches all companies and their associated stands for the current authenticated user.
- * Note: This function now only fetches data directly from the 'companies' table.
- * Additional Excel data is not merged here, as per the request for independent tables.
  */
 export async function fetchCompaniesWithStands(userId: string): Promise<Company[]> {
   console.log(`[fetchCompaniesWithStands] Fetching companies for user: ${userId}`);
@@ -17,133 +141,23 @@ export async function fetchCompaniesWithStands(userId: string): Promise<Company[
     console.error('[fetchCompaniesWithStands] Error fetching companies:', companiesError);
     throw new Error(companiesError.message);
   }
-  console.log(`[fetchCompaniesWithStands] Fetched ${companiesData.length} companies:`, companiesData.map(c => ({ id: c.id, company_id: c.company_id, name: c.company_name })));
+  console.log(`[fetchCompaniesWithStands] Fetched ${companiesData.length} companies.`);
 
-  const companyIds = companiesData.map(c => c.id);
-  if (companyIds.length === 0) {
-    console.log('[fetchCompaniesWithStands] No companies found, returning empty array.');
-    return [];
-  }
-  console.log(`[fetchCompaniesWithStands] Company DB IDs to fetch stands for:`, companyIds);
-
-  let allStandsData: any[] = [];
-  const BATCH_SIZE = 50; // Fetch stands in batches of 50 company IDs to avoid URI Too Long error
-
-  for (let i = 0; i < companyIds.length; i += BATCH_SIZE) {
-    const batchIds = companyIds.slice(i, i + BATCH_SIZE);
-    if (batchIds.length === 0) continue;
-
-    console.log(`[fetchCompaniesWithStands] Fetching stands for batch of company IDs:`, batchIds);
-    const { data: batchStandsData, error: batchStandsError } = await supabase
-      .from('stands')
-      .select('*, stand_name') // Select stand_name
-      .in('company_db_id', batchIds);
-
-    if (batchStandsError) {
-      console.error('[fetchCompaniesWithStands] Error fetching stands in batch:', batchStandsError);
-      throw new Error(batchStandsError.message);
-    }
-    console.log(`[fetchCompaniesWithStands] Fetched ${batchStandsData.length} stands in batch.`);
-    allStandsData = allStandsData.concat(batchStandsData);
-  }
-
+  const companyDbIds = companiesData.map(c => c.id);
+  const allStandsData = await fetchStandsForCompanyDbIds(userId, companyDbIds);
   console.log(`[fetchCompaniesWithStands] Total stands fetched: ${allStandsData.length}`);
 
-  // const standsData = allStandsData; // This line is redundant and caused the error
-
   const companiesMap = new Map<string, Company>();
-  companiesData.forEach(company => {
-    companiesMap.set(company.id, {
-      Company_id: company.company_id,
-      Company_Name: company.company_name,
-      NIF: company.nif,
-      Company_Email: company.company_email,
-      Company_Contact_Person: company.company_contact_person,
-      Website: company.website,
-      Plafond: company.plafond,
-      Supervisor: company.supervisor,
-      Is_CRB_Partner: company.is_crb_partner,
-      Is_APDCA_Partner: company.is_apdca_partner,
-      Creation_Date: company.creation_date,
-      Last_Login_Date: company.last_login_date,
-      Financing_Simulator_On: company.financing_simulator_on,
-      Simulator_Color: company.simulator_color,
-      Last_Plan: company.last_plan,
-      Plan_Price: company.plan_price,
-      Plan_Expiration_Date: company.plan_expiration_date,
-      Plan_Active: company.plan_active,
-      Plan_Auto_Renewal: company.plan_auto_renewal,
-      Current_Bumps: company.current_bumps,
-      Total_Bumps: company.total_bumps,
-      
-      Commercial_Name: company.commercial_name,
-      Company_Postal_Code: company.company_postal_code,
-      District: company.district,
-      Company_City: company.company_city,
-      Company_Address: company.company_address,
-      AM_Old: company.am_old,
-      AM_Current: company.am_current,
-      Stock_STV: company.stock_stv,
-      Company_API_Info: company.company_api_info,
-      Company_Stock: company.company_stock,
-      Logo_URL: company.logo_url,
-      Classification: company.classification,
-      Imported_Percentage: company.imported_percentage,
-      Vehicle_Source: company.vehicle_source,
-      Competition: company.competition,
-      Social_Media_Investment: company.social_media_investment,
-      Portal_Investment: company.portal_investment,
-      B2B_Market: company.b2b_market,
-      Uses_CRM: company.uses_crm,
-      CRM_Software: company.crm_software,
-      Recommended_Plan: company.recommended_plan,
-      Credit_Mediator: company.credit_mediator,
-      Bank_Of_Portugal_Link: company.bank_of_portugal_link,
-      Financing_Agreements: company.financing_agreements,
-      Last_Visit_Date: company.last_visit_date,
-      Company_Group: company.company_group,
-      Represented_Brands: company.represented_brands,
-      Company_Type: company.company_type,
-      Wants_CT: company.wants_ct,
-      Wants_CRB_Partner: company.wants_crb_partner,
-      Autobiz_Info: company.autobiz_info,
-      Stand_Name: company.stand_name, // NEW
-      
-      stands: []
-    });
+  companiesData.forEach(supabaseCompany => {
+    companiesMap.set(supabaseCompany.id, mapSupabaseCompanyToCrmCompany(supabaseCompany));
   });
 
-  allStandsData.forEach(stand => { // Corrected: Use allStandsData directly
-    const company = companiesMap.get(stand.company_db_id);
+  allStandsData.forEach(supabaseStand => {
+    const company = companiesMap.get(supabaseStand.company_db_id);
     if (company) {
-      company.stands.push({
-        ...stand,
-        Stand_ID: stand.stand_id,
-        Company_id: stand.company_id_excel,
-        Company_Name: stand.company_name,
-        NIF: stand.nif,
-        Address: stand.address,
-        City: stand.city,
-        Postal_Code: stand.postal_code,
-        Phone: stand.phone,
-        Email: stand.email,
-        Contact_Person: stand.contact_person,
-        Anuncios: stand.anuncios,
-        API: stand.api,
-        Publicados: stand.publicados,
-        Arquivados: stand.arquivados,
-        Guardados: stand.guardados,
-        Tipo: stand.tipo,
-        Delta_Publicados_Last_Day_Month: stand.delta_publicados_last_day_month,
-        Leads_Recebidas: stand.leads_recebidas,
-        Leads_Pendentes: stand.leads_pendentes,
-        Leads_Expiradas: stand.leads_expiradas,
-        Leads_Financiadas: stand.leads_financiadas,
-        Whatsapp: stand.whatsapp,
-        Stand_Name: stand.stand_name, // NEW: Include stand_name
-      });
+      company.stands.push(mapSupabaseStandToCrmStand(supabaseStand));
     } else {
-      console.warn(`[fetchCompaniesWithStands] Stand with company_db_id ${stand.company_db_id} found but no matching company in map. Stand:`, stand);
+      console.warn(`[fetchCompaniesWithStands] Stand with company_db_id ${supabaseStand.company_db_id} found but no matching company in map. Stand:`, supabaseStand);
     }
   });
 
@@ -176,123 +190,22 @@ export async function fetchCompaniesByExcelCompanyIds(userId: string, excelCompa
   console.log(`[fetchCompaniesByExcelCompanyIds] Fetched ${companiesData.length} companies by Excel IDs.`);
 
   const companyDbIds = companiesData.map(c => c.id);
-
-  let allStandsData: any[] = [];
-  const BATCH_SIZE = 50; // Fetch stands in batches of 50 company IDs to avoid URI Too Long error
-
-  for (let i = 0; i < companyDbIds.length; i += BATCH_SIZE) {
-    const batchIds = companyDbIds.slice(i, i + BATCH_SIZE);
-    if (batchIds.length === 0) continue;
-
-    console.log(`[fetchCompaniesByExcelCompanyIds] Fetching stands for batch of company DB IDs:`, batchIds);
-    const { data: batchStandsData, error: batchStandsError } = await supabase
-      .from('stands')
-      .select('*, stand_name') // Select stand_name
-      .in('company_db_id', batchIds);
-
-    if (batchStandsError) {
-      console.error('[fetchCompaniesByExcelCompanyIds] Error fetching stands in batch for specific companies:', batchStandsError);
-      throw new Error(batchStandsError.message);
-    }
-    allStandsData = allStandsData.concat(batchStandsData);
-  }
-
+  const allStandsData = await fetchStandsForCompanyDbIds(userId, companyDbIds);
   console.log(`[fetchCompaniesByExcelCompanyIds] Total stands fetched for specific companies: ${allStandsData.length}`);
 
   const companiesMap = new Map<string, Company>();
-  companiesData.forEach(company => {
-    companiesMap.set(company.company_id, { // Use company.company_id (Excel ID) as key for mapping
-      Company_id: company.company_id,
-      Company_Name: company.company_name,
-      NIF: company.nif,
-      Company_Email: company.company_email,
-      Company_Contact_Person: company.company_contact_person,
-      Website: company.website,
-      Plafond: company.plafond,
-      Supervisor: company.supervisor,
-      Is_CRB_Partner: company.is_crb_partner,
-      Is_APDCA_Partner: company.is_apdca_partner,
-      Creation_Date: company.creation_date,
-      Last_Login_Date: company.last_login_date,
-      Financing_Simulator_On: company.financing_simulator_on,
-      Simulator_Color: company.simulator_color,
-      Last_Plan: company.last_plan,
-      Plan_Price: company.plan_price,
-      Plan_Expiration_Date: company.plan_expiration_date,
-      Plan_Active: company.plan_active,
-      Plan_Auto_Renewal: company.plan_auto_renewal,
-      Current_Bumps: company.current_bumps,
-      Total_Bumps: company.total_bumps,
-      
-      Commercial_Name: company.commercial_name,
-      Company_Postal_Code: company.company_postal_code,
-      District: company.district,
-      Company_City: company.company_city,
-      Company_Address: company.company_address,
-      AM_Old: company.am_old,
-      AM_Current: company.am_current,
-      Stock_STV: company.stock_stv,
-      Company_API_Info: company.company_api_info,
-      Company_Stock: company.company_stock,
-      Logo_URL: company.logo_url,
-      Classification: company.classification,
-      Imported_Percentage: company.imported_percentage,
-      Vehicle_Source: company.vehicle_source,
-      Competition: company.competition,
-      Social_Media_Investment: company.social_media_investment,
-      Portal_Investment: company.portal_investment,
-      B2B_Market: company.b2b_market,
-      Uses_CRM: company.uses_crm,
-      CRM_Software: company.crm_software,
-      Recommended_Plan: company.recommended_plan,
-      Credit_Mediator: company.credit_mediator,
-      Bank_Of_Portugal_Link: company.bank_of_portugal_link,
-      Financing_Agreements: company.financing_agreements,
-      Last_Visit_Date: company.last_visit_date,
-      Company_Group: company.company_group,
-      Represented_Brands: company.represented_brands,
-      Company_Type: company.company_type,
-      Wants_CT: company.wants_ct,
-      Wants_CRB_Partner: company.wants_crb_partner,
-      Autobiz_Info: company.autobiz_info,
-      Stand_Name: company.stand_name, // NEW
-      
-      stands: []
-    });
+  companiesData.forEach(supabaseCompany => {
+    // Use company.company_id (Excel ID) as key for mapping
+    companiesMap.set(supabaseCompany.company_id, mapSupabaseCompanyToCrmCompany(supabaseCompany));
   });
 
-  allStandsData.forEach(stand => { // Corrected: Use allStandsData directly
+  allStandsData.forEach(supabaseStand => {
     // Find the company using its Excel ID (company_id_excel)
-    const company = companiesMap.get(stand.company_id_excel);
+    const company = companiesMap.get(supabaseStand.company_id_excel);
     if (company) {
-      company.stands.push({
-        ...stand,
-        Stand_ID: stand.stand_id,
-        Company_id: stand.company_id_excel,
-        Company_Name: stand.company_name,
-        NIF: stand.nif,
-        Address: stand.address,
-        City: stand.city,
-        Postal_Code: stand.postal_code,
-        Phone: stand.phone,
-        Email: stand.email,
-        Contact_Person: stand.contact_person,
-        Anuncios: stand.anuncios,
-        API: stand.api,
-        Publicados: stand.publicados,
-        Arquivados: stand.arquivados,
-        Guardados: stand.guardados,
-        Tipo: stand.tipo,
-        Delta_Publicados_Last_Day_Month: stand.delta_publicados_last_day_month,
-        Leads_Recebidas: stand.leads_recebidas,
-        Leads_Pendentes: stand.leads_pendentes,
-        Leads_Expiradas: stand.leads_expiradas,
-        Leads_Financiadas: stand.leads_financiadas,
-        Whatsapp: stand.whatsapp,
-        Stand_Name: stand.stand_name, // NEW: Include stand_name
-      });
+      company.stands.push(mapSupabaseStandToCrmStand(supabaseStand));
     } else {
-      console.warn(`[fetchCompaniesByExcelCompanyIds] Stand with company_id_excel ${stand.company_id_excel} found but no matching company in map. Stand:`, stand);
+      console.warn(`[fetchCompaniesByExcelCompanyIds] Stand with company_id_excel ${supabaseStand.company_id_excel} found but no matching company in map. Stand:`, supabaseStand);
     }
   });
 
@@ -355,15 +268,15 @@ export async function upsertCompanies(companies: Company[], userId: string): Pro
     crm_software: company.CRM_Software,
     recommended_plan: company.Recommended_Plan,
     credit_mediator: company.Credit_Mediator,
-    bank_of_portugal_link: company.Bank_Of_Portugal_Link,
-    financing_agreements: company.Financing_Agreements,
-    last_visit_date: company.Last_Visit_Date,
-    company_group: company.Company_Group,
-    represented_brands: company.Represented_Brands,
-    company_type: company.Company_Type,
-    wants_ct: company.Wants_CT,
-    wants_crb_partner: company.Wants_CRB_Partner,
-    autobiz_info: company.Autobiz_Info,
+    Bank_Of_Portugal_Link: company.Bank_Of_Portugal_Link,
+    Financing_Agreements: company.Financing_Agreements,
+    Last_Visit_Date: company.Last_Visit_Date,
+    Company_Group: company.Company_Group,
+    Represented_Brands: company.Represented_Brands,
+    Company_Type: company.Company_Type,
+    Wants_CT: company.Wants_CT,
+    Wants_CRB_Partner: company.Wants_CRB_Partner,
+    Autobiz_Info: company.Autobiz_Info,
     stand_name: company.Stand_Name,
   }));
 
@@ -433,14 +346,14 @@ export async function updateCompanyAdditionalInfo(companyIdExcel: string, data: 
   if (data.Credit_Mediator !== undefined) updatePayload.credit_mediator = data.Credit_Mediator;
   if (data.Bank_Of_Portugal_Link !== undefined) updatePayload.bank_of_portugal_link = data.Bank_Of_Portugal_Link;
   if (data.Financing_Agreements !== undefined) updatePayload.financing_agreements = data.Financing_Agreements;
-  if (data.Last_Visit_Date !== undefined) updatePayload.last_visit_date = data.Last_Visit_Date; // Corrigido aqui
+  if (data.Last_Visit_Date !== undefined) updatePayload.last_visit_date = data.Last_Visit_Date;
   if (data.Company_Group !== undefined) updatePayload.company_group = data.Company_Group;
   if (data.Represented_Brands !== undefined) updatePayload.represented_brands = data.Represented_Brands;
   if (data.Company_Type !== undefined) updatePayload.company_type = data.Company_Type;
   if (data.Wants_CT !== undefined) updatePayload.wants_ct = data.Wants_CT;
   if (data.Wants_CRB_Partner !== undefined) updatePayload.wants_crb_partner = data.Wants_CRB_Partner;
   if (data.Autobiz_Info !== undefined) updatePayload.autobiz_info = data.Autobiz_Info;
-  if (data.Stand_Name !== undefined) updatePayload.stand_name = data.Stand_Name; // NEW
+  if (data.Stand_Name !== undefined) updatePayload.stand_name = data.Stand_Name;
 
   if (Object.keys(updatePayload).length === 0) {
     console.warn('[updateCompanyAdditionalInfo] No additional company data to update for company:', companyIdExcel);
@@ -483,63 +396,7 @@ export async function fetchCompanyByEmail(userId: string, email: string): Promis
   }
 
   console.log(`[fetchCompanyByEmail] Found company for email ${email}:`, data.company_id);
-  // Map Supabase data to Company type
-  return {
-    Company_id: data.company_id,
-    Company_Name: data.company_name,
-    NIF: data.nif,
-    Company_Email: data.company_email,
-    Company_Contact_Person: data.company_contact_person,
-    Website: data.website,
-    Plafond: data.plafond,
-    Supervisor: data.supervisor,
-    Is_CRB_Partner: data.is_crb_partner,
-    Is_APDCA_Partner: data.is_apdca_partner,
-    Creation_Date: data.creation_date,
-    Last_Login_Date: data.last_login_date,
-    Financing_Simulator_On: data.financing_simulator_on,
-    Simulator_Color: data.simulator_color,
-    Last_Plan: data.last_plan,
-    Plan_Price: data.plan_price,
-    Plan_Expiration_Date: data.plan_expiration_date,
-    Plan_Active: data.plan_active,
-    Plan_Auto_Renewal: data.plan_auto_renewal,
-    Current_Bumps: data.current_bumps,
-    Total_Bumps: data.total_bumps,
-    Commercial_Name: data.commercial_name,
-    Company_Postal_Code: data.company_postal_code,
-    District: data.district,
-    Company_City: data.company_city,
-    Company_Address: data.company_address,
-    AM_Old: data.am_old,
-    AM_Current: data.am_current,
-    Stock_STV: data.stock_stv,
-    Company_API_Info: data.company_api_info,
-    Company_Stock: data.company_stock,
-    Logo_URL: data.logo_url,
-    Classification: data.classification,
-    Imported_Percentage: data.imported_percentage,
-    Vehicle_Source: data.vehicle_source,
-    Competition: data.competition,
-    Social_Media_Investment: data.social_media_investment,
-    Portal_Investment: data.portal_investment,
-    B2B_Market: data.b2b_market,
-    Uses_CRM: data.uses_crm,
-    CRM_Software: data.crm_software,
-    Recommended_Plan: data.recommended_plan,
-    Credit_Mediator: data.credit_mediator,
-    Bank_Of_Portugal_Link: data.bank_of_portugal_link,
-    Financing_Agreements: data.financing_agreements,
-    Last_Visit_Date: data.last_visit_date,
-    Company_Group: data.company_group,
-    Represented_Brands: data.represented_brands,
-    Company_Type: data.company_type,
-    Wants_CT: data.wants_ct,
-    Wants_CRB_Partner: data.wants_crb_partner,
-    Autobiz_Info: data.autobiz_info,
-    Stand_Name: data.stand_name, // NEW
-    stands: [] // Stands are not fetched by this function
-  };
+  return mapSupabaseCompanyToCrmCompany(data);
 }
 
 /**
