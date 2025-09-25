@@ -6,12 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { parseStandsExcel } from '@/lib/excel-parser';
-import { useAuth } from '@/components/providers/AuthContext';
 import { toast } from 'sonner';
 import { upsertCompanies } from '@/integrations/supabase/services/companyService';
-import { upsertStands, deleteStands } from '@/integrations/supabase/services/standService'; // Corrected import path
+import { upsertStands, deleteStands } from '@/integrations/supabase/services/standService';
 import { Company } from '@/types/crm';
 import { Loader2 } from 'lucide-react';
+import { useSession } from '@/context/SessionContext'; // Use useSession
 
 interface ExcelUploadCardProps {
   onUploadSuccess: () => void;
@@ -20,7 +20,7 @@ interface ExcelUploadCardProps {
 const ExcelUploadCard: React.FC<ExcelUploadCardProps> = ({ onUploadSuccess }) => {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
+  const { user } = useSession(); // Use useSession
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -61,26 +61,17 @@ const ExcelUploadCard: React.FC<ExcelUploadCardProps> = ({ onUploadSuccess }) =>
           return;
         }
 
-        // 1. Delete existing companies and stands for the user
-        // Note: Deleting companies will cascade delete related stands if foreign key is set up with ON DELETE CASCADE
-        // However, explicitly deleting stands first can prevent potential issues with very large datasets
-        // and ensures a clean slate for stands.
-        await deleteStands(user.id); // Delete stands first
-        // await deleteCompanies(user.id); // If you want to delete companies too, uncomment this.
-                                       // For now, we assume companies might persist and stands are updated.
+        await deleteStands(user.id);
 
-        // 2. Upsert companies and get their new DB IDs
         const companyDbIdMap = await upsertCompanies(companiesWithStands, user.id);
-
-        // 3. Prepare stands for upsert using the new companyDbIdMap
+        
         const allStandsToUpsert = companiesWithStands.flatMap(company => 
           company.stands.map(stand => ({
             ...stand,
-            Company_id: company.Company_id // Ensure original Excel Company_id is passed for mapping
+            Company_id: company.Company_id
           }))
         );
         
-        // 4. Upsert stands
         await upsertStands(allStandsToUpsert, companyDbIdMap);
 
         toast.success("Dados do CRM carregados com sucesso!", {
@@ -94,7 +85,7 @@ const ExcelUploadCard: React.FC<ExcelUploadCardProps> = ({ onUploadSuccess }) =>
         });
       } finally {
         setIsLoading(false);
-        setFile(null); // Clear the selected file
+        setFile(null);
       }
     };
 

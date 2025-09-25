@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from '@/context/SessionContext'; // Use useSession
 
 interface AdditionalExcelUploadCardProps {
   onUploadSuccess: () => void;
@@ -15,6 +16,7 @@ interface AdditionalExcelUploadCardProps {
 const AdditionalExcelUploadCard: React.FC<AdditionalExcelUploadCardProps> = ({ onUploadSuccess }) => {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useSession(); // Use useSession
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -28,6 +30,13 @@ const AdditionalExcelUploadCard: React.FC<AdditionalExcelUploadCardProps> = ({ o
     if (!file) {
       toast.error("Nenhum ficheiro selecionado.", {
         description: "Por favor, selecione um ficheiro Excel para carregar.",
+      });
+      return;
+    }
+
+    if (!user?.id) {
+      toast.error("Erro de autenticação.", {
+        description: "Utilizador não autenticado. Por favor, faça login novamente.",
       });
       return;
     }
