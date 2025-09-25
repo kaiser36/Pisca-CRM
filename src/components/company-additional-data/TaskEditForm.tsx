@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'; // Import useMemo
-import { useForm } from 'react-hook-form'; // Corrigido: useForm vem de react-hook-form
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Task, Employee, Account, Company } from '@/types/crm';
@@ -127,7 +127,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
     }
   }, [assignedToEmployeeId, availableAMs, setValue]);
 
-  // Memoized value for displaying the selected AM's name
+  // Memoized value for displaying the selected AM's name (kept for potential future use or debugging, not directly used by SelectValue anymore)
   const selectedAMDisplayName = useMemo(() => {
     if (assignedToEmployeeId && availableAMs.length > 0) {
       const selectedAM = availableAMs.find(am => am.id === assignedToEmployeeId);
@@ -233,17 +233,11 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
                     ) : field.type === "select" ? (
                       <Select
                         onValueChange={formField.onChange}
-                        value={formField.value as string}
+                        value={formField.value as string} // Bind Select value to formField.value (the ID)
                         disabled={field.disabled}
                       >
                         <SelectTrigger>
-                          {field.name === "assigned_to_employee_id" ? (
-                            <SelectValue>
-                              {selectedAMDisplayName || field.placeholder}
-                            </SelectValue>
-                          ) : (
-                            <SelectValue placeholder={field.placeholder} />
-                          )}
+                          <SelectValue placeholder={field.placeholder} /> {/* Use placeholder, let Select handle display */}
                         </SelectTrigger>
                         <SelectContent>
                           {field.options?.length === 0 ? (
