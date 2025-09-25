@@ -452,7 +452,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
             <TabsContent value="details" className="mt-4 space-y-6">
               <Accordion type="multiple" className="w-full space-y-4">
                 <AccordionItem value="essential-info" className="border rounded-lg shadow-sm"> {/* Changed rounded-md to rounded-lg */}
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
+                  <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:no-underline">
                     <div className="flex items-center">
                       <Info className="mr-2 h-5 w-5 text-muted-foreground" />
                       Informações Essenciais da Empresa
@@ -472,7 +472,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </AccordionItem>
 
                 <AccordionItem value="location-address" className="border rounded-lg shadow-sm"> {/* Changed rounded-md to rounded-lg */}
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
+                  <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:no-underline">
                     <div className="flex items-center">
                       <MapPin className="mr-2 h-5 w-5 text-muted-foreground" />
                       Localização e Morada
@@ -487,7 +487,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </AccordionItem>
 
                 <AccordionItem value="account-management" className="border rounded-lg shadow-sm"> {/* Changed rounded-md to rounded-lg */}
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
+                  <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:no-underline">
                     <div className="flex items-center">
                       <User className="mr-2 h-5 w-5 text-muted-foreground" />
                       Gestão de Conta (AM)
@@ -503,7 +503,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </AccordionItem>
 
                 <AccordionItem value="stock-api" className="border rounded-lg shadow-sm"> {/* Changed rounded-md to rounded-lg */}
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
+                  <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:no-underline">
                     <div className="flex items-center">
                       <Package className="mr-2 h-5 w-5 text-muted-foreground" />
                       Dados de Stock e API
@@ -517,7 +517,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </AccordionItem>
 
                 <AccordionItem value="plan-financing" className="border rounded-lg shadow-sm"> {/* Changed rounded-md to rounded-lg */}
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
+                  <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:no-underline">
                     <div className="flex items-center">
                       <DollarSign className="mr-2 h-5 w-5 text-muted-foreground" />
                       Detalhes do Plano e Financiamento
@@ -541,7 +541,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </AccordionItem>
 
                 <AccordionItem value="marketing-competition" className="border rounded-lg shadow-sm"> {/* Changed rounded-md to rounded-lg */}
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
+                  <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:no-underline">
                     <div className="flex items-center">
                       <TrendingUp className="mr-2 h-5 w-5 text-muted-foreground" />
                       Marketing e Concorrência
@@ -561,7 +561,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </AccordionItem>
 
                 <AccordionItem value="partnerships-other" className="border rounded-lg shadow-sm"> {/* Changed rounded-md to rounded-lg */}
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
+                  <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:no-underline">
                     <div className="flex items-center">
                       <ShieldCheck className="mr-2 h-5 w-5 text-muted-foreground" />
                       Parcerias e Outros
@@ -577,7 +577,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 </AccordionItem>
 
                 <AccordionItem value="important-dates" className="border rounded-lg shadow-sm"> {/* Changed rounded-md to rounded-lg */}
-                  <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
+                  <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:no-underline">
                     <div className="flex items-center">
                       <Calendar className="mr-2 h-5 w-5 text-muted-foreground" />
                       Datas Importantes
