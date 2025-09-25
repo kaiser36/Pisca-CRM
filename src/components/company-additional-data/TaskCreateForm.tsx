@@ -159,8 +159,6 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
         form.setValue("assigned_to_employee_name", selectedAM?.account_name || selectedAM?.am || null);
         form.setValue("assigned_to_employee_id", value);
       },
-      // Corrected: Use formField.value for the Select component's value prop
-      // value: form.watch("assigned_to_employee_id") || '', // This was the old incorrect line
       disabled: isAMsLoading || availableAMs.length === 0,
     },
   ];
@@ -217,13 +215,14 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
                     ) : field.type === "select" ? (
                       <Select
                         onValueChange={(value) => {
+                          formField.onChange(value); // Always update react-hook-form state
                           if (field.onValueChange) {
-                            field.onValueChange(value);
-                          } else {
-                            formField.onChange(value);
+                            // Manually call the side effect logic
+                            const selectedAM = availableAMs.find(am => am.id === value);
+                            form.setValue("assigned_to_employee_name", selectedAM?.account_name || selectedAM?.am || null);
                           }
                         }}
-                        value={formField.value as string} // Corrected line
+                        value={formField.value as string}
                         disabled={field.disabled}
                       >
                         <SelectTrigger>
