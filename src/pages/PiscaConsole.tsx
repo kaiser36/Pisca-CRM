@@ -26,15 +26,11 @@ const PiscaConsole: React.FC = () => {
 
   return (
     <Layout>
-      <div className="h-full flex flex-col w-full"> {/* Alterado aqui para ocupar toda a altura e largura */}
-        <h1 className="text-3xl font-bold mb-6 px-6">Consola Pisca</h1> {/* Adicionado padding horizontal para o título */}
-        <Card className="flex-1 shadow-md flex flex-col mx-6"> {/* Adicionado padding horizontal para o Card */}
+      <div className="h-full flex flex-col w-full">
+        {/* Removido o título da página */}
+        <Card className="flex-1 shadow-md flex flex-col mx-6 my-6"> {/* Adicionado padding vertical para o Card */}
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-semibold">Aceder ao Dashboard Pisca Pisca</CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Aqui pode visualizar e interagir com a Consola Pisca diretamente.
-              Se o conteúdo não carregar, pode ser devido a restrições de segurança do site externo.
-            </CardDescription>
+            {/* Removido o CardTitle e CardDescription */}
           </CardHeader>
           <CardContent className="flex-1 flex flex-col p-0">
             {isLoadingIframe && (
