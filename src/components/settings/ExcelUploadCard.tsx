@@ -8,7 +8,7 @@ import { Upload, Loader2 } from 'lucide-react';
 import { parseStandsExcel } from '@/lib/excel-parser';
 import { useCrmData } from '@/context/CrmDataContext';
 import { showError, showSuccess } from '@/utils/toast';
-import { upsertCompanies, upsertStands } from '@/integrations/supabase/utils';
+import { upsertCompanies, upsertStands, deleteCompanies, deleteStands } from '@/integrations/supabase/utils'; // Import delete functions
 import { supabase } from '@/integrations/supabase/client';
 import { Progress } from '@/components/ui/progress'; // Import the Progress component
 
@@ -59,22 +59,28 @@ const ExcelUploadCard: React.FC = () => {
     setIsUploading(true);
     setUploadProgress(0); // Start progress from 0
     try {
-      // Step 1: Parse Excel file (approx 20% of total process)
+      // Step 1: Delete existing data (approx 10% of total process)
+      setUploadProgress(5);
+      await deleteStands(userId); // Delete stands first due to foreign key constraint
       setUploadProgress(10);
+      await deleteCompanies(userId); // Then delete companies
+      setUploadProgress(20);
+
+      // Step 2: Parse Excel file (approx 20% of total process)
       const arrayBuffer = await selectedFile.arrayBuffer();
       const newCompanies = await parseStandsExcel(arrayBuffer);
-      setUploadProgress(30);
+      setUploadProgress(40);
 
-      // Step 2: Upsert Companies (approx 40% of total process)
+      // Step 3: Upsert Companies (approx 30% of total process)
       const companyDbIdMap = await upsertCompanies(newCompanies, userId);
       setUploadProgress(70);
       
-      // Step 3: Upsert Stands (approx 20% of total process)
+      // Step 4: Upsert Stands (approx 20% of total process)
       const allStands = newCompanies.flatMap(company => company.stands);
       await upsertStands(allStands, companyDbIdMap);
       setUploadProgress(90);
 
-      // Step 4: Load initial data to refresh UI (approx 10% of total process)
+      // Step 5: Load initial data to refresh UI (approx 10% of total process)
       await loadInitialData();
       setUploadProgress(100); // Mark as complete
 
@@ -93,7 +99,10 @@ const ExcelUploadCard: React.FC = () => {
     <Card className="w-full max-w-md shadow-sm">
       <CardHeader className="pb-4">
         <CardTitle className="text-lg font-semibold">Carregar Dados CRM</CardTitle>
-        <CardDescription className="text-muted-foreground">Atualize as informações das empresas carregando um novo ficheiro Excel.</CardDescription>
+        <CardDescription className="text-muted-foreground">
+          Atualize as informações das empresas carregando um novo ficheiro Excel.
+          **Todos os dados existentes de empresas e stands serão substituídos.**
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <Input type="file" accept=".xlsx, .xls" onChange={handleFileChange} />

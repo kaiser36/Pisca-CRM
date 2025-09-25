@@ -62,3 +62,20 @@ export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, 
   }
   console.log(`[upsertStands] Successfully upserted ${standsToUpsert.length} stands.`);
 }
+
+/**
+ * Deletes all stands for a given user.
+ */
+export async function deleteStands(userId: string): Promise<void> {
+  console.log(`[deleteStands] Deleting all stands for user: ${userId}`);
+  const { error } = await supabase
+    .from('stands')
+    .delete()
+    .eq('user_id', userId); // Assuming 'stands' table has a user_id column
+
+  if (error) {
+    console.error('[deleteStands] Error deleting stands:', error);
+    throw new Error(error.message);
+  }
+  console.log(`[deleteStands] Successfully deleted stands for user: ${userId}`);
+}

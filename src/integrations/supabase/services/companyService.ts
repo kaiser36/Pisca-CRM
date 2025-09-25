@@ -541,3 +541,20 @@ export async function fetchCompanyByEmail(userId: string, email: string): Promis
     stands: [] // Stands are not fetched by this function
   };
 }
+
+/**
+ * Deletes all companies for a given user.
+ */
+export async function deleteCompanies(userId: string): Promise<void> {
+  console.log(`[deleteCompanies] Deleting all companies for user: ${userId}`);
+  const { error } = await supabase
+    .from('companies')
+    .delete()
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('[deleteCompanies] Error deleting companies:', error);
+    throw new Error(error.message);
+  }
+  console.log(`[deleteCompanies] Successfully deleted companies for user: ${userId}`);
+}
