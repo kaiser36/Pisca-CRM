@@ -159,6 +159,7 @@ export interface EasyvistaType { // NEW: Interface for custom Easyvista types
   id?: string;
   user_id: string;
   name: string;
+  display_fields?: string[] | null; // NEW: Array of field names to display
   created_at?: string;
 }
 

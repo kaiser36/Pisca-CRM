@@ -29,7 +29,11 @@ export async function fetchEasyvistaTypes(userId: string): Promise<EasyvistaType
 export async function insertEasyvistaType(type: Omit<EasyvistaType, 'id' | 'created_at'>): Promise<EasyvistaType> {
   const { data, error } = await supabase
     .from('easyvista_types')
-    .insert(type)
+    .insert({
+      user_id: type.user_id,
+      name: type.name,
+      display_fields: type.display_fields || null, // NEW: Include display_fields
+    })
     .select()
     .single();
 
@@ -46,7 +50,10 @@ export async function insertEasyvistaType(type: Omit<EasyvistaType, 'id' | 'crea
 export async function updateEasyvistaType(id: string, type: Partial<Omit<EasyvistaType, 'id' | 'created_at' | 'user_id'>>): Promise<EasyvistaType> {
   const { data, error } = await supabase
     .from('easyvista_types')
-    .update(type)
+    .update({
+      name: type.name,
+      display_fields: type.display_fields || null, // NEW: Include display_fields
+    })
     .eq('id', id)
     .select()
     .single();
