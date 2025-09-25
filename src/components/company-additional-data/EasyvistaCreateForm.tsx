@@ -168,6 +168,7 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
 
   const fields = [
     { name: "Nome comercial", label: "Nome Comercial", type: "text" },
+    { name: "Urgência", label: "Urgência", type: "select", options: ["Alto", "Médio", "Baixo"] }, // MOVED: Urgência field
     { name: "EV_ID", label: "EV_ID", type: "text", required: true },
     { name: "Status", label: "Status", type: "text" },
     { name: "Account", label: "Account", type: "text" },
@@ -177,7 +178,6 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
     { name: "Tipo de report", label: "Tipo de Report", type: "select", options: ["Geral", "Específico a um cliente"] },
     { name: "PV", label: "PV (Informado ou não informado)", type: "boolean" },
     { name: "Tipo EVS", label: "Tipo EVS", type: "text" },
-    { name: "Urgência", label: "Urgência", type: "select", options: ["Alto", "Médio", "Baixo"] }, // NEW: Select for Urgência
     { name: "Email Pisca", label: "Email Pisca", type: "email" },
     { name: "Pass Pisca", label: "Pass Pisca", type: "text" },
     { name: "Client ID", label: "Client ID", type: "text" },
