@@ -14,6 +14,7 @@ import AmView from "./pages/AmView";
 import Products from "./pages/Products";
 import Campaigns from "./pages/Campaigns";
 import EasyvistaTypeManagement from "./pages/EasyvistaTypeManagement";
+import PiscaConsole from "./pages/PiscaConsole"; // NEW: Import PiscaConsole
 import { CrmDataProvider } from "@/context/CrmDataContext";
 
 const queryClient = new QueryClient();
@@ -31,12 +32,12 @@ const App = () => (
             <Route path="/company-additional-data" element={<CompanyAdditionalData />} />
             <Route path="/company-additional-data/:companyExcelId" element={<CompanyAdditionalDetailPage />} />
             <Route path="/settings" element={<Settings />} />
-            {/* Mover a rota EasyvistaTypeManagement para cima para garantir que é apanhada antes de rotas mais genéricas */}
             <Route path="/settings/easyvista-types" element={<EasyvistaTypeManagement />} />
             <Route path="/accounts" element={<Accounts />} />
             <Route path="/am-view" element={<AmView />} />
             <Route path="/products" element={<Products />} />
             <Route path="/campaigns" element={<Campaigns />} />
+            <Route path="/pisca-console" element={<PiscaConsole />} /> {/* NEW: PiscaConsole Route */}
             {/* A rota catch-all "*" deve ser sempre a última */}
             <Route path="*" element={<NotFound />} />
           </Routes>
