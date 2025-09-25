@@ -68,7 +68,7 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
   }
 
   const dealIds = dealsData.map(d => d.id);
-  const uniqueExcelCompanyIds = Array.from(new Set(dealsData.map(deal => deal.company_excel_id)));
+  const uniqueExcelCompanyIds: string[] = Array.from(new Set(dealsData.map(deal => deal.company_excel_id))); // Explicitly type
 
   // 2. Fetch commercial names from 'company_additional_excel_data'
   const { data: additionalData, error: additionalError } = await supabase
@@ -91,9 +91,9 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
   // 3. Fetch commercial names from 'companies' table
   const { data: companiesData, error: companiesError } = await supabase
     .from('companies')
-    .select('company_id, commercial_name')
+    .select('company_id, commercial_name, company_name') // Include company_name for fallback
     .eq('user_id', userId)
-    .in('company_id', uniqueCompanyExcelIds);
+    .in('company_id', uniqueExcelCompanyIds); // Corrected variable name
 
   if (companiesError) {
     console.error('Error fetching companies data:', companiesError);
@@ -103,6 +103,10 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
   companiesData?.forEach(row => {
     if (row.company_id && row.commercial_name) {
       companyNamesMap.set(row.company_id, row.commercial_name);
+    }
+    // Fallback to company_name if commercial_name is null
+    if (row.company_id && !row.commercial_name && row.company_name) {
+      companyNamesMap.set(row.company_id, row.company_name);
     }
   });
 
@@ -167,7 +171,7 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
           ...dp,
           product_name: productDetail?.produto || null,
           product_category: productDetail?.categoria || null,
-          unit_price_at_deal_time: productDetail?.preco_unitario || 0, // Ensure unit price is set
+          unit_price_at_deal_time: productDetail?.preco_total || 0, // Ensure unit price is set
           total_price_at_deal_time: discountedProductLineTotal, // This is the discounted total for the line item
         } as DealProduct;
       });
@@ -274,7 +278,7 @@ export async function deleteDeal(id: string): Promise<void> {
  */
 export async function upsertDeals(deals: Negocio[], userId: string): Promise<void> {
   // Fetch company_db_ids for all unique company_excel_ids in the batch
-  const uniqueCompanyExcelIds = Array.from(new Set(deals.map(deal => deal.company_excel_id)));
+  const uniqueCompanyExcelIds: string[] = Array.from(new Set(deals.map(deal => deal.company_excel_id))); // Explicitly type
   const { data: companies, error: companyError } = await supabase
     .from('companies')
     .select('id, company_id')

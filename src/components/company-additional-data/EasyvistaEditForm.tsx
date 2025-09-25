@@ -4,8 +4,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Easyvista, EasyvistaStatus, Account, EasyvistaType } from '@/types/crm';
-import { upsertEasyvistas, fetchAccounts, fetchEasyvistaTypes } from '@/integrations/supabase/utils';
+import { Easyvista, EasyvistaStatus, Account, EasyvistaType, Company, CompanyAdditionalExcelData } from '@/types/crm'; // Import Company and CompanyAdditionalExcelData
+import { upsertEasyvistas, fetchAccounts, fetchEasyvistaTypes, fetchCompaniesByExcelCompanyIds, fetchCompanyAdditionalExcelData } from '@/integrations/supabase/utils'; // Import fetchCompaniesByExcelCompanyIds and fetchCompanyAdditionalExcelData
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -83,6 +83,9 @@ const EasyvistaEditForm: React.FC<EasyvistaEditFormProps> = ({ easyvista, onSave
   const [easyvistaTypes, setEasyvistaTypes] = useState<EasyvistaType[]>([]);
   const [isTypesLoading, setIsTypesLoading] = useState(true);
   const [selectedEasyvistaTypeFields, setSelectedEasyvistaTypeFields] = useState<string[] | null>(null); // NEW: State for dynamically displayed fields
+  const [companyDbId, setCompanyDbId] = useState<string | null>(null); // NEW: State for company_db_id
+  const [companyDetails, setCompanyDetails] = useState<Company | null>(null); // NEW: State for CRM company details
+  const [additionalCompanyDetails, setAdditionalCompanyDetails] = useState<CompanyAdditionalExcelData | null>(null); // NEW: State for additional company data
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -135,10 +138,25 @@ const EasyvistaEditForm: React.FC<EasyvistaEditFormProps> = ({ easyvista, onSave
 
   useEffect(() => {
     const loadData = async () => {
-      if (!userId) return;
+      if (!userId || !easyvista.company_excel_id) return;
       setIsAMsLoading(true);
       setIsTypesLoading(true);
       try {
+        // Fetch CRM company data
+        const companies = await fetchCompaniesByExcelCompanyIds(userId, [easyvista.company_excel_id]);
+        const currentCompany = companies.find(c => c.Company_id === easyvista.company_excel_id);
+        setCompanyDetails(currentCompany || null);
+        setCompanyDbId(currentCompany?.id || null); // Set company_db_id
+
+        // Fetch additional company data
+        const { data: additionalData } = await fetchCompanyAdditionalExcelData(userId, 1, 1, easyvista.company_excel_id);
+        const currentAdditionalData = additionalData.find(c => c.excel_company_id === easyvista.company_excel_id);
+        setAdditionalCompanyDetails(currentAdditionalData || null);
+
+        // Set commercial name in form if available
+        const resolvedCommercialName = currentAdditionalData?.["Nome Comercial"] || currentCompany?.Commercial_Name || currentCompany?.Company_Name || null;
+        setValue("Nome comercial", resolvedCommercialName);
+
         const fetchedAMs = await fetchAccounts(userId);
         setAvailableAMs(fetchedAMs.filter(am => am.am !== null && am.am.trim() !== ''));
 
@@ -165,7 +183,7 @@ const EasyvistaEditForm: React.FC<EasyvistaEditFormProps> = ({ easyvista, onSave
     if (userId) {
       loadData();
     }
-  }, [userId, easyvista["Tipo EVS"]]); // Added easyvista["Tipo EVS"] to dependencies
+  }, [userId, easyvista.company_excel_id, easyvista["Tipo EVS"], setValue]); // Added easyvista["Tipo EVS"] to dependencies
 
   // Effect to update displayed fields when selected Tipo EVS changes
   useEffect(() => {
@@ -182,6 +200,10 @@ const EasyvistaEditForm: React.FC<EasyvistaEditFormProps> = ({ easyvista, onSave
       showError("Utilizador não autenticado. Por favor, faça login para guardar os dados.");
       return;
     }
+    if (!companyDbId) { // NEW: Check if companyDbId is available
+      showError("Não foi possível associar o Easyvista a uma empresa válida. Por favor, verifique o ID Excel da empresa.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -189,6 +211,7 @@ const EasyvistaEditForm: React.FC<EasyvistaEditFormProps> = ({ easyvista, onSave
         id: easyvista.id,
         user_id: userId,
         company_excel_id: easyvista.company_excel_id,
+        company_db_id: companyDbId, // NEW: Include company_db_id
         "Nome comercial": values["Nome comercial"] || null,
         "Data Criação": easyvista["Data Criação"],
         "Status": values["Status"] || null,
@@ -240,7 +263,7 @@ const EasyvistaEditForm: React.FC<EasyvistaEditFormProps> = ({ easyvista, onSave
   ];
 
   const allFormFields: FormFieldConfig[] = useMemo(() => [
-    { name: "Nome comercial", label: "Nome Comercial", type: "text", alwaysVisible: true },
+    { name: "Nome comercial", label: "Nome Comercial", type: "text", alwaysVisible: true, disabled: true }, // Make commercial name read-only
     { name: "Urgência", label: "Urgência", type: "select", options: urgencyOptions, alwaysVisible: true },
     { name: "Status", label: "Status", type: "select", options: statusOptions, alwaysVisible: true },
     { name: "Account", label: "Account", type: "select", options: availableAMs.map(am => ({ value: am.account_name || am.am || '', label: am.account_name || am.am || 'N/A' })).filter(opt => opt.value !== ''), placeholder: "Selecione um AM", disabled: isAMsLoading || availableAMs.length === 0, alwaysVisible: true },
@@ -271,12 +294,23 @@ const EasyvistaEditForm: React.FC<EasyvistaEditFormProps> = ({ easyvista, onSave
     );
   }, [allFormFields, selectedEasyvistaTypeFields]);
 
+  const companyDisplayName = additionalCompanyDetails?.["Nome Comercial"] && additionalCompanyDetails["Nome Comercial"].trim() !== ''
+    ? additionalCompanyDetails["Nome Comercial"]
+    : (companyDetails?.Commercial_Name && companyDetails.Commercial_Name.trim() !== ''
+      ? companyDetails.Commercial_Name
+      : (companyDetails?.Company_Name ? `${companyDetails.Company_Name} (Nome Fiscal)` : easyvista.company_excel_id));
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4">
         <p className="text-sm text-muted-foreground">
-          A editar Easyvista para a empresa com ID Excel: <span className="font-semibold">{easyvista.company_excel_id}</span>
+          A editar Easyvista para a empresa <span className="font-semibold">{companyDisplayName}</span> (ID Excel: <span className="font-semibold">{easyvista.company_excel_id}</span>)
         </p>
+        {!companyDbId && ( // NEW: Alert if companyDbId is missing
+          <p className="text-sm text-red-500">
+            Não foi possível encontrar a empresa no CRM principal com o ID Excel fornecido. O Easyvista não poderá ser atualizado.
+          </p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {fieldsToRender.map((field) => (
             <FormField
@@ -344,6 +378,7 @@ const EasyvistaEditForm: React.FC<EasyvistaEditFormProps> = ({ easyvista, onSave
                             formField.onChange(e.target.value);
                           }
                         }}
+                        readOnly={field.disabled} // Use field.disabled for readOnly
                       />
                     )}
                   </FormControl>
@@ -357,7 +392,7 @@ const EasyvistaEditForm: React.FC<EasyvistaEditFormProps> = ({ easyvista, onSave
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting || !userId || !form.formState.isValid}>
+          <Button type="submit" disabled={isSubmitting || !userId || !companyDbId || !form.formState.isValid}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -80,7 +80,7 @@ export interface Company {
   Wants_CT?: boolean;
   Wants_CRB_Partner?: boolean;
   Autobiz_Info?: string;
-  Stand_Name?: string; // NEW: Nome comercial do ponto de venda
+  Stand_Name?: string; // Nome comercial do ponto de venda
 
   stands: Stand[];
 }
@@ -130,7 +130,7 @@ export interface CompanyAdditionalExcelData {
 export interface AccountContact {
   id?: string;
   user_id: string;
-  company_db_id: string; // NEW: Add company_db_id
+  company_db_id?: string; // NEW: Add company_db_id
   account_am?: string | null;
   contact_type?: string | null;
   report_text?: string | null;
