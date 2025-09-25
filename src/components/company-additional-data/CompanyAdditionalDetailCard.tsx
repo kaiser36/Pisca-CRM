@@ -230,7 +230,10 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                   {firstLetter}
                 </AvatarFallback>
               </Avatar>
-              <CardTitle className="text-2xl font-bold">{companyDisplayName}</CardTitle>
+              <div> {/* New div to group title and description */}
+                <CardTitle className="text-2xl font-bold">{companyDisplayName}</CardTitle>
+                <CardDescription className="text-muted-foreground">ID Excel: {company.excel_company_id}</CardDescription>
+              </div>
               {isCompanyClosed && (
                 <Badge variant="destructive" className="text-sm px-3 py-1">Empresa Encerrada</Badge>
               )}
@@ -335,7 +338,6 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
               </Dialog>
             </div>
           </div>
-          <CardDescription className="text-muted-foreground">ID Excel: {company.excel_company_id}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Main Overview Card */}
