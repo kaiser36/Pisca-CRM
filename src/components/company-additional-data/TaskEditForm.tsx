@@ -174,6 +174,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
   };
 
   const fields = [
+    { name: "commercial_name", label: "Nome Comercial da Empresa", type: "text", readOnly: true }, // NEW: Read-only commercial name
     { name: "title", label: "Título", type: "text", required: true },
     { name: "description", label: "Descrição", type: "textarea", colSpan: 2 },
     { name: "due_date", label: "Data Limite", type: "date" },
@@ -269,6 +270,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
                         {...formField}
                         value={formField.value as string || ''}
                         onChange={formField.onChange}
+                        readOnly={field.readOnly} // Apply readOnly prop
                       />
                     )}
                   </FormControl>
