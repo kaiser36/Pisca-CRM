@@ -16,7 +16,7 @@ import { Loader2, CalendarIcon, PlusCircle } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format, parseISO, isPast } from 'date-fns'; // Import isPast
+import { format, parseISO, isPast, isFuture } from 'date-fns'; // Import isFuture
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DealProductFormItem from './DealProductFormItem';
@@ -100,7 +100,12 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
         const fetchedProducts = await fetchProducts(userId);
         setAllProducts(fetchedProducts);
         const fetchedCampaigns = await fetchCampaigns(userId);
-        setAvailableCampaigns(fetchedCampaigns.filter(c => c.is_active && (!c.end_date || !isPast(parseISO(c.end_date)))));
+        // Filter active campaigns that have started and not expired
+        setAvailableCampaigns(fetchedCampaigns.filter(c => 
+          c.is_active && 
+          (!c.start_date || !isFuture(parseISO(c.start_date))) && // Campaign has started or no start date
+          (!c.end_date || !isPast(parseISO(c.end_date))) // Campaign has not expired or no end date
+        ));
       } catch (err: any) {
         console.error("Erro ao carregar produtos ou campanhas:", err);
         showError(err.message || "Falha ao carregar a lista de produtos ou campanhas.");
@@ -147,14 +152,23 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
   useEffect(() => {
     if (selectedCampaignId) {
       const campaign = availableCampaigns.find(c => c.id === selectedCampaignId);
-      if (campaign && campaign.type === 'discount') {
+      // Validate campaign before applying discount
+      if (campaign && campaign.type === 'discount' && campaign.is_active && 
+          (!campaign.start_date || !isFuture(parseISO(campaign.start_date))) &&
+          (!campaign.end_date || !isPast(parseISO(campaign.end_date)))) {
         setValue("discount_type", campaign.discount_type || 'none', { shouldDirty: true, shouldValidate: true });
         setValue("discount_value", campaign.discount_value || 0, { shouldDirty: true, shouldValidate: true });
       } else {
+        // If campaign is invalid or not found, reset discount fields and campaign_id
+        setValue("campaign_id", '', { shouldDirty: true, shouldValidate: true });
         setValue("discount_type", 'none', { shouldDirty: true, shouldValidate: true });
         setValue("discount_value", 0, { shouldDirty: true, shouldValidate: true });
+        if (selectedCampaignId) { // Only show error if a campaign was actually selected and became invalid
+          showError("A campanha selecionada não é válida ou está inativa.");
+        }
       }
     } else {
+      // If no campaign selected, ensure manual discount is still respected or reset if it was from a campaign
       setValue("discount_type", 'none', { shouldDirty: true, shouldValidate: true });
       setValue("discount_value", 0, { shouldDirty: true, shouldValidate: true });
     }
@@ -368,7 +382,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
                     <FormControl>
                       {field.type === "select" ? (
                         <Select onValueChange={(value) => {
-                          formField.onChange(value === "null-campaign" ? null : value); // Map "null-campaign" to null
+                          formField.onChange(value === "null-campaign" ? null : value);
                           if (field.name === "discount_type" && value === 'none') {
                             setValue("discount_value", 0);
                           }
@@ -377,7 +391,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
                             <SelectValue placeholder={field.placeholder} />
                           </SelectTrigger>
                           <SelectContent>
-                            {field.name === "campaign_id" && <SelectItem value="null-campaign">Nenhuma Campanha</SelectItem>} {/* Use distinct value */}
+                            {field.name === "campaign_id" && <SelectItem value="null-campaign">Nenhuma Campanha</SelectItem>}
                             {field.options?.map((option: any) => (
                               <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
                             ))}
