@@ -14,8 +14,10 @@ import AmView from "./pages/AmView";
 import Products from "./pages/Products";
 import Campaigns from "./pages/Campaigns";
 import EasyvistaTypeManagement from "./pages/EasyvistaTypeManagement";
-import PiscaConsole from "./pages/PiscaConsole"; // NEW: Import PiscaConsole
+import PiscaConsole from "./pages/PiscaConsole";
+import Login from "./pages/Login"; // Import the new Login page
 import { CrmDataProvider } from "@/context/CrmDataContext";
+import { SessionContextProvider } from "@/context/SessionContext"; // Import SessionContextProvider
 
 const queryClient = new QueryClient();
 
@@ -25,23 +27,27 @@ const App = () => (
       <Toaster />
       <Sonner position="top-right" richColors className="[&>div]:z-[9999]" />
       <BrowserRouter>
-        <CrmDataProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/crm" element={<CRM />} />
-            <Route path="/company-additional-data" element={<CompanyAdditionalData />} />
-            <Route path="/company-additional-data/:companyExcelId" element={<CompanyAdditionalDetailPage />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/settings/easyvista-types" element={<EasyvistaTypeManagement />} />
-            <Route path="/accounts" element={<Accounts />} />
-            <Route path="/am-view" element={<AmView />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/campaigns" element={<Campaigns />} />
-            <Route path="/pisca-console" element={<PiscaConsole />} /> {/* NEW: PiscaConsole Route */}
-            {/* A rota catch-all "*" deve ser sempre a última */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </CrmDataProvider>
+        <SessionContextProvider> {/* Wrap the entire app with SessionContextProvider */}
+          <CrmDataProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} /> {/* Public login route */}
+              {/* Protected routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/crm" element={<CRM />} />
+              <Route path="/company-additional-data" element={<CompanyAdditionalData />} />
+              <Route path="/company-additional-data/:companyExcelId" element={<CompanyAdditionalDetailPage />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/easyvista-types" element={<EasyvistaTypeManagement />} />
+              <Route path="/accounts" element={<Accounts />} />
+              <Route path="/am-view" element={<AmView />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/campaigns" element={<Campaigns />} />
+              <Route path="/pisca-console" element={<PiscaConsole />} />
+              {/* A rota catch-all "*" deve ser sempre a última */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </CrmDataProvider>
+        </SessionContextProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

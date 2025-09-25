@@ -6,6 +6,8 @@ import Sidebar from './Sidebar';
 import Footer from './Footer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { useSession } from '@/context/SessionContext'; // Import useSession
+import { Loader2 } from 'lucide-react'; // Import Loader2 icon
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,6 +16,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(isMobile);
+  const { isLoading: isAuthLoading, user } = useSession(); // Get auth loading state and user
 
   React.useEffect(() => {
     setIsSidebarCollapsed(isMobile);
@@ -22,6 +25,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
+
+  // If auth state is loading, show a full-screen loader
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // If not authenticated, don't render the layout, let the router handle redirect to login
+  if (!user) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -50,7 +67,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto bg-muted/40"> {/* Removido o 'p-6' daqui */}
+        <main className="flex-1 overflow-y-auto bg-muted/40">
           {children}
         </main>
       </div>

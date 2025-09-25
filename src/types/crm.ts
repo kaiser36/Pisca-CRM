@@ -305,3 +305,11 @@ export interface Campaign {
   product_ids?: string[]; // Array of product IDs associated with the campaign
   category?: string | null; // NEW: Category for the campaign
 }
+
+export interface UserProfile { // NEW: User profile interface
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  updated_at: string | null;
+}

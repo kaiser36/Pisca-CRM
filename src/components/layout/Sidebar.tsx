@@ -4,13 +4,14 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2, UserCog, Info, Users, Package, ListTodo, Gift, Settings2, Monitor } from 'lucide-react'; // NEW: Import Monitor icon
+import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2, UserCog, Info, Users, Package, ListTodo, Gift, Settings2, Monitor } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useSession } from '@/context/SessionContext'; // Import useSession
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -19,6 +20,8 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const location = useLocation();
+  const { user, isLoading: isAuthLoading } = useSession(); // Get user and loading state from session context
+
   const isActive = (path: string) => location.pathname === path;
   const isPathActive = (pathPrefix: string) => location.pathname.startsWith(pathPrefix);
 
@@ -31,6 +34,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       setAccordionValue(undefined);
     }
   }, [location.pathname]);
+
+  if (isAuthLoading) {
+    return null; // Don't render sidebar while authentication state is loading
+  }
+
+  if (!user) {
+    return null; // Don't render sidebar if user is not logged in
+  }
 
   return (
     <aside
@@ -85,7 +96,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             {!isCollapsed && "Empresas Adicionais"}
           </Button>
         </Link>
-        {/* NEW: Pisca Console Link */}
         <Link to="/pisca-console">
           <Button
             variant="ghost"
