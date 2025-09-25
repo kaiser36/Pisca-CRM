@@ -4,8 +4,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Task, Account, Company } from '@/types/crm';
-import { insertTask, fetchEmployeesByCompanyExcelId, fetchAccounts, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils';
+import { Task, Account, Company, CompanyAdditionalExcelData } from '@/types/crm'; // Import CompanyAdditionalExcelData
+import { insertTask, fetchEmployeesByCompanyExcelId, fetchAccounts, fetchCompaniesByExcelCompanyIds, fetchCompanyAdditionalExcelData } from '@/integrations/supabase/utils'; // Import fetchCompanyAdditionalExcelData
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -34,7 +34,7 @@ const formSchema = z.object({
   priority: z.enum(['Low', 'Medium', 'High']).default('Medium'),
   assigned_to_employee_id: z.string().nullable().optional(),
   assigned_to_employee_name: z.string().nullable().optional(),
-  commercial_name: z.string().nullable().optional(), // NEW: Add commercial_name to schema
+  commercial_name: z.string().nullable().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -43,6 +43,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [companyDetails, setCompanyDetails] = useState<Company | null>(null);
+  const [additionalCompanyDetails, setAdditionalCompanyDetails] = useState<CompanyAdditionalExcelData | null>(null); // NEW: State for additional company data
   const [availableAMs, setAvailableAMs] = useState<Account[]>([]);
   const [isAMsLoading, setIsAMsLoading] = useState(true);
 
@@ -74,7 +75,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
       priority: 'Medium',
       assigned_to_employee_id: '',
       assigned_to_employee_name: '',
-      commercial_name: '', // NEW: Default value for commercial_name
+      commercial_name: '',
     },
   });
 
@@ -86,12 +87,19 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
       if (!userId || !companyExcelId) return;
       setIsAMsLoading(true);
       try {
+        // Fetch CRM company data
         const companies = await fetchCompaniesByExcelCompanyIds(userId, [companyExcelId]);
         const currentCompany = companies.find(c => c.Company_id === companyExcelId);
         setCompanyDetails(currentCompany || null);
+
+        // Fetch additional company data
+        const { data: additionalData } = await fetchCompanyAdditionalExcelData(userId, 1, 1, companyExcelId);
+        const currentAdditionalData = additionalData.find(c => c.excel_company_id === companyExcelId);
+        setAdditionalCompanyDetails(currentAdditionalData || null);
         
-        // NEW: Set commercial_name from fetched company details
-        setValue("commercial_name", currentCompany?.Commercial_Name || currentCompany?.Company_Name || null);
+        // Determine commercial_name using a more robust logic
+        const resolvedCommercialName = currentAdditionalData?.["Nome Comercial"] || currentCompany?.Commercial_Name || currentCompany?.Company_Name || null;
+        setValue("commercial_name", resolvedCommercialName);
 
         const fetchedAMs = await fetchAccounts(userId);
         setAvailableAMs(fetchedAMs);
@@ -146,7 +154,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
       const newTask: Omit<Task, 'id' | 'created_at' | 'updated_at'> = {
         user_id: userId,
         company_excel_id: companyExcelId,
-        commercial_name: values.commercial_name || null, // NEW: Include commercial_name
+        commercial_name: values.commercial_name || null,
         title: values.title,
         description: values.description || null,
         due_date: values.due_date ? values.due_date.toISOString() : null,
@@ -168,7 +176,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
   };
 
   const fields = [
-    { name: "commercial_name", label: "Nome Comercial da Empresa", type: "text", readOnly: true }, // NEW: Read-only commercial name
+    { name: "commercial_name", label: "Nome Comercial da Empresa", type: "text", readOnly: true },
     { name: "title", label: "Título", type: "text", required: true },
     { name: "description", label: "Descrição", type: "textarea", colSpan: 2 },
     { name: "due_date", label: "Data Limite", type: "date" },
@@ -184,9 +192,11 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
     },
   ];
 
-  const companyDisplayName = companyDetails?.Commercial_Name && companyDetails.Commercial_Name.trim() !== ''
-    ? companyDetails.Commercial_Name
-    : (companyDetails?.Company_Name ? `${companyDetails.Company_Name} (Nome Fiscal)` : companyExcelId);
+  const companyDisplayName = additionalCompanyDetails?.["Nome Comercial"] && additionalCompanyDetails["Nome Comercial"].trim() !== ''
+    ? additionalCompanyDetails["Nome Comercial"]
+    : (companyDetails?.Commercial_Name && companyDetails.Commercial_Name.trim() !== ''
+      ? companyDetails.Commercial_Name
+      : (companyDetails?.Company_Name ? `${companyDetails.Company_Name} (Nome Fiscal)` : companyExcelId));
 
   return (
     <Form {...form}>
@@ -236,7 +246,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
                     ) : field.type === "select" ? (
                       <Select
                         onValueChange={formField.onChange}
-                        value={String(formField.value || '')} // Garante que o valor é sempre uma string
+                        value={String(formField.value || '')}
                         disabled={field.disabled}
                       >
                         <SelectTrigger>
@@ -264,7 +274,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
                         {...formField}
                         value={formField.value as string || ''}
                         onChange={formField.onChange}
-                        readOnly={field.readOnly} // Apply readOnly prop
+                        readOnly={field.readOnly}
                       />
                     )}
                   </FormControl>
