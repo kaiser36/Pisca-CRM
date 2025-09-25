@@ -5,7 +5,7 @@ import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Negocio, Product, DealProduct as DealProductType, Campaign } from '@/types/crm';
-import { insertDeal, fetchProducts, fetchCampaigns } from '@/integrations/supabase/utils';
+import { insertDeal, fetchProducts, fetchCampaigns, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils'; // Import fetchCompaniesByExcelCompanyIds
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -75,6 +75,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
   const [userId, setUserId] = useState<string | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [availableCampaigns, setAvailableCampaigns] = useState<Campaign[]>([]);
+  const [companyDbId, setCompanyDbId] = useState<string | null>(null); // NEW: State for company_db_id
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -98,6 +99,16 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
     const loadProductsAndCampaigns = async () => {
       if (!userId) return;
       try {
+        // NEW: Fetch company_db_id
+        const companies = await fetchCompaniesByExcelCompanyIds(userId, [companyExcelId]);
+        const currentCompany = companies.find(c => c.Company_id === companyExcelId);
+        if (currentCompany) {
+          setCompanyDbId(currentCompany.id || null);
+        } else {
+          showError(`Empresa com ID Excel '${companyExcelId}' não encontrada no CRM principal.`);
+          setCompanyDbId(null);
+        }
+
         const fetchedProducts = await fetchProducts(userId);
         setAllProducts(fetchedProducts);
         const fetchedCampaigns = await fetchCampaigns(userId);
@@ -116,7 +127,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
     if (userId) {
       loadProductsAndCampaigns();
     }
-  }, [userId]);
+  }, [userId, companyExcelId]); // Added companyExcelId to dependencies
 
   const formMethods = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -211,6 +222,10 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
       showError("Utilizador não autenticado. Por favor, faça login para criar o negócio.");
       return;
     }
+    if (!companyDbId) { // NEW: Check if companyDbId is available
+      showError("Não foi possível associar o negócio a uma empresa válida. Por favor, verifique o ID Excel da empresa.");
+      return;
+    }
 
     if (Object.keys(errors).length > 0) {
       console.error("Form validation errors:", errors);
@@ -223,6 +238,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
       const newDeal: Omit<Negocio, 'id' | 'created_at' | 'updated_at' | 'commercial_name'> = {
         user_id: userId,
         company_excel_id: companyExcelId,
+        company_db_id: companyDbId, // NEW: Include company_db_id
         deal_name: values.deal_name,
         deal_status: values.deal_status || 'Prospecting',
         deal_value: values.deal_value || 0,
@@ -274,6 +290,11 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
         <p className="text-sm text-muted-foreground">
           A criar negócio para a empresa com ID Excel: <span className="font-semibold">{companyExcelId}</span>
         </p>
+        {!companyDbId && ( // NEW: Alert if companyDbId is missing
+          <p className="text-sm text-red-500">
+            Não foi possível encontrar a empresa no CRM principal com o ID Excel fornecido. O negócio não poderá ser criado.
+          </p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {mainFields.map((field) => (
             <FormField
@@ -435,7 +456,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting || !userId || !formMethods.formState.isValid}>
+          <Button type="submit" disabled={isSubmitting || !userId || !companyDbId || !formMethods.formState.isValid}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

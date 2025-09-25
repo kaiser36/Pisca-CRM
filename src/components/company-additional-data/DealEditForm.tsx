@@ -5,7 +5,7 @@ import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Negocio, Product, DealProduct as DealProductType, Campaign } from '@/types/crm';
-import { updateDeal, fetchProducts, fetchCampaigns } from '@/integrations/supabase/utils';
+import { updateDeal, fetchProducts, fetchCampaigns, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils'; // Import fetchCompaniesByExcelCompanyIds
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -74,6 +74,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
   const [userId, setUserId] = useState<string | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [availableCampaigns, setAvailableCampaigns] = useState<Campaign[]>([]);
+  const [companyDbId, setCompanyDbId] = useState<string | null>(null); // NEW: State for company_db_id
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -97,6 +98,16 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
     const loadProductsAndCampaigns = async () => {
       if (!userId) return;
       try {
+        // NEW: Fetch company_db_id
+        const companies = await fetchCompaniesByExcelCompanyIds(userId, [deal.company_excel_id]);
+        const currentCompany = companies.find(c => c.Company_id === deal.company_excel_id);
+        if (currentCompany) {
+          setCompanyDbId(currentCompany.id || null);
+        } else {
+          showError(`Empresa com ID Excel '${deal.company_excel_id}' não encontrada no CRM principal.`);
+          setCompanyDbId(null);
+        }
+
         const fetchedProducts = await fetchProducts(userId);
         setAllProducts(fetchedProducts);
         const fetchedCampaigns = await fetchCampaigns(userId);
@@ -115,7 +126,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
     if (userId) {
       loadProductsAndCampaigns();
     }
-  }, [userId]);
+  }, [userId, deal.company_excel_id]); // Added deal.company_excel_id to dependencies
 
   const formMethods = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -209,6 +220,10 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
       showError("Utilizador não autenticado. Por favor, faça login para guardar os dados.");
       return;
     }
+    if (!companyDbId) { // NEW: Check if companyDbId is available
+      showError("Não foi possível associar o negócio a uma empresa válida. Por favor, verifique o ID Excel da empresa.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -226,6 +241,7 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
         discount_type: values.discount_type || null,
         discount_value: values.discount_value || null,
         final_deal_value: values.final_deal_value || null,
+        company_db_id: companyDbId, // NEW: Include company_db_id
       };
 
       await updateDeal(deal.id!, updatedDeal);
@@ -264,6 +280,11 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
         <p className="text-sm text-muted-foreground">
           A editar negócio para a empresa com ID Excel: <span className="font-semibold">{deal.company_excel_id}</span>
         </p>
+        {!companyDbId && ( // NEW: Alert if companyDbId is missing
+          <p className="text-sm text-red-500">
+            Não foi possível encontrar a empresa no CRM principal com o ID Excel fornecido. O negócio não poderá ser atualizado.
+          </p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {mainFields.map((field) => (
             <FormField
@@ -425,14 +446,14 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting || !userId || !formMethods.formState.isValid}>
+          <Button type="submit" disabled={isSubmitting || !userId || !companyDbId || !formMethods.formState.isValid}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                A Guardar...
+                A Criar...
               </>
             ) : (
-              "Guardar Alterações"
+              "Criar Negócio"
             )}
           </Button>
         </div>
@@ -441,4 +462,4 @@ const DealEditForm: React.FC<DealEditFormProps> = ({ deal, onSave, onCancel }) =
   );
 };
 
-export default DealEditForm;
+export default DealCreateForm;

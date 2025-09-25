@@ -93,7 +93,7 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
     .from('companies')
     .select('company_id, commercial_name')
     .eq('user_id', userId)
-    .in('company_id', uniqueExcelCompanyIds);
+    .in('company_id', uniqueCompanyExcelIds);
 
   if (companiesError) {
     console.error('Error fetching companies data:', companiesError);
@@ -156,9 +156,9 @@ export async function fetchDealsByCompanyExcelId(userId: string, companyExcelId:
         let baseProductLineTotal = (productDetail?.preco_total || 0) * (dp.quantity || 0);
         let discountedProductLineTotal = baseProductLineTotal;
 
-        if (dp.discount_type === 'percentage' && dp.discount_value !== null) {
+        if (dp.discount_type === 'percentage' && dp.discount_value !== null && dp.discount_value !== undefined) {
           discountedProductLineTotal = baseProductLineTotal * (1 - (dp.discount_value / 100));
-        } else if (dp.discount_type === 'amount' && dp.discount_value !== null) {
+        } else if (dp.discount_type === 'amount' && dp.discount_value !== null && dp.discount_value !== undefined) {
           discountedProductLineTotal = baseProductLineTotal - dp.discount_value;
         }
         discountedProductLineTotal = Math.max(0, discountedProductLineTotal); // Ensure not negative
@@ -273,22 +273,47 @@ export async function deleteDeal(id: string): Promise<void> {
  * Upserts deal data into the negocios table.
  */
 export async function upsertDeals(deals: Negocio[], userId: string): Promise<void> {
-  const dataToUpsert = deals.map(deal => ({
-    user_id: userId,
-    company_excel_id: deal.company_excel_id,
-    deal_name: deal.deal_name,
-    deal_status: deal.deal_status || 'Prospecting',
-    deal_value: deal.deal_value || 0, // Will be recalculated by triggers or UI
-    currency: deal.currency || 'EUR',
-    expected_close_date: deal.expected_close_date || null,
-    stage: deal.stage || null,
-    priority: deal.priority || 'Medium',
-    notes: deal.notes || null,
-    discount_type: deal.discount_type || 'none',
-    discount_value: deal.discount_value || 0,
-    final_deal_value: deal.final_deal_value || 0, // Will be recalculated by triggers or UI
-    campaign_id: deal.campaign_id || null, // NEW: Include campaign_id
-  }));
+  // Fetch company_db_ids for all unique company_excel_ids in the batch
+  const uniqueCompanyExcelIds = Array.from(new Set(deals.map(deal => deal.company_excel_id)));
+  const { data: companies, error: companyError } = await supabase
+    .from('companies')
+    .select('id, company_id')
+    .eq('user_id', userId)
+    .in('company_id', uniqueCompanyExcelIds);
+
+  if (companyError) {
+    console.error('Error fetching company IDs for upserting deals:', companyError);
+    throw new Error(companyError.message);
+  }
+
+  const companyIdMap = new Map<string, string>();
+  companies.forEach(company => companyIdMap.set(company.company_id, company.id));
+
+  const dataToUpsert = deals.map(deal => {
+    const companyDbId = companyIdMap.get(deal.company_excel_id);
+    if (!companyDbId) {
+      console.warn(`Company DB ID not found for excel_company_id: ${deal.company_excel_id}. Skipping deal.`);
+      return null; // Skip deals that cannot be linked
+    }
+
+    return {
+      user_id: userId,
+      company_excel_id: deal.company_excel_id,
+      company_db_id: companyDbId, // NEW: Populate company_db_id
+      deal_name: deal.deal_name,
+      deal_status: deal.deal_status || 'Prospecting',
+      deal_value: deal.deal_value || 0, // Will be recalculated by triggers or UI
+      currency: deal.currency || 'EUR',
+      expected_close_date: deal.expected_close_date || null,
+      stage: deal.stage || null,
+      priority: deal.priority || 'Medium',
+      notes: deal.notes || null,
+      discount_type: deal.discount_type || 'none',
+      discount_value: deal.discount_value || 0,
+      final_deal_value: deal.final_deal_value || 0, // Will be recalculated by triggers or UI
+      campaign_id: deal.campaign_id || null, // NEW: Include campaign_id
+    };
+  }).filter(Boolean); // Filter out nulls
 
   if (dataToUpsert.length === 0) {
     return;
