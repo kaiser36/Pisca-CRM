@@ -215,15 +215,14 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
   const fields: FormFieldConfig[] = [
     { name: "Nome comercial", label: "Nome Comercial", type: "text" },
     { name: "Urgência", label: "Urgência", type: "select", options: urgencyOptions },
-    // { name: "EV_ID", label: "EV_ID", type: "text", required: true }, // REMOVED: EV_ID
     { name: "Status", label: "Status", type: "select", options: statusOptions },
-    { name: "Account", label: "Account", type: "select", options: availableAMs.map(am => ({ value: am.account_name || am.am || '', label: am.account_name || am.am || 'N/A' })).filter(opt => opt.value !== ''), placeholder: "Selecione um AM", disabled: isAMsLoading || availableAMs.length === 0 }, // UPDATED: Select for Account
-    { name: "Titulo", label: "Título", type: "text" },
+    { name: "Account", label: "Account", type: "select", options: availableAMs.map(am => ({ value: am.account_name || am.am || '', label: am.account_name || am.am || 'N/A' })).filter(opt => opt.value !== ''), placeholder: "Selecione um AM", disabled: isAMsLoading || availableAMs.length === 0 },
+    { name: "Tipo de report", label: "Tipo de Report", type: "select", options: ["Geral", "Específico a um cliente"] }, // MOVED
+    { name: "Tipo EVS", label: "Tipo EVS", type: "text" }, // MOVED
+    { name: "Titulo", label: "Título", type: "text" }, // MOVED
     { name: "Descrição", label: "Descrição", type: "textarea", colSpan: 2 },
     { name: "Anexos", label: "Anexos (URL)", type: "url" },
-    { name: "Tipo de report", label: "Tipo de Report", type: "select", options: ["Geral", "Específico a um cliente"] },
     { name: "PV", label: "PV (Informado ou não informado)", type: "boolean" },
-    { name: "Tipo EVS", label: "Tipo EVS", type: "text" },
     { name: "Email Pisca", label: "Email Pisca", type: "email" },
     { name: "Pass Pisca", label: "Pass Pisca", type: "text" },
     { name: "Client ID", label: "Client ID", type: "text" },

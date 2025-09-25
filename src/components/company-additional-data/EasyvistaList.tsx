@@ -180,9 +180,8 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
                   {renderField(Tag, "Status", easyvista["Status"])}
                   {renderField(User, "Account", easyvista["Account"])}
                   {renderField(Clock, "Última Atualização", easyvista["Ultima actualização"])}
-                  {renderField(Info, "Tipo de Report", easyvista["Tipo de report"])}
-                  {renderField(ShieldCheck, "PV", easyvista["PV"])}
-                  {renderField(Tag, "Tipo EVS", easyvista["Tipo EVS"])}
+                  {renderField(Info, "Tipo de Report", easyvista["Tipo de report"])} {/* MOVED */}
+                  {renderField(Tag, "Tipo EVS", easyvista["Tipo EVS"])} {/* MOVED */}
                   {renderField(Alert, "Urgência", easyvista["Urgência"])}
                   {renderField(Mail, "Email Pisca", easyvista["Email Pisca"])}
                   {renderField(Info, "Pass Pisca", easyvista["Pass Pisca"])}
