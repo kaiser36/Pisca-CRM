@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Easyvista } from '@/types/crm';
+import { Easyvista, EasyvistaStatus } from '@/types/crm'; // Import EasyvistaStatus
 import { insertEasyvista } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, CalendarIcon } from 'lucide-react';
+import { Loader2, CalendarIcon, PlusCircle, CheckCircle2, Hourglass, XCircle, FilePen, CircleDotDashed } from 'lucide-react'; // Import new icons
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -31,7 +31,7 @@ interface EasyvistaCreateFormProps {
 const formSchema = z.object({
   "Nome comercial": z.string().nullable().optional(),
   "EV_ID": z.string().min(1, "EV_ID é obrigatório").nullable().optional(),
-  "Status": z.string().nullable().optional(),
+  "Status": z.enum(['Criado', 'Em validação', 'Em tratamento', 'Resolvido', 'Cancelado']).nullable().optional(), // UPDATED: Use z.enum
   "Account": z.string().nullable().optional(),
   "Titulo": z.string().nullable().optional(),
   "Descrição": z.string().nullable().optional(),
@@ -39,7 +39,7 @@ const formSchema = z.object({
   "Tipo de report": z.string().nullable().optional(),
   "PV": z.boolean().optional(),
   "Tipo EVS": z.string().nullable().optional(),
-  "Urgência": z.enum(['Alto', 'Médio', 'Baixo']).nullable().optional(), // NEW: Enum for Urgência
+  "Urgência": z.enum(['Alto', 'Médio', 'Baixo']).nullable().optional(),
   "Email Pisca": z.string().email("Email inválido").nullable().optional().or(z.literal('')),
   "Pass Pisca": z.string().nullable().optional(),
   "Client ID": z.string().nullable().optional(),
@@ -91,7 +91,7 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
     defaultValues: {
       "Nome comercial": commercialName || '',
       "EV_ID": '',
-      "Status": '',
+      "Status": 'Criado', // NEW: Default status
       "Account": '',
       "Titulo": '',
       "Descrição": '',
@@ -99,7 +99,7 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
       "Tipo de report": '',
       "PV": false,
       "Tipo EVS": '',
-      "Urgência": 'Médio', // NEW: Default urgency
+      "Urgência": 'Médio',
       "Email Pisca": '',
       "Pass Pisca": '',
       "Client ID": '',
@@ -140,7 +140,7 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
         "Tipo de report": values["Tipo de report"] || null,
         "PV": values["PV"] || false,
         "Tipo EVS": values["Tipo EVS"] || null,
-        "Urgência": values["Urgência"] || null, // NEW: Include urgency
+        "Urgência": values["Urgência"] || null,
         "Email Pisca": values["Email Pisca"] || null,
         "Pass Pisca": values["Pass Pisca"] || null,
         "Client ID": values["Client ID"] || null,
@@ -166,11 +166,25 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
     }
   };
 
+  const statusOptions: { value: EasyvistaStatus; label: string; icon: React.ElementType; color: string }[] = [
+    { value: 'Criado', label: 'Criado', icon: PlusCircle, color: 'text-blue-500' },
+    { value: 'Em validação', label: 'Em validação', icon: FilePen, color: 'text-yellow-500' },
+    { value: 'Em tratamento', label: 'Em tratamento', icon: Hourglass, color: 'text-orange-500' },
+    { value: 'Resolvido', label: 'Resolvido', icon: CheckCircle2, color: 'text-green-500' },
+    { value: 'Cancelado', label: 'Cancelado', icon: XCircle, color: 'text-red-500' },
+  ];
+
+  const urgencyOptions: { value: 'Alto' | 'Médio' | 'Baixo'; label: string; color: string }[] = [
+    { value: 'Alto', label: 'Alto', color: 'bg-red-500' },
+    { value: 'Médio', label: 'Médio', color: 'bg-blue-500' },
+    { value: 'Baixo', label: 'Baixo', color: 'bg-green-500' },
+  ];
+
   const fields = [
     { name: "Nome comercial", label: "Nome Comercial", type: "text" },
-    { name: "Urgência", label: "Urgência", type: "select", options: ["Alto", "Médio", "Baixo"] }, // MOVED: Urgência field
+    { name: "Urgência", label: "Urgência", type: "select", options: urgencyOptions },
     { name: "EV_ID", label: "EV_ID", type: "text", required: true },
-    { name: "Status", label: "Status", type: "text" },
+    { name: "Status", label: "Status", type: "select", options: statusOptions }, // UPDATED: Use statusOptions
     { name: "Account", label: "Account", type: "text" },
     { name: "Titulo", label: "Título", type: "text" },
     { name: "Descrição", label: "Descrição", type: "textarea", colSpan: 2 },
@@ -219,25 +233,39 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
                         value={formField.value as string || ''}
                         onChange={formField.onChange}
                       />
-                    ) : field.type === "select" ? (
+                    ) : field.name === "Urgência" ? ( // Specific rendering for Urgência
                       <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
                         <SelectTrigger>
                           <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
                         </SelectTrigger>
                         <SelectContent>
-                          {field.options?.map(option => (
-                            <SelectItem key={option} value={option}>
+                          {urgencyOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
                               <div className="flex items-center">
-                                <span className={cn(
-                                  "h-3 w-3 rounded-full mr-2",
-                                  option === 'Alto' && "bg-red-500",
-                                  option === 'Médio' && "bg-blue-500",
-                                  option === 'Baixo' && "bg-green-500"
-                                )}></span>
-                                {option}
+                                <span className={cn("h-3 w-3 rounded-full mr-2", option.color)}></span>
+                                {option.label}
                               </div>
                             </SelectItem>
                           ))}
+                        </SelectContent>
+                      </Select>
+                    ) : field.name === "Status" ? ( // Specific rendering for Status
+                      <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statusOptions.map(option => {
+                            const Icon = option.icon;
+                            return (
+                              <SelectItem key={option.value} value={option.value}>
+                                <div className="flex items-center">
+                                  <Icon className={cn("h-4 w-4 mr-2", option.color)} />
+                                  {option.label}
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
                     ) : (

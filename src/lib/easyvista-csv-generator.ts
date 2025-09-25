@@ -4,7 +4,7 @@ export const generateEasyvistaCsvTemplate = (): string => {
     "Nome comercial",
     "EV_ID (OBRIGATÓRIO)",
     "Data Criação (YYYY-MM-DD HH:MM:SS)",
-    "Status",
+    "Status (Criado, Em validação, Em tratamento, Resolvido, Cancelado)", // UPDATED: Status options
     "Account",
     "Titulo",
     "Descrição",
@@ -13,7 +13,7 @@ export const generateEasyvistaCsvTemplate = (): string => {
     "Tipo de report",
     "PV (1 para Sim, 0 para Não)",
     "Tipo EVS",
-    "Urgência",
+    "Urgência (Alto, Médio, Baixo)",
     "Email Pisca",
     "Pass Pisca",
     "Client ID",
@@ -33,7 +33,7 @@ export const generateEasyvistaCsvTemplate = (): string => {
     "Comercial Lda.",
     "EV001",
     "2023-10-26 10:00:00",
-    "Em Progresso",
+    "Criado", // UPDATED: Example status
     "Account Manager A",
     "Implementação de Nova Funcionalidade",
     "Detalhes sobre a implementação da funcionalidade X para o cliente Y.",
@@ -42,7 +42,7 @@ export const generateEasyvistaCsvTemplate = (): string => {
     "Geral",
     "1", // PV
     "EVS Tipo A",
-    "Alta",
+    "Médio",
     "email@pisca.com",
     "password123",
     "client_id_abc",

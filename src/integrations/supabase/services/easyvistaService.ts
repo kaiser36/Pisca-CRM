@@ -1,5 +1,5 @@
 import { supabase } from '../client';
-import { Easyvista } from '@/types/crm';
+import { Easyvista, EasyvistaStatus } from '@/types/crm'; // Import EasyvistaStatus
 
 /**
  * Inserts a new Easyvista record into the Easyvistas table.
@@ -50,7 +50,7 @@ export async function upsertEasyvistas(easyvistas: Easyvista[], userId: string):
     "Nome comercial": easyvista["Nome comercial"] || null,
     "EV_ID": easyvista["EV_ID"], // EV_ID is required for uniqueness
     "Data Criação": easyvista["Data Criação"] || new Date().toISOString(),
-    "Status": easyvista["Status"] || null,
+    "Status": easyvista["Status"] || 'Criado', // UPDATED: Default status to 'Criado'
     "Account": easyvista["Account"] || null,
     "Titulo": easyvista["Titulo"] || null,
     "Descrição": easyvista["Descrição"] || null,

@@ -153,6 +153,8 @@ export interface AccountContact {
   created_at?: string;
 }
 
+export type EasyvistaStatus = 'Criado' | 'Em validação' | 'Em tratamento' | 'Resolvido' | 'Cancelado'; // NEW: Define EasyvistaStatus type
+
 export interface Easyvista {
   id?: number;
   created_at?: string;
@@ -161,7 +163,7 @@ export interface Easyvista {
   "Nome comercial"?: string | null;
   "EV_ID"?: string | null;
   "Data Criação"?: string | null;
-  "Status"?: string | null;
+  "Status"?: EasyvistaStatus | null; // UPDATED: Use EasyvistaStatus type
   "Account"?: string | null;
   "Titulo"?: string | null;
   "Descrição"?: string | null;
@@ -170,7 +172,7 @@ export interface Easyvista {
   "Tipo de report"?: string | null;
   "PV"?: boolean | null;
   "Tipo EVS"?: string | null;
-  "Urgência"?: string | null;
+  "Urgência"?: 'Alto' | 'Médio' | 'Baixo' | null;
   "Email Pisca"?: string | null;
   "Pass Pisca"?: string | null;
   "Client ID"?: string | null;

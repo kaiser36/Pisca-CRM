@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Easyvista } from '@/types/crm';
+import { Easyvista, EasyvistaStatus } from '@/types/crm'; // Import EasyvistaStatus
 import { fetchEasyvistasByCompanyExcelId } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
@@ -9,10 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Calendar, User, Mail, Tag, FileText, LinkIcon, DollarSign, Building, Clock, Info, ShieldCheck, Package, Repeat, TrendingUp, Banknote, Factory, Users } from 'lucide-react';
+import { Terminal, Calendar, User, Mail, Tag, FileText, LinkIcon, DollarSign, Building, Clock, Info, ShieldCheck, Package, Repeat, TrendingUp, Banknote, Factory, Users, PlusCircle, CheckCircle2, Hourglass, XCircle, FilePen, CircleDotDashed } from 'lucide-react'; // Import new icons
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
-import { Badge } from '@/components/ui/badge'; // Import Badge component
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface EasyvistaListProps {
   companyExcelId: string;
@@ -97,6 +98,17 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
     }
   };
 
+  const getStatusDisplay = (status: EasyvistaStatus | null | undefined) => {
+    switch (status) {
+      case 'Criado': return { text: 'Criado', icon: PlusCircle, color: 'bg-blue-100 text-blue-800 border-blue-200' };
+      case 'Em validação': return { text: 'Em validação', icon: FilePen, color: 'bg-yellow-100 text-yellow-800 border-yellow-200' };
+      case 'Em tratamento': return { text: 'Em tratamento', icon: Hourglass, color: 'bg-orange-100 text-orange-800 border-orange-200' };
+      case 'Resolvido': return { text: 'Resolvido', icon: CheckCircle2, color: 'bg-green-100 text-green-800 border-green-200' };
+      case 'Cancelado': return { text: 'Cancelado', icon: XCircle, color: 'bg-red-100 text-red-800 border-red-200' };
+      default: return { text: 'Desconhecido', icon: CircleDotDashed, color: 'bg-gray-100 text-gray-800 border-gray-200' };
+    }
+  };
+
   const renderField = (Icon: React.ElementType, label: string, value: string | number | boolean | string[] | null | undefined) => {
     if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '') || (Array.isArray(value) && value.length === 0) || (typeof value === 'number' && value === 0 && !label.includes('Valor'))) return null;
 
@@ -129,8 +141,16 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
       }
     } else if (typeof value === 'number') {
       displayValue = value.toLocaleString('pt-PT');
-    } else if (label === 'Urgência' && typeof value === 'string') { // NEW: Handle Urgência with Badge
+    } else if (label === 'Urgência' && typeof value === 'string') {
       displayValue = <Badge variant={getUrgencyBadgeVariant(value as Easyvista['Urgência'])}>{value}</Badge>;
+    } else if (label === 'Status' && typeof value === 'string') { // UPDATED: Handle Status with Badge and Icon
+      const statusDisplay = getStatusDisplay(value as EasyvistaStatus);
+      const StatusIcon = statusDisplay.icon;
+      displayValue = (
+        <Badge className={cn("flex items-center w-fit", statusDisplay.color)}>
+          <StatusIcon className="h-3 w-3 mr-1" /> {statusDisplay.text}
+        </Badge>
+      );
     }
 
     return (
@@ -157,13 +177,13 @@ const EasyvistaList: React.FC<EasyvistaListProps> = ({ companyExcelId }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {renderField(Building, "Nome Comercial", easyvista["Nome comercial"])}
                   {renderField(Calendar, "Data Criação", easyvista["Data Criação"])}
-                  {renderField(Tag, "Status", easyvista["Status"])}
+                  {renderField(Tag, "Status", easyvista["Status"])} {/* UPDATED: Status will now render with badge */}
                   {renderField(User, "Account", easyvista["Account"])}
                   {renderField(Clock, "Última Atualização", easyvista["Ultima actualização"])}
                   {renderField(Info, "Tipo de Report", easyvista["Tipo de report"])}
                   {renderField(ShieldCheck, "PV", easyvista["PV"])}
                   {renderField(Tag, "Tipo EVS", easyvista["Tipo EVS"])}
-                  {renderField(Alert, "Urgência", easyvista["Urgência"])} {/* NEW: Render Urgência with color */}
+                  {renderField(Alert, "Urgência", easyvista["Urgência"])}
                   {renderField(Mail, "Email Pisca", easyvista["Email Pisca"])}
                   {renderField(Info, "Pass Pisca", easyvista["Pass Pisca"])}
                   {renderField(Info, "Client ID", easyvista["Client ID"])}
