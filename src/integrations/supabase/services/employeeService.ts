@@ -19,6 +19,7 @@ export async function insertEmployee(employee: Omit<Employee, 'id' | 'created_at
       image_url: employee.image_url,
       stand_id: employee.stand_id,
       stand_name: employee.stand_name,
+      company_db_id: employee.company_db_id, // NEW: Include company_db_id
     })
     .select()
     .single();
@@ -64,6 +65,7 @@ export async function updateEmployee(id: string, employee: Partial<Omit<Employee
       image_url: employee.image_url,
       stand_id: employee.stand_id,
       stand_name: employee.stand_name,
+      company_db_id: employee.company_db_id, // NEW: Include company_db_id
     })
     .eq('id', id)
     .select()
@@ -95,18 +97,43 @@ export async function deleteEmployee(id: string): Promise<void> {
  * Upserts employee data into the employees table.
  */
 export async function upsertEmployees(employees: Employee[], userId: string): Promise<void> {
-  const dataToUpsert = employees.map(employee => ({
-    user_id: userId,
-    company_excel_id: employee.company_excel_id,
-    nome_colaborador: employee.nome_colaborador,
-    telemovel: employee.telemovel || null,
-    email: employee.email || null,
-    cargo: employee.cargo || null,
-    commercial_name: employee.commercial_name || null,
-    image_url: employee.image_url || null,
-    stand_id: employee.stand_id || null,
-    stand_name: employee.stand_name || null,
-  }));
+  // Fetch company_db_ids for all unique company_excel_ids in the batch
+  const uniqueCompanyExcelIds = Array.from(new Set(employees.map(employee => employee.company_excel_id)));
+  const { data: companies, error: companyError } = await supabase
+    .from('companies')
+    .select('id, company_id')
+    .eq('user_id', userId)
+    .in('company_id', uniqueCompanyExcelIds);
+
+  if (companyError) {
+    console.error('Error fetching company IDs for upserting employees:', companyError);
+    throw new Error(companyError.message);
+  }
+
+  const companyIdMap = new Map<string, string>();
+  companies.forEach(company => companyIdMap.set(company.company_id, company.id));
+
+  const dataToUpsert = employees.map(employee => {
+    const companyDbId = companyIdMap.get(employee.company_excel_id);
+    if (!companyDbId) {
+      console.warn(`Company DB ID not found for excel_company_id: ${employee.company_excel_id}. Skipping employee.`);
+      return null; // Skip employees that cannot be linked
+    }
+
+    return {
+      user_id: userId,
+      company_excel_id: employee.company_excel_id,
+      company_db_id: companyDbId, // NEW: Populate company_db_id
+      nome_colaborador: employee.nome_colaborador,
+      telemovel: employee.telemovel || null,
+      email: employee.email || null,
+      cargo: employee.cargo || null,
+      commercial_name: employee.commercial_name || null,
+      image_url: employee.image_url || null,
+      stand_id: employee.stand_id || null,
+      stand_name: employee.stand_name || null,
+    };
+  }).filter(Boolean); // Filter out nulls
 
   if (dataToUpsert.length === 0) {
     return;

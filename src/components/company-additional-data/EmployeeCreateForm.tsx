@@ -44,6 +44,7 @@ const EmployeeCreateForm: React.FC<EmployeeCreateFormProps> = ({
   const [userId, setUserId] = useState<string | null>(null);
   const [companyStands, setCompanyStands] = useState<Stand[]>([]);
   const [isStandsLoading, setIsStandsLoading] = useState(true);
+  const [companyDbId, setCompanyDbId] = useState<string | null>(null); // NEW: State for company_db_id
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -63,25 +64,32 @@ const EmployeeCreateForm: React.FC<EmployeeCreateFormProps> = ({
     return () => subscription.unsubscribe();
   }, []);
 
+  // NEW: Fetch company_db_id and stands
   useEffect(() => {
-    const loadStands = async () => {
+    const loadCompanyData = async () => {
       if (!userId || !companyExcelId) return;
       setIsStandsLoading(true);
       try {
         const companies = await fetchCompaniesByExcelCompanyIds(userId, [companyExcelId]);
         if (companies.length > 0) {
-          setCompanyStands(companies[0].stands || []);
+          const currentCompany = companies[0];
+          setCompanyDbId(currentCompany.id); // Set company_db_id
+          setCompanyStands(currentCompany.stands || []);
+        } else {
+          showError(`Empresa com ID Excel '${companyExcelId}' não encontrada no CRM principal.`);
+          setCompanyDbId(null);
+          setCompanyStands([]);
         }
       } catch (err: any) {
-        console.error("Erro ao carregar stands da empresa:", err);
-        showError(err.message || "Falha ao carregar os stands da empresa.");
+        console.error("Erro ao carregar dados da empresa e stands:", err);
+        showError(err.message || "Falha ao carregar dados da empresa e stands.");
       } finally {
         setIsStandsLoading(false);
       }
     };
 
-    if (userId) { // Only load stands if userId is available
-      loadStands();
+    if (userId) {
+      loadCompanyData();
     }
   }, [userId, companyExcelId]);
 
@@ -103,12 +111,17 @@ const EmployeeCreateForm: React.FC<EmployeeCreateFormProps> = ({
       showError("Utilizador não autenticado. Por favor, faça login para criar o colaborador.");
       return;
     }
+    if (!companyDbId) { // NEW: Check if companyDbId is available
+      showError("Não foi possível associar o colaborador a uma empresa válida. Por favor, verifique o ID Excel da empresa.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       const newEmployee: Omit<Employee, 'id' | 'created_at' | 'id_people'> = {
         user_id: userId,
         company_excel_id: companyExcelId,
+        company_db_id: companyDbId, // NEW: Include company_db_id
         commercial_name: commercialName || null,
         nome_colaborador: values.nome_colaborador,
         telemovel: values.telemovel || null,
@@ -158,6 +171,11 @@ const EmployeeCreateForm: React.FC<EmployeeCreateFormProps> = ({
         <p className="text-sm text-muted-foreground">
           A criar colaborador para a empresa com ID Excel: <span className="font-semibold">{companyExcelId}</span>
         </p>
+        {!companyDbId && ( // NEW: Alert if companyDbId is missing
+          <p className="text-sm text-red-500">
+            Não foi possível encontrar a empresa no CRM principal com o ID Excel fornecido. O colaborador não poderá ser criado.
+          </p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {fieldsConfig.map((field) => (
             <FormField
@@ -212,7 +230,7 @@ const EmployeeCreateForm: React.FC<EmployeeCreateFormProps> = ({
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting || !userId || !form.formState.isValid}>
+          <Button type="submit" disabled={isSubmitting || !userId || !companyDbId || !form.formState.isValid}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

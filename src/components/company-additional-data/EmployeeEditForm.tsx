@@ -42,6 +42,7 @@ const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [companyDbId, setCompanyDbId] = useState<string | null>(null); // NEW: State for company_db_id
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -61,6 +62,33 @@ const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
     return () => subscription.unsubscribe();
   }, []);
 
+  // NEW: Fetch company_db_id
+  useEffect(() => {
+    const fetchCompanyDbId = async () => {
+      if (userId && employee.company_excel_id) {
+        const { data, error } = await supabase
+          .from('companies')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('company_id', employee.company_excel_id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching company_db_id for employee edit:', error);
+          showError(`Falha ao obter o ID interno da empresa: ${error.message}`);
+          setCompanyDbId(null);
+        } else if (data) {
+          setCompanyDbId(data.id);
+        } else {
+          showError(`Empresa com ID Excel '${employee.company_excel_id}' não encontrada no CRM principal.`);
+          setCompanyDbId(null);
+        }
+      }
+    };
+
+    fetchCompanyDbId();
+  }, [userId, employee.company_excel_id]);
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -79,6 +107,10 @@ const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
       showError("Utilizador não autenticado. Por favor, faça login para guardar os dados.");
       return;
     }
+    if (!companyDbId) { // NEW: Check if companyDbId is available
+      showError("Não foi possível associar o colaborador a uma empresa válida. Por favor, verifique o ID Excel da empresa.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -90,6 +122,7 @@ const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
         image_url: values.image_url || null,
         stand_id: values.stand_id || null,
         stand_name: values.stand_name || null,
+        company_db_id: companyDbId, // NEW: Include company_db_id
       };
 
       await updateEmployee(employee.id!, updatedEmployee);
@@ -131,6 +164,11 @@ const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
         <p className="text-sm text-muted-foreground">
           A editar colaborador para a empresa com ID Excel: <span className="font-semibold">{employee.company_excel_id}</span>
         </p>
+        {!companyDbId && ( // NEW: Alert if companyDbId is missing
+          <p className="text-sm text-red-500">
+            Não foi possível encontrar a empresa no CRM principal com o ID Excel fornecido. O colaborador não poderá ser atualizado.
+          </p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {fieldsConfig.map((field) => (
             <FormField
@@ -185,7 +223,7 @@ const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting || !userId || !form.formState.isValid}>
+          <Button type="submit" disabled={isSubmitting || !userId || !companyDbId || !form.formState.isValid}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

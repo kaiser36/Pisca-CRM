@@ -25,6 +25,7 @@ export interface Stand {
 }
 
 export interface Company {
+  id?: string; // NEW: Adicionado o ID interno da base de dados (UUID)
   Company_id: string;
   Company_Name: string; // Nome fiscal da empresa
   NIF: string; // NIF da empresa

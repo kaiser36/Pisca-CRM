@@ -6,6 +6,7 @@ import { Company, Stand } from '@/types/crm';
  */
 function mapSupabaseCompanyToCrmCompany(supabaseCompany: any): Company {
   return {
+    id: supabaseCompany.id, // NEW: Mapear o ID da base de dados
     Company_id: supabaseCompany.company_id,
     Company_Name: supabaseCompany.company_name,
     NIF: supabaseCompany.nif,
@@ -114,7 +115,7 @@ async function fetchStandsForCompanyDbIds(userId: string, companyDbIds: string[]
     const { data: batchStandsData, error: batchStandsError } = await supabase
       .from('stands')
       .select('*')
-      .in('company_db_id', batchIds); // Removed .eq('user_id', userId)
+      .in('company_db_id', batchIds); 
 
     if (batchStandsError) {
       console.error('[fetchStandsForCompanyDbIds] Error fetching stands in batch:', batchStandsError);
