@@ -229,7 +229,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
                     ) : field.type === "select" ? (
                       <Select
                         onValueChange={formField.onChange}
-                        value={formField.value as string} // Bind Select value to formField.value (the ID)
+                        value={String(formField.value || '')} // Corrigido: Garante que o valor é sempre uma string
                         disabled={field.disabled}
                       >
                         <SelectTrigger>
