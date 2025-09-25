@@ -293,5 +293,6 @@ export interface Campaign {
   is_active?: boolean | null;
   created_at?: string;
   updated_at?: string;
-  product_ids?: string[]; // NEW: Array of product IDs associated with the campaign
+  product_ids?: string[]; // Array of product IDs associated with the campaign
+  category?: string | null; // NEW: Category for the campaign
 }

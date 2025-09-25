@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, Tag, Percent, DollarSign, Calendar, CheckCircle, XCircle, Edit, Trash, Info } from 'lucide-react';
+import { Loader2, Tag, Percent, DollarSign, Calendar, CheckCircle, XCircle, Edit, Trash, Info, Folder } from 'lucide-react'; // Added Folder icon
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import CampaignEditForm from './CampaignEditForm';
 import { deleteCampaign } from '@/integrations/supabase/utils';
 import { showError, showSuccess } from '@/utils/toast';
-import { format, isPast, isFuture, parseISO } from 'date-fns'; // Importar parseISO
+import { format, isPast, isFuture, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -111,6 +111,7 @@ const CampaignTable: React.FC<CampaignTableProps> = ({ campaigns, isLoading, err
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[200px]">Nome</TableHead>
+                <TableHead className="w-[120px]">Categoria</TableHead> {/* NEW: Category column */}
                 <TableHead className="w-[100px]">Tipo</TableHead>
                 <TableHead className="w-[150px]">Desconto</TableHead>
                 <TableHead>Período</TableHead>
@@ -126,6 +127,10 @@ const CampaignTable: React.FC<CampaignTableProps> = ({ campaigns, isLoading, err
                     <TableCell className="font-medium flex items-center py-3">
                       <Tag className="mr-2 h-4 w-4 text-muted-foreground" />
                       {campaign.name}
+                    </TableCell>
+                    <TableCell className="py-3 flex items-center"> {/* NEW: Display category */}
+                      {campaign.category && <Folder className="mr-2 h-4 w-4 text-muted-foreground" />}
+                      {campaign.category || 'N/A'}
                     </TableCell>
                     <TableCell className="py-3 capitalize">{campaign.type}</TableCell>
                     <TableCell className="py-3">

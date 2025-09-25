@@ -40,7 +40,8 @@ const formSchema = z.object({
   start_date: z.date().nullable().optional(),
   end_date: z.date().nullable().optional(),
   is_active: z.boolean().default(true),
-  product_ids: z.array(z.string()).optional(), // NEW: Array of product IDs
+  product_ids: z.array(z.string()).optional(),
+  category: z.string().nullable().optional(), // NEW: category field
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -48,7 +49,7 @@ type FormData = z.infer<typeof formSchema>;
 const CampaignEditForm: React.FC<CampaignEditFormProps> = ({ campaign, onSave, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [allProducts, setAllProducts] = useState<Product[]>([]); // NEW: State for all products
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -68,7 +69,6 @@ const CampaignEditForm: React.FC<CampaignEditFormProps> = ({ campaign, onSave, o
     return () => subscription.unsubscribe();
   }, []);
 
-  // NEW: Fetch all products
   useEffect(() => {
     const loadProducts = async () => {
       if (!userId) return;
@@ -96,14 +96,15 @@ const CampaignEditForm: React.FC<CampaignEditFormProps> = ({ campaign, onSave, o
       start_date: campaign.start_date ? parseISO(campaign.start_date) : undefined,
       end_date: campaign.end_date ? parseISO(campaign.end_date) : undefined,
       is_active: campaign.is_active ?? true,
-      product_ids: campaign.product_ids || [], // NEW: Default to existing product_ids
+      product_ids: campaign.product_ids || [],
+      category: campaign.category || '', // NEW: Default to existing category
     },
   });
 
   const { watch, setValue } = form;
   const campaignType = watch("type");
   const discountType = watch("discount_type");
-  const selectedProductIds = watch("product_ids"); // NEW: Watch selected product IDs
+  const selectedProductIds = watch("product_ids");
 
   useEffect(() => {
     if (campaignType !== 'discount') {
@@ -135,7 +136,8 @@ const CampaignEditForm: React.FC<CampaignEditFormProps> = ({ campaign, onSave, o
         start_date: values.start_date ? values.start_date.toISOString() : null,
         end_date: values.end_date ? values.end_date.toISOString() : null,
         is_active: values.is_active,
-        product_ids: values.product_ids, // NEW: Include product_ids
+        product_ids: values.product_ids,
+        category: values.category || null, // NEW: Include category
       };
 
       await updateCampaign(campaign.id!, updatedCampaign);
@@ -151,6 +153,7 @@ const CampaignEditForm: React.FC<CampaignEditFormProps> = ({ campaign, onSave, o
 
   const fields = [
     { name: "name", label: "Nome da Campanha", type: "text", required: true },
+    { name: "category", label: "Categoria", type: "select", options: [{ value: 'Sazonal', label: 'Sazonal' }, { value: 'Novo Cliente', label: 'Novo Cliente' }, { value: 'Fidelidade', label: 'Fidelidade' }, { value: 'Recuperação', label: 'Recuperação' }, { value: 'Outro', label: 'Outro' }] }, // NEW: Category field
     { name: "type", label: "Tipo de Campanha", type: "select", options: [{ value: 'discount', label: 'Desconto' }, { value: 'offer', label: 'Oferta' }, { value: 'other', label: 'Outro' }] },
     { name: "description", label: "Descrição", type: "textarea", colSpan: 2 },
     { name: "start_date", label: "Data de Início", type: "date" },
@@ -158,7 +161,7 @@ const CampaignEditForm: React.FC<CampaignEditFormProps> = ({ campaign, onSave, o
     { name: "is_active", label: "Ativa", type: "boolean" },
     { name: "discount_type", label: "Tipo de Desconto", type: "select", options: [{ value: 'none', label: 'Nenhum' }, { value: 'percentage', label: 'Percentagem' }, { value: 'amount', label: 'Valor Fixo' }], conditional: (val: FormData) => val.type === 'discount' },
     { name: "discount_value", label: "Valor do Desconto", type: "number", conditional: (val: FormData) => val.type === 'discount' && val.discount_type !== 'none' },
-    { name: "product_ids", label: "Aplicar a Produtos", type: "multi-select", options: allProducts.map(p => ({ value: p.id, label: p.produto })) }, // NEW: Multi-select for products
+    { name: "product_ids", label: "Aplicar a Produtos", type: "multi-select", options: allProducts.map(p => ({ value: p.id, label: p.produto })) },
   ];
 
   return (
@@ -212,7 +215,7 @@ const CampaignEditForm: React.FC<CampaignEditFormProps> = ({ campaign, onSave, o
                           value={formField.value as string || ''}
                           onChange={formField.onChange}
                         />
-                      ) : field.type === "multi-select" ? ( // NEW: Multi-select for products
+                      ) : field.type === "multi-select" ? (
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button variant="outline" className="w-full justify-start">
