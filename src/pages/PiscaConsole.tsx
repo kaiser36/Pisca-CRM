@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card'; // Removido CardHeader, CardTitle, CardDescription
 import { Loader2, ExternalLink } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
@@ -26,15 +26,12 @@ const PiscaConsole: React.FC = () => {
 
   return (
     <Layout>
-      <div className="h-full flex flex-col w-full">
-        {/* Removido o título da página */}
-        <Card className="flex-1 shadow-md flex flex-col mx-6 my-6"> {/* Adicionado padding vertical para o Card */}
-          <CardHeader className="pb-4">
-            {/* Removido o CardTitle e CardDescription */}
-          </CardHeader>
+      <div className="h-full flex flex-col w-full"> {/* Mantido para flexbox */}
+        <Card className="flex-1 shadow-md flex flex-col rounded-none border-none"> {/* Removido mx-6 my-6, rounded-none, border-none */}
+          {/* Removido CardHeader */}
           <CardContent className="flex-1 flex flex-col p-0">
             {isLoadingIframe && (
-              <div className="flex flex-col items-center justify-center h-full bg-muted/50 p-4">
+              <div className="flex flex-col items-center justify-center h-full w-full bg-muted/50 p-4">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
                 <p className="text-muted-foreground">A carregar a Consola Pisca...</p>
               </div>
@@ -61,7 +58,7 @@ const PiscaConsole: React.FC = () => {
             <iframe
               src={PISCA_PISCA_URL}
               title="Consola Pisca"
-              className="flex-1 w-full border-0 rounded-b-lg"
+              className="flex-1 w-full h-full border-0" // Adicionado h-full
               onLoad={handleIframeLoad}
               onError={handleIframeError}
               style={{ display: isLoadingIframe || iframeError ? 'none' : 'block' }}
