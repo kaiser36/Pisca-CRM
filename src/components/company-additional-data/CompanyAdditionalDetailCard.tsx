@@ -144,7 +144,8 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   const firstLetter = companyDisplayName.charAt(0).toUpperCase();
 
   // Utility functions for date comparisons
-  const isVisitOld = (dateString: string): boolean => {
+  const isVisitOld = (dateString: string | null | undefined): boolean => {
+    if (!dateString) return false;
     try {
       const date = parseISO(dateString);
       return differenceInMonths(new Date(), date) >= 3;
@@ -182,7 +183,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
   // 3. Se a data da ultima visita for mais de 3 meses
   const lastVisitDate = company["Data ultima visita"] || crmCompany?.Last_Visit_Date || null;
-  if (lastVisitDate && isVisitOld(lastVisitDate)) {
+  if (isVisitOld(lastVisitDate)) { // Using the new utility function
     alerts.push("A última visita foi há mais de 3 meses.");
   }
 
@@ -220,7 +221,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
   return (
     <ScrollArea className="h-full w-full pr-4">
-      <Card className="w-full shadow-md">
+      <Card className="w-full shadow-md rounded-lg"> {/* Added rounded-lg */}
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -341,9 +342,9 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Main Overview Card */}
-          <Card className="p-6 shadow-subtle border-l-4 border-primary">
-            <div className="flex flex-col items-center space-y-4"> {/* Changed to flex-col and items-center */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 flex-1 w-full"> {/* Added w-full */}
+          <Card className="p-6 shadow-subtle border-l-4 border-primary rounded-lg"> {/* Added rounded-lg */}
+            <div className="flex flex-col items-center space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 flex-1 w-full">
                 {renderField(Mail, "Email", company["Email da empresa"] || crmCompany?.Company_Email)}
                 {renderField(Globe, "Website", company["Site"] || crmCompany?.Website)}
                 {renderField(Landmark, "NIF", crmCompany?.NIF)}
@@ -384,8 +385,8 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
           {/* New Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Pisca Card */}
-            <Card className="p-4 shadow-subtle border-l-4 border-blue-200 bg-blue-50">
-              <CardTitle className="text-lg font-semibold mb-3 flex items-center text-blue-800">
+            <Card className="p-4 shadow-subtle border-l-4 border-primary/50 bg-primary/5 rounded-lg"> {/* Updated colors and added rounded-lg */}
+              <CardTitle className="text-lg font-semibold mb-3 flex items-center text-primary"> {/* Updated text color */}
                 <Package className="mr-2 h-5 w-5" /> Pisca
               </CardTitle>
               <div className="space-y-2">
@@ -400,8 +401,8 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
             </Card>
 
             {/* Resumo Card */}
-            <Card className="p-4 shadow-subtle border-l-4 border-green-200 bg-green-50">
-              <CardTitle className="text-lg font-semibold mb-3 flex items-center text-green-800">
+            <Card className="p-4 shadow-subtle border-l-4 border-success/50 bg-success/5 rounded-lg"> {/* Updated colors and added rounded-lg */}
+              <CardTitle className="text-lg font-semibold mb-3 flex items-center text-success"> {/* Updated text color */}
                 <Info className="mr-2 h-5 w-5" /> Resumo
               </CardTitle>
               <div className="space-y-2">
@@ -414,8 +415,8 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
             </Card>
 
             {/* Alertas Card */}
-            <Card className={`p-4 shadow-subtle border-l-4 ${alerts.length > 0 ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50'}`}>
-              <CardTitle className={`text-lg font-semibold mb-3 flex items-center ${alerts.length > 0 ? 'text-red-800' : 'text-yellow-800'}`}>
+            <Card className={`p-4 shadow-subtle border-l-4 ${alerts.length > 0 ? 'border-destructive/50 bg-destructive/5' : 'border-yellow-200 bg-yellow-50'} rounded-lg`}> {/* Updated colors and added rounded-lg */}
+              <CardTitle className={`text-lg font-semibold mb-3 flex items-center ${alerts.length > 0 ? 'text-destructive' : 'text-yellow-800'}`}> {/* Updated text color */}
                 <BellRing className="mr-2 h-5 w-5" /> Alertas
               </CardTitle>
               <div className="space-y-2">
@@ -427,7 +428,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                   </Alert>
                 ) : (
                   alerts.map((alert, index) => (
-                    <Alert key={index} variant="destructive" className="bg-red-100 border-red-200 text-red-800 p-2">
+                    <Alert key={index} variant="destructive" className="bg-destructive/10 border-destructive/50 text-destructive p-2"> {/* Updated colors */}
                       <AlertDescription className="flex items-center">
                         <Info className="mr-2 h-4 w-4" /> {alert}
                       </AlertDescription>
@@ -440,7 +441,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
           {/* End New Overview Cards */}
 
           <Tabs defaultValue="details" onValueChange={(value) => console.log('Tab changed to:', value)}>
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-10">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-10 rounded-lg"> {/* Added rounded-lg */}
               <TabsTrigger value="details">Detalhes</TabsTrigger>
               <TabsTrigger value="stands">Stands</TabsTrigger>
               <TabsTrigger value="contacts">Contactos</TabsTrigger>
@@ -450,7 +451,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
             </TabsList>
             <TabsContent value="details" className="mt-4 space-y-6">
               <Accordion type="multiple" className="w-full space-y-4">
-                <AccordionItem value="essential-info" className="border rounded-md shadow-sm">
+                <AccordionItem value="essential-info" className="border rounded-lg shadow-sm"> {/* Changed rounded-md to rounded-lg */}
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
                     <div className="flex items-center">
                       <Info className="mr-2 h-5 w-5 text-muted-foreground" />
@@ -470,7 +471,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="location-address" className="border rounded-md shadow-sm">
+                <AccordionItem value="location-address" className="border rounded-lg shadow-sm"> {/* Changed rounded-md to rounded-lg */}
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
                     <div className="flex items-center">
                       <MapPin className="mr-2 h-5 w-5 text-muted-foreground" />
@@ -485,7 +486,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="account-management" className="border rounded-md shadow-sm">
+                <AccordionItem value="account-management" className="border rounded-lg shadow-sm"> {/* Changed rounded-md to rounded-lg */}
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
                     <div className="flex items-center">
                       <User className="mr-2 h-5 w-5 text-muted-foreground" />
@@ -501,7 +502,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="stock-api" className="border rounded-md shadow-sm">
+                <AccordionItem value="stock-api" className="border rounded-lg shadow-sm"> {/* Changed rounded-md to rounded-lg */}
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
                     <div className="flex items-center">
                       <Package className="mr-2 h-5 w-5 text-muted-foreground" />
@@ -515,7 +516,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="plan-financing" className="border rounded-md shadow-sm">
+                <AccordionItem value="plan-financing" className="border rounded-lg shadow-sm"> {/* Changed rounded-md to rounded-lg */}
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
                     <div className="flex items-center">
                       <DollarSign className="mr-2 h-5 w-5 text-muted-foreground" />
@@ -539,7 +540,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="marketing-competition" className="border rounded-md shadow-sm">
+                <AccordionItem value="marketing-competition" className="border rounded-lg shadow-sm"> {/* Changed rounded-md to rounded-lg */}
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
                     <div className="flex items-center">
                       <TrendingUp className="mr-2 h-5 w-5 text-muted-foreground" />
@@ -559,7 +560,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="partnerships-other" className="border rounded-md shadow-sm">
+                <AccordionItem value="partnerships-other" className="border rounded-lg shadow-sm"> {/* Changed rounded-md to rounded-lg */}
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
                     <div className="flex items-center">
                       <ShieldCheck className="mr-2 h-5 w-5 text-muted-foreground" />
@@ -575,7 +576,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="important-dates" className="border rounded-md shadow-sm">
+                <AccordionItem value="important-dates" className="border rounded-lg shadow-sm"> {/* Changed rounded-md to rounded-lg */}
                   <AccordionTrigger className="px-4 py-3 text-base font-medium hover:no-underline">
                     <div className="flex items-center">
                       <Calendar className="mr-2 h-5 w-5 text-muted-foreground" />
