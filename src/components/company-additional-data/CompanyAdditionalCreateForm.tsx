@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { CompanyAdditionalExcelData, Company as CrmCompanyType, Account } from '@/types/crm'; // Renamed Company to CrmCompanyType to avoid conflict, imported Account
-import { upsertCompanyAdditionalExcelData, fetchCompanyByEmail, fetchAccounts } from '@/integrations/supabase/utils'; // Imported fetchAccounts
+import { upsertCompanyAdditionalExcelData, fetchCompanyByEmail, fetchAccounts, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils'; // Imported fetchAccounts and fetchCompaniesByExcelCompanyIds
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -85,6 +85,7 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
   const [isProvisional, setIsProvisional] = useState(false);
   const [isLookingUpEmail, setIsLookingUpEmail] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]); // State for accounts
+  const [companyDbId, setCompanyDbId] = useState<string | null>(null); // NEW: State for company_db_id
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -176,6 +177,7 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
       if (!userId || !debouncedCompanyEmail || !z.string().email().safeParse(debouncedCompanyEmail).success) {
         setGeneratedExcelCompanyId(generateProvisionalId());
         setIsProvisional(true);
+        setCompanyDbId(null); // Reset companyDbId
         return;
       }
 
@@ -185,10 +187,12 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
         if (crmCompany) {
           setGeneratedExcelCompanyId(crmCompany.Company_id);
           setIsProvisional(false);
+          setCompanyDbId(crmCompany.id || null); // Set companyDbId from CRM company
           showSuccess(`Email encontrado no CRM. ID da Empresa: ${crmCompany.Company_id}`);
         } else {
           setGeneratedExcelCompanyId(generateProvisionalId());
           setIsProvisional(true);
+          setCompanyDbId(null); // Reset companyDbId
           showError("Email não encontrado no CRM. Gerado ID provisório.");
         }
       } catch (err: any) {
@@ -196,6 +200,7 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
         showError(err.message || "Erro ao procurar email no CRM.");
         setGeneratedExcelCompanyId(generateProvisionalId());
         setIsProvisional(true);
+        setCompanyDbId(null); // Reset companyDbId
       } finally {
         setIsLookingUpEmail(false);
       }
@@ -219,6 +224,7 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
       const newCompanyData: CompanyAdditionalExcelData = {
         user_id: userId,
         excel_company_id: generatedExcelCompanyId, // Use the generated ID
+        company_db_id: companyDbId, // NEW: Include company_db_id
         "Nome Comercial": values["Nome Comercial"],
         "Email da empresa": values["Email da empresa"],
         "STAND_POSTAL_CODE": values["STAND_POSTAL_CODE"],

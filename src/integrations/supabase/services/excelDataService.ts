@@ -8,11 +8,34 @@ import { CompanyAdditionalExcelData } from '@/types/crm';
 export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalExcelData[], userId: string): Promise<void> {
   const uniqueDataMap = new Map<string, CompanyAdditionalExcelData>();
 
+  // Fetch company_db_ids for all unique excel_company_ids in the batch
+  const uniqueExcelCompanyIds: string[] = Array.from(new Set(data.map(row => row.excel_company_id)));
+  const { data: companies, error: companyError } = await supabase
+    .from('companies')
+    .select('id, company_id')
+    .eq('user_id', userId)
+    .in('company_id', uniqueExcelCompanyIds);
+
+  if (companyError) {
+    console.error('Error fetching company IDs for upserting additional company data:', companyError);
+    throw new Error(companyError.message);
+  }
+
+  const companyIdMap = new Map<string, string>();
+  companies.forEach(company => companyIdMap.set(company.company_id, company.id));
+
   data.forEach(row => {
+    const companyDbId = companyIdMap.get(row.excel_company_id);
+    if (!companyDbId) {
+      console.warn(`Company DB ID not found for excel_company_id: ${row.excel_company_id}. Skipping additional company data.`);
+      return; // Skip rows that cannot be linked
+    }
+
     const key = `${row.excel_company_id}-${userId}`; // Unique key for deduplication
     uniqueDataMap.set(key, {
       ...row,
       user_id: userId, // Ensure user_id is correctly set
+      company_db_id: companyDbId, // NEW: Populate company_db_id
       created_at: row.created_at || new Date().toISOString(), // Set created_at if not present
     });
   });

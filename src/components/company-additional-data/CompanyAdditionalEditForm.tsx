@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { CompanyAdditionalExcelData } from '@/types/crm';
-import { upsertCompanyAdditionalExcelData } from '@/integrations/supabase/utils';
+import { CompanyAdditionalExcelData, Account } from '@/types/crm';
+import { upsertCompanyAdditionalExcelData, fetchAccounts, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils'; // Import fetchAccounts and fetchCompaniesByExcelCompanyIds
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -15,6 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Switch } from '@/components/ui/switch';
 import { Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Import Select components
 
 interface CompanyAdditionalEditFormProps {
   company: CompanyAdditionalExcelData;
@@ -79,6 +80,8 @@ type FormData = z.infer<typeof formSchema>;
 const CompanyAdditionalEditForm: React.FC<CompanyAdditionalEditFormProps> = ({ company, onSave, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]); // State for accounts
+  const [companyDbId, setCompanyDbId] = useState<string | null>(null); // NEW: State for company_db_id
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -97,6 +100,36 @@ const CompanyAdditionalEditForm: React.FC<CompanyAdditionalEditFormProps> = ({ c
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Fetch accounts for the AM select field
+  useEffect(() => {
+    const loadAccounts = async () => {
+      if (!userId) return;
+      try {
+        const fetchedAccounts = await fetchAccounts(userId);
+        setAccounts(fetchedAccounts.filter(acc => acc.am !== null && acc.am.trim() !== ''));
+      } catch (err: any) {
+        console.error("Erro ao carregar contas de AM:", err);
+        showError(err.message || "Falha ao carregar a lista de AMs.");
+      }
+    };
+
+    if (userId) {
+      loadAccounts();
+    }
+  }, [userId]);
+
+  // NEW: Fetch company_db_id based on company.excel_company_id and userId
+  useEffect(() => {
+    const fetchCompanyDbId = async () => {
+      if (userId && company.excel_company_id) {
+        const companies = await fetchCompaniesByExcelCompanyIds(userId, [company.excel_company_id]);
+        const currentCompany = companies.find(c => c.Company_id === company.excel_company_id);
+        setCompanyDbId(currentCompany?.id || null);
+      }
+    };
+    fetchCompanyDbId();
+  }, [userId, company.excel_company_id]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -142,6 +175,10 @@ const CompanyAdditionalEditForm: React.FC<CompanyAdditionalEditFormProps> = ({ c
       showError("Utilizador não autenticado. Por favor, faça login para guardar os dados.");
       return;
     }
+    if (!companyDbId) { // NEW: Check if companyDbId is available
+      showError("Não foi possível associar os dados adicionais a uma empresa válida. Por favor, verifique o ID Excel da empresa.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -150,6 +187,7 @@ const CompanyAdditionalEditForm: React.FC<CompanyAdditionalEditFormProps> = ({ c
         ...values,
         user_id: userId, // Garantir que o user_id está correto
         excel_company_id: company.excel_company_id, // Garantir que o excel_company_id está correto
+        company_db_id: companyDbId, // NEW: Include company_db_id
       };
 
       await upsertCompanyAdditionalExcelData([updatedData], userId);
@@ -171,7 +209,7 @@ const CompanyAdditionalEditForm: React.FC<CompanyAdditionalEditFormProps> = ({ c
     { name: "Cidade", label: "Cidade", type: "text" },
     { name: "Morada", label: "Morada", type: "text" },
     { name: "AM_OLD", label: "AM Antigo", type: "text" },
-    { name: "AM", label: "AM Atual", type: "text" },
+    { name: "AM", label: "AM Atual", type: "select", options: accounts.map(acc => acc.am).filter((am): am is string => am !== null && am.trim() !== '') }, // Changed to select
     { name: "Stock STV", label: "Stock STV", type: "number" },
     { name: "API", label: "API", type: "text" },
     { name: "Site", label: "Site", type: "url" },
@@ -202,6 +240,14 @@ const CompanyAdditionalEditForm: React.FC<CompanyAdditionalEditFormProps> = ({ c
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4">
+        <p className="text-sm text-muted-foreground">
+          A editar dados adicionais para a empresa com ID Excel: <span className="font-semibold">{company.excel_company_id}</span>
+        </p>
+        {!companyDbId && ( // NEW: Alert if companyDbId is missing
+          <p className="text-sm text-red-500">
+            Não foi possível encontrar a empresa no CRM principal com o ID Excel fornecido. Os dados adicionais não poderão ser atualizados.
+          </p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {fields.map((field) => (
             <FormField
@@ -223,6 +269,17 @@ const CompanyAdditionalEditForm: React.FC<CompanyAdditionalEditFormProps> = ({ c
                         value={formField.value as string || ''}
                         onChange={formField.onChange}
                       />
+                    ) : field.type === "select" ? (
+                      <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {field.options?.map(option => (
+                            <SelectItem key={option} value={option}>{option}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     ) : (
                       <Input
                         type={field.type}
@@ -248,7 +305,7 @@ const CompanyAdditionalEditForm: React.FC<CompanyAdditionalEditFormProps> = ({ c
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting || !userId}>
+          <Button type="submit" disabled={isSubmitting || !userId || !companyDbId}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
