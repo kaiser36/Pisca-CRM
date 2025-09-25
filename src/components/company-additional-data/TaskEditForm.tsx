@@ -169,8 +169,8 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
     { name: "title", label: "Título", type: "text", required: true },
     { name: "description", label: "Descrição", type: "textarea", colSpan: 2 },
     { name: "due_date", label: "Data Limite", type: "date" },
-    { name: "status", label: "Status", type: "select", options: ['Pending', 'In Progress', 'Completed', 'Cancelled'] },
-    { name: "priority", label: "Prioridade", type: "select", options: ['Low', 'Medium', 'High'] },
+    { name: "status", label: "Status", type: "select", options: ['Pending', 'In Progress', 'Completed', 'Cancelled'], placeholder: "Selecione o Status" },
+    { name: "priority", label: "Prioridade", type: "select", options: ['Low', 'Medium', 'High'], placeholder: "Selecione a Prioridade" },
     {
       name: "assigned_to_employee_id",
       label: "Atribuído a (AM)",
@@ -233,13 +233,17 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
                     ) : field.type === "select" ? (
                       <Select
                         onValueChange={formField.onChange}
-                        value={String(formField.value || '')} // Corrigido: Garante que o valor é sempre uma string
+                        value={String(formField.value || '')} // Garante que o valor é sempre uma string
                         disabled={field.disabled}
                       >
                         <SelectTrigger>
-                          <SelectValue>
-                            {selectedAMDisplayName || field.placeholder}
-                          </SelectValue>
+                          {field.name === "assigned_to_employee_id" ? (
+                            <SelectValue>
+                              {selectedAMDisplayName || field.placeholder}
+                            </SelectValue>
+                          ) : (
+                            <SelectValue placeholder={field.placeholder} />
+                          )}
                         </SelectTrigger>
                         <SelectContent>
                           {field.options?.length === 0 ? (
