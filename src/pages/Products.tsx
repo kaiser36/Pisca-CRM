@@ -1,175 +1,98 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Layout } from '@/components/layout/Layout'; // Corrigido para importação nomeada
+import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Package, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { toast } from 'react-hot-toast';
-import { showSuccess, showError } from '@/utils/toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import ProductCreateForm from '@/components/products/ProductCreateForm';
+import ProductTable from '@/components/products/ProductTable';
+import { fetchProducts } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/integrations/supabase/auth';
-import { PlusCircle, Edit, Trash2, RefreshCw } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { Product } from '@/types/crm'; // Assuming Product type is defined
+import { Product } from '@/types/crm';
 
-export default function Products() {
-  const { user } = useAuth();
+const Products: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const fetchProducts = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    setError(null);
-    const { data, error } = await supabase
-      .from('produtos')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('produto', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching products:', error);
-      setError(error.message);
-      showError('Erro ao carregar produtos.');
-    } else {
-      setProducts(data || []);
-    }
-    setLoading(false);
-  }, [user]);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
-
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Tem certeza que deseja eliminar este produto?')) return;
-    const toastId = toast.loading('A eliminar produto...');
-    try {
-      const { error } = await supabase
-        .from('produtos')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        throw error;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      } else {
+        setUserId(null);
       }
-      showSuccess('Produto eliminado com sucesso!');
-      fetchProducts();
-    } catch (error: any) {
-      console.error('Error deleting product:', error);
-      showError(`Erro ao eliminar produto: ${error.message}`);
-    } finally {
-      toast.dismiss(toastId);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const loadProducts = useCallback(async () => {
+    if (!userId) {
+      setIsLoading(false);
+      setError("Utilizador não autenticado. Por favor, faça login para ver os produtos.");
+      return;
     }
-  };
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await fetchProducts(userId);
+      setProducts(data);
+    } catch (err: any) {
+      console.error("Erro ao carregar produtos:", err);
+      setError(err.message || "Falha ao carregar os produtos.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId]);
 
-  const filteredProducts = products.filter(product =>
-    product.produto?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.categoria?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.unidade?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  if (loading) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-          <RefreshCw className="h-6 w-6 animate-spin mr-2" /> A carregar produtos...
-        </div>
-      </Layout>
-    );
-  }
-
-  if (error) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-[calc(100vh-200px)] text-red-500">
-          <RefreshCw className="h-6 w-6 mr-2" /> Erro: {error}
-        </div>
-      </Layout>
-    );
-  }
+  useEffect(() => {
+    if (userId) {
+      loadProducts();
+    }
+  }, [userId, loadProducts]);
 
   return (
     <Layout>
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Produtos</h2>
-          <div className="flex items-center space-x-2">
-            <Link to="/products/new">
-              <Button>
-                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Produto
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">Gestão de Produtos</h1>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <PlusCircle className="mr-2 h-4 w-4" /> Criar Novo Produto
               </Button>
-            </Link>
-          </div>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Lista de Produtos</CardTitle>
-            <CardDescription>Gerencie os produtos disponíveis no seu CRM.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2 mb-4">
-              <Input
-                placeholder="Pesquisar produtos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Criar Novo Produto</DialogTitle>
+              </DialogHeader>
+              <ProductCreateForm
+                onSave={() => {
+                  setIsCreateDialogOpen(false);
+                  loadProducts();
+                }}
+                onCancel={() => setIsCreateDialogOpen(false)}
               />
-              <Button variant="outline" onClick={fetchProducts}>
-                <RefreshCw className="h-4 w-4 mr-2" /> Atualizar
-              </Button>
-            </div>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Produto</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Unidade</TableHead>
-                    <TableHead className="text-right">Preço Unitário</TableHead>
-                    <TableHead className="text-right">Preço Total</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredProducts.length > 0 ? (
-                    filteredProducts.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell className="font-medium">{product.produto}</TableCell>
-                        <TableCell>{product.categoria}</TableCell>
-                        <TableCell>{product.unidade}</TableCell>
-                        <TableCell className="text-right">{product.preco_unitario?.toFixed(2)} €</TableCell>
-                        <TableCell className="text-right">{product.preco_total?.toFixed(2)} €</TableCell>
-                        <TableCell className="text-right">
-                          <Link to={`/products/${product.id}`}>
-                            <Button variant="ghost" size="icon" className="mr-2">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(product.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center">
-                        Nenhum produto encontrado.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+            </DialogContent>
+          </Dialog>
+        </div>
+        <div className="grid grid-cols-1 gap-6">
+          <ProductTable products={products} isLoading={isLoading} error={error} onProductChanged={loadProducts} />
+        </div>
       </div>
     </Layout>
   );
-}
+};
+
+export default Products;
