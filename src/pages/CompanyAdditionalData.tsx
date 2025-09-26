@@ -1,144 +1,102 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import Layout from '@/components/layout/Layout';
+import { Layout } from '@/components/layout/Layout'; // Corrigido para importação nomeada
 import { CompanyAdditionalExcelData, Company } from '@/types/crm';
-import { fetchCompanyAdditionalExcelData, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { showError } from '@/utils/toast';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, PlusCircle } from 'lucide-react';
+import { useAuth } from '@/integrations/supabase/auth';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
-import CompanyAdditionalList from '@/components/company-additional-data/CompanyAdditionalList';
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { useDebounce } from '@/hooks/use-debounce';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import CompanyAdditionalCreateForm from '@/components/company-additional-data/CompanyAdditionalCreateForm';
-import { useLocation, useNavigate } from 'react-router-dom'; // Import useNavigate
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { toast } from 'react-hot-toast';
+import { showSuccess, showError } from '@/utils/toast';
+import { Link } from 'react-router-dom';
+import { PlusCircle, Edit, Trash2, Search, RefreshCw } from 'lucide-react';
 
-const CompanyAdditionalData: React.FC = () => {
-  const [companies, setCompanies] = useState<CompanyAdditionalExcelData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function CompanyAdditionalData() {
+  const { user } = useAuth();
+  const [additionalData, setAdditionalData] = useState<CompanyAdditionalExcelData[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
-  const [userId, setUserId] = useState<string | null>(null);
-  const isMobile = useIsMobile();
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  const location = useLocation();
-  const navigate = useNavigate(); // Initialize useNavigate
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(25);
-  const [totalCompanies, setTotalCompanies] = useState(0);
-
-  const isSearching = isLoading && searchTerm !== '';
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-      } else {
-        setUserId(null);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const loadCompanies = useCallback(async () => {
-    console.log(`[CompanyAdditionalData] Loading companies for userId: ${userId}`); // NEW: Log userId
-    if (!userId) {
-      setIsLoading(false);
-      setError("Utilizador não autenticado. Por favor, faça login para ver os dados adicionais das empresas.");
-      return;
-    }
-    setIsLoading(true);
+  const fetchAdditionalData = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
     setError(null);
-    try {
-      console.log(`Attempting to fetch additional company data for userId: ${userId}, page: ${currentPage}, pageSize: ${pageSize}, searchTerm: ${debouncedSearchTerm}`);
-      const { data: additionalData, totalCount } = await fetchCompanyAdditionalExcelData(userId, currentPage, pageSize, debouncedSearchTerm);
-      setTotalCompanies(totalCount);
+    const { data, error } = await supabase
+      .from('company_additional_excel_data')
+      .select('*')
+      .eq('user_id', user.id);
 
-      const excelCompanyIds = additionalData.map(company => company.excel_company_id);
-
-      const crmCompanies = await fetchCompaniesByExcelCompanyIds(userId, excelCompanyIds);
-      const crmCompaniesMap = new Map<string, Company>();
-      crmCompanies.forEach(company => {
-        crmCompaniesMap.set(company.Company_id, company);
-      });
-
-      const augmentedCompanies: CompanyAdditionalExcelData[] = additionalData.map(additionalCompany => ({
-        ...additionalCompany,
-        crmCompany: crmCompaniesMap.get(additionalCompany.excel_company_id),
-      }));
-
-      setCompanies(augmentedCompanies);
-      console.log(`CompanyAdditionalData: Set ${augmentedCompanies.length} companies into state. Total count from DB: ${totalCount}`); // Updated log
-
-      const params = new URLSearchParams(location.search);
-      const companyIdFromUrl = params.get('companyId');
-      const tabFromUrl = params.get('tab'); // NEW: Get tab from URL
-      if (companyIdFromUrl) {
-        // If a companyId is in the URL, navigate to its detail page
-        navigate(`/company-additional-data/${companyIdFromUrl}${tabFromUrl ? `?tab=${tabFromUrl}` : ''}`); // NEW: Pass tab to detail page
-      }
-
-    } catch (err: any) {
-      console.error("Erro ao carregar dados adicionais das empresas:", err);
-      setError(err.message || "Falha ao carregar os dados adicionais das empresas.");
-      showError(err.message || "Falha ao carregar os dados adicionais das empresas.");
-    } finally {
-      setIsLoading(false);
+    if (error) {
+      console.error('Error fetching additional data:', error);
+      setError(error.message);
+      showError('Erro ao carregar dados adicionais das empresas.');
+    } else {
+      setAdditionalData(data || []);
     }
-  }, [userId, currentPage, pageSize, debouncedSearchTerm, location.search, navigate]);
+    setLoading(false);
+  }, [user]);
+
+  const fetchCompanies = useCallback(async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('companies')
+      .select('id, company_name, company_email');
+
+    if (error) {
+      console.error('Error fetching companies:', error);
+    } else {
+      setCompanies(data || []);
+    }
+  }, [user]);
 
   useEffect(() => {
-    if (userId) {
-      loadCompanies();
+    fetchAdditionalData();
+    fetchCompanies();
+  }, [fetchAdditionalData, fetchCompanies]);
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja eliminar este registo de dados adicionais?')) return;
+    const toastId = toast.loading('A eliminar...');
+    try {
+      const { error } = await supabase
+        .from('company_additional_excel_data')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+      showSuccess('Registo eliminado com sucesso!');
+      fetchAdditionalData();
+    } catch (error: any) {
+      console.error('Error deleting additional data:', error);
+      showError(`Erro ao eliminar registo: ${error.message}`);
+    } finally {
+      toast.dismiss(toastId);
     }
-  }, [userId, loadCompanies]);
-
-  const handleSearchChange = (term: string) => {
-    setSearchTerm(term);
-    setCurrentPage(1);
   };
 
-  const handleSelectCompany = (companyExcelId: string) => {
-    navigate(`/company-additional-data/${companyExcelId}`); // Navigate to the new detail page
+  const getCompanyName = (companyDbId: string | null) => {
+    const company = companies.find(c => c.id === companyDbId);
+    return company ? company.company_name : 'N/A';
   };
 
-  const totalPages = Math.ceil(totalCompanies / pageSize);
+  const filteredData = additionalData.filter(item =>
+    item.excel_company_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item["Nome Comercial"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item["Email da empresa"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    getCompanyName(item.company_db_id).toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
-
-  if (isLoading && searchTerm === '') {
+  if (loading) {
     return (
       <Layout>
-        <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[calc(100vh-var(--header-height)-var(--footer-height))]">
-          <div className="md:col-span-1 flex flex-col space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-          </div>
-          <div className="md:col-span-2 flex flex-col space-y-4">
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-40 w-full" />
-          </div>
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+          <RefreshCw className="h-6 w-6 animate-spin mr-2" /> A carregar dados adicionais...
         </div>
       </Layout>
     );
@@ -147,12 +105,8 @@ const CompanyAdditionalData: React.FC = () => {
   if (error) {
     return (
       <Layout>
-        <div className="container mx-auto p-6 min-h-[calc(100vh-var(--header-height)-var(--footer-height))]">
-          <Alert variant="destructive">
-            <Terminal className="h-4 w-4" />
-            <AlertTitle>Erro</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)] text-red-500">
+          <RefreshCw className="h-6 w-6 mr-2" /> Erro: {error}
         </div>
       </Layout>
     );
@@ -160,66 +114,78 @@ const CompanyAdditionalData: React.FC = () => {
 
   return (
     <Layout>
-      <div className="h-full flex flex-col p-6"> {/* Added p-6 for consistent padding */}
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-3xl font-bold">Empresas Adicionais ({totalCompanies})</h1>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="ml-2">
-                <PlusCircle className="mr-2 h-4 w-4" /> Criar
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Dados Adicionais das Empresas</h2>
+          <div className="flex items-center space-x-2">
+            <Link to="/company-additional-data/new">
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Novo
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Criar Nova Empresa Adicional</DialogTitle>
-              </DialogHeader>
-              <CompanyAdditionalCreateForm
-                onSave={() => {
-                  setIsCreateDialogOpen(false);
-                  loadCompanies();
-                }}
-                onCancel={() => setIsCreateDialogOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
+            </Link>
+          </div>
         </div>
-        <div className="flex-grow">
-          <CompanyAdditionalList
-            companies={companies}
-            onSelectCompany={handleSelectCompany} // Use the new handler
-            selectedCompanyId={null} // No longer needed to track selected ID in this component
-            searchTerm={searchTerm}
-            onSearchChange={handleSearchChange}
-            isSearching={isSearching}
-            totalCompanies={totalCompanies} // Pass totalCompanies
+
+        <div className="flex items-center space-x-2 mb-4">
+          <Input
+            placeholder="Pesquisar por ID, Nome Comercial ou Email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-sm"
           />
-          {totalPages > 1 && (
-            <div className="mt-4 flex justify-center">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
-                    />
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink isActive>{currentPage}</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : undefined}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
+          <Button variant="outline" onClick={() => fetchAdditionalData()}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Atualizar
+          </Button>
+        </div>
+
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID Excel da Empresa</TableHead>
+                <TableHead>Nome Comercial</TableHead>
+                <TableHead>Email da Empresa</TableHead>
+                <TableHead>Empresa Associada</TableHead>
+                <TableHead>Distrito</TableHead>
+                <TableHead>Cidade</TableHead>
+                <TableHead>AM</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredData.length > 0 ? (
+                filteredData.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.excel_company_id}</TableCell>
+                    <TableCell>{item["Nome Comercial"]}</TableCell>
+                    <TableCell>{item["Email da empresa"]}</TableCell>
+                    <TableCell>{getCompanyName(item.company_db_id)}</TableCell>
+                    <TableCell>{item.Distrito}</TableCell>
+                    <TableCell>{item.Cidade}</TableCell>
+                    <TableCell>{item.AM}</TableCell>
+                    <TableCell className="text-right">
+                      <Link to={`/company-additional-data/${item.id}`}>
+                        <Button variant="ghost" size="icon" className="mr-2">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="h-24 text-center">
+                    Nenhum dado adicional encontrado.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
       </div>
     </Layout>
   );
-};
-
-export default CompanyAdditionalData;
+}

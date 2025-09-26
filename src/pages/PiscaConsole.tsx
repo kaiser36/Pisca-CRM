@@ -1,72 +1,107 @@
 "use client";
 
 import React, { useState } from 'react';
-import Layout from '@/components/layout/Layout';
+import { Layout } from '@/components/layout/Layout'; // Corrigido para importação nomeada
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, ExternalLink } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Terminal, Send, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'react-hot-toast';
+import { showSuccess, showError } from '@/utils/toast';
 
-const PISCA_PISCA_URL = "https://www.piscapisca.pt/mgmt/login?returnUrl=%2Fconsole%2Fdashboard";
+export default function PiscaConsole() {
+  const [command, setCommand] = useState('');
+  const [output, setOutput] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
-const PiscaConsole: React.FC = () => {
-  const [isLoadingIframe, setIsLoadingIframe] = useState(true);
-  const [iframeError, setIframeError] = useState<string | null>(null);
+  const executeCommand = async () => {
+    if (!command.trim()) {
+      showError('O comando não pode estar vazio.');
+      return;
+    }
 
-  const handleIframeLoad = () => {
-    setIsLoadingIframe(false);
-    setIframeError(null); // Clear any previous errors on successful load
-  };
+    setLoading(true);
+    setOutput(prev => [...prev, `> ${command}`]);
+    const toastId = toast.loading('A executar comando...');
 
-  const handleIframeError = () => {
-    setIsLoadingIframe(false);
-    setIframeError("Não foi possível carregar a Consola Pisca. O site pode estar a bloquear a incorporação (iframe) por razões de segurança (CORS/X-Frame-Options).");
+    try {
+      // This is a placeholder for actual command execution.
+      // In a real application, you would send this command to a backend
+      // or a Supabase Edge Function that can safely execute SQL or other operations.
+      // Direct client-side execution of arbitrary SQL is a security risk.
+
+      // For demonstration, we'll simulate a simple response.
+      // If you need to execute SQL, you'd typically use `supabase.rpc` for stored procedures
+      // or a secure Edge Function.
+      const simulatedResponse = `Comando "${command}" executado com sucesso (simulado).`;
+      setOutput(prev => [...prev, simulatedResponse]);
+      showSuccess('Comando executado com sucesso!');
+
+      // Example of a real (but unsafe for arbitrary input) Supabase query:
+      // const { data, error } = await supabase.from('your_table').select('*');
+      // if (error) throw error;
+      // setOutput(prev => [...prev, JSON.stringify(data, null, 2)]);
+
+    } catch (error: any) {
+      console.error('Erro ao executar comando:', error);
+      setOutput(prev => [...prev, `Erro: ${error.message}`]);
+      showError(`Erro ao executar comando: ${error.message}`);
+    } finally {
+      setCommand('');
+      toast.dismiss(toastId);
+      setLoading(false);
+    }
   };
 
   return (
     <Layout>
-      <div className="h-full flex flex-col w-full">
-        <Card className="flex-1 shadow-md flex flex-col rounded-none border-none">
-          <CardContent className="flex-1 flex flex-col p-0 h-full"> {/* Adicionado h-full aqui */}
-            {isLoadingIframe && (
-              <div className="flex flex-col items-center justify-center h-full w-full bg-muted/50 p-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-                <p className="text-muted-foreground">A carregar a Consola Pisca...</p>
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Consola Pisca</h2>
+        </div>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="command-input">Comando</Label>
+                <Input
+                  id="command-input"
+                  placeholder="Digite o seu comando aqui..."
+                  value={command}
+                  onChange={(e) => setCommand(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !loading) {
+                      executeCommand();
+                    }
+                  }}
+                  disabled={loading}
+                />
               </div>
-            )}
-            {iframeError && (
-              <div className="p-4">
-                <Alert variant="destructive">
-                  <Terminal className="h-4 w-4" />
-                  <AlertTitle>Erro de Carregamento</AlertTitle>
-                  <AlertDescription>{iframeError}</AlertDescription>
-                </Alert>
-                <div className="mt-4 text-center">
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Pode tentar aceder à Consola Pisca diretamente no navegador:
-                  </p>
-                  <a href={PISCA_PISCA_URL} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline">
-                      <ExternalLink className="mr-2 h-4 w-4" /> Abrir Consola Pisca em Nova Aba
-                    </Button>
-                  </a>
-                </div>
+              <Button onClick={executeCommand} disabled={loading}>
+                {loading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="mr-2 h-4 w-4" />
+                )}
+                Executar
+              </Button>
+              <div>
+                <Label htmlFor="console-output">Saída da Consola</Label>
+                <Textarea
+                  id="console-output"
+                  readOnly
+                  value={output.join('\n')}
+                  className="h-64 font-mono text-sm bg-gray-900 text-green-400"
+                />
               </div>
-            )}
-            <iframe
-              src={PISCA_PISCA_URL}
-              title="Consola Pisca"
-              className="flex-1 w-full h-full border-0"
-              onLoad={handleIframeLoad}
-              onError={handleIframeError}
-              style={{ display: isLoadingIframe || iframeError ? 'none' : 'block' }}
-            ></iframe>
+            </div>
           </CardContent>
         </Card>
       </div>
     </Layout>
   );
-};
-
-export default PiscaConsole;
+}

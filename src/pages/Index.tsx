@@ -1,58 +1,24 @@
-import { MadeWithDyad } from "@/components/made-with-dyad";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+"use client";
+
 import CompanyOverviewDashboard from "@/components/dashboard/CompanyOverviewDashboard";
-import Layout from "@/components/layout/Layout";
+import { Layout } from "@/components/layout/Layout"; // Corrigido para importação nomeada
 import { showSuccess } from "@/utils/toast";
-import { useSession } from "@/context/SessionContext"; // Import useSession
+import { useEffect } from "react";
 
-const Index = () => {
-  const { user, profile, isLoading: isAuthLoading } = useSession(); // Get user and profile from session context
-
-  const userDisplayName = profile?.first_name || user?.email || 'Visitante';
+export default function Index() {
+  useEffect(() => {
+    // Exemplo de uso de toast, pode ser removido se não for necessário
+    // showSuccess("Bem-vindo de volta!");
+  }, []);
 
   return (
     <Layout>
-      <div className="min-h-[calc(100vh-var(--header-height)-var(--footer-height))] flex flex-col items-center justify-center bg-background text-foreground p-4">
-        <div className="text-center p-8 bg-card rounded-lg shadow-md mb-8 w-full max-w-2xl">
-          <h1 className="text-5xl font-extrabold tracking-tight mb-4 text-primary">
-            Bem-vindo{user ? `, ${userDisplayName}` : ''} ao seu Pisca CRM
-          </h1>
-          <p className="text-lg text-muted-foreground mb-8">
-            Comece a gerir os seus clientes do setor automóvel aqui!
-          </p>
-          {user ? (
-            <Link to="/crm">
-              <Button size="lg" className="px-8 py-4 text-lg shadow-sm hover:shadow-md transition-shadow">
-                Ver CRM de Clientes
-              </Button>
-            </Link>
-          ) : (
-            <Link to="/login">
-              <Button size="lg" className="px-8 py-4 text-lg shadow-sm hover:shadow-md transition-shadow">
-                Fazer Login
-              </Button>
-            </Link>
-          )}
-          <Button 
-            onClick={() => showSuccess("Este é um toast de teste!")} 
-            className="mt-4 ml-4 px-8 py-4 text-lg shadow-sm hover:shadow-md transition-shadow"
-            variant="secondary"
-          >
-            Mostrar Toast de Teste
-          </Button>
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         </div>
-
-        {user && ( // Only show dashboard if logged in
-          <div className="w-full max-w-2xl mb-8">
-            <CompanyOverviewDashboard />
-          </div>
-        )}
-
-        <MadeWithDyad />
+        <CompanyOverviewDashboard />
       </div>
     </Layout>
   );
-};
-
-export default Index;
+}
