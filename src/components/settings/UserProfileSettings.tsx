@@ -5,9 +5,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useSession } from '@/context/SessionContext';
-import { updateUserProfile, uploadUserAvatar, deleteUserAvatar } from '@/integrations/supabase/utils';
+import { updateUserProfile, uploadUserAvatar, deleteUserAvatar, fetchAvailableAmAccountsForLinking, updateAmAccountLink } from '@/integrations/supabase/utils';
 import { showSuccess, showError } from '@/utils/toast';
-import { UserProfile } from '@/types/crm'; // Import UserProfile
+import { UserProfile, Account } from '@/types/crm';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,20 +15,24 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Loader2, Image as ImageIcon, XCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formSchema = z.object({
   first_name: z.string().min(1, "O nome é obrigatório").nullable().optional(),
   last_name: z.string().min(1, "O apelido é obrigatório").nullable().optional(),
   avatarFile: typeof window === 'undefined' ? z.any().optional() : z.instanceof(File).nullable().optional(),
+  am_account_id: z.string().nullable().optional(), // NEW: Field for linking to AM account
 });
 
 type FormData = z.infer<typeof formSchema>;
 
 const UserProfileSettings: React.FC = () => {
-  const { user, profile, isLoading: isSessionLoading, refreshProfile } = useSession();
+  const { user, profile, amAccount, isLoading: isSessionLoading, refreshProfile } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(profile?.avatar_url || null);
+  const [availableAmAccounts, setAvailableAmAccounts] = useState<Account[]>([]); // NEW: State for available AMs
+  const [isAmAccountsLoading, setIsAmAccountsLoading] = useState(true); // NEW: Loading state for AMs
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -36,19 +40,42 @@ const UserProfileSettings: React.FC = () => {
       first_name: profile?.first_name || '',
       last_name: profile?.last_name || '',
       avatarFile: null,
+      am_account_id: amAccount?.id || '', // NEW: Initialize with current linked AM
     },
   });
 
-  // Update form defaults when profile changes
+  // Update form defaults when profile or amAccount changes
   useEffect(() => {
     form.reset({
       first_name: profile?.first_name || '',
       last_name: profile?.last_name || '',
       avatarFile: null,
+      am_account_id: amAccount?.id || '',
     });
     setCurrentAvatarUrl(profile?.avatar_url || null);
     setSelectedImage(null);
-  }, [profile, form]);
+  }, [profile, amAccount, form]);
+
+  // NEW: Fetch available AM accounts for linking
+  useEffect(() => {
+    const loadAvailableAmAccounts = async () => {
+      if (!user?.id) return;
+      setIsAmAccountsLoading(true);
+      try {
+        const accounts = await fetchAvailableAmAccountsForLinking(user.id);
+        setAvailableAmAccounts(accounts);
+      } catch (err: any) {
+        console.error("Erro ao carregar contas AM disponíveis:", err);
+        showError(err.message || "Falha ao carregar a lista de contas AM.");
+      } finally {
+        setIsAmAccountsLoading(false);
+      }
+    };
+
+    if (user?.id) {
+      loadAvailableAmAccounts();
+    }
+  }, [user?.id]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -100,20 +127,27 @@ const UserProfileSettings: React.FC = () => {
     let newAvatarUrl: string | null = profile?.avatar_url || null;
 
     try {
+      // Handle avatar upload/removal
       if (selectedImage) {
         newAvatarUrl = await uploadUserAvatar(selectedImage, user.id);
       } else if (currentAvatarUrl === null && profile?.avatar_url !== null) {
-        // If currentAvatarUrl was explicitly set to null (removed), and original had a photo
         newAvatarUrl = null;
       }
 
+      // Update user profile (first_name, last_name, avatar_url)
       const updatedProfileData: Partial<Omit<UserProfile, 'id' | 'updated_at'>> = {
         first_name: values.first_name || null,
         last_name: values.last_name || null,
         avatar_url: newAvatarUrl,
       };
-
       await updateUserProfile(user.id, updatedProfileData);
+
+      // NEW: Handle AM account linking
+      const newAmAccountId = values.am_account_id === "null-am" ? null : values.am_account_id;
+      if (newAmAccountId !== (amAccount?.id || null)) { // Only update if changed
+        await updateAmAccountLink(user.id, newAmAccountId);
+      }
+      
       showSuccess("Perfil atualizado com sucesso!");
       await refreshProfile(); // Refresh session context to update UI
     } catch (error: any) {
@@ -203,6 +237,42 @@ const UserProfileSettings: React.FC = () => {
                 <FormLabel>Apelido</FormLabel>
                 <FormControl>
                   <Input {...field} value={field.value || ''} disabled={isSubmitting} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {/* NEW: AM Account Link Field */}
+          <FormField
+            control={form.control}
+            name="am_account_id"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Associar a Conta AM</FormLabel>
+                <FormControl>
+                  <Select
+                    onValueChange={(value) => field.onChange(value === "null-am" ? null : value)}
+                    value={field.value === null ? "null-am" : (field.value as string)}
+                    disabled={isAmAccountsLoading || isSubmitting}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma conta AM" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="null-am">Nenhum</SelectItem>
+                      {isAmAccountsLoading ? (
+                        <SelectItem value="loading" disabled>A carregar AMs...</SelectItem>
+                      ) : availableAmAccounts.length === 0 && !amAccount ? (
+                        <SelectItem value="no-ams" disabled>Nenhuma conta AM disponível</SelectItem>
+                      ) : (
+                        availableAmAccounts.map((am) => (
+                          <SelectItem key={am.id} value={am.id}>
+                            {am.account_name || am.am || am.email || 'AM sem nome'}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>

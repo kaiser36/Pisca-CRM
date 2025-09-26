@@ -1,6 +1,6 @@
 import { supabase } from '../client';
 import { Account, UserProfile } from '@/types/crm';
-import { User } from '@supabase/supabase-js'; // NEW: Import User type
+import { User } from '@supabase/supabase-js';
 
 /**
  * Fetches all accounts for the current authenticated user.
@@ -26,6 +26,7 @@ export async function fetchAccounts(userId: string): Promise<Account[]> {
 
 /**
  * Fetches all users from auth.users that are not currently linked to an AM account.
+ * (This function is now less relevant for the new linking flow, but kept for other potential uses)
  */
 export async function fetchAuthUsersNotLinkedToAccount(): Promise<{ id: string; email: string }[]> {
   const { data, error: authUsersError } = await supabase.auth.admin.listUsers();
@@ -35,17 +36,12 @@ export async function fetchAuthUsersNotLinkedToAccount(): Promise<{ id: string; 
     throw new Error(authUsersError.message);
   }
 
-  // Ensure data and data.users exist before proceeding
   if (!data || !data.users) {
     return [];
   }
 
-  // Explicitly type the users array after the null check
   const authUsersList: User[] = data.users;
 
-  const allAuthUserIds = authUsersList.map(u => u.id);
-
-  // Fetch all existing AM accounts that have an auth_user_id linked
   const { data: linkedAccounts, error: linkedAccountsError } = await supabase
     .from('accounts')
     .select('auth_user_id')
@@ -58,10 +54,9 @@ export async function fetchAuthUsersNotLinkedToAccount(): Promise<{ id: string; 
 
   const linkedAuthUserIds = new Set(linkedAccounts.map(acc => acc.auth_user_id));
 
-  // Filter auth users to find those not yet linked
   const unlinkedUsers = authUsersList
-    .filter((user: User) => !linkedAuthUserIds.has(user.id)) // Explicitly type user in filter
-    .map((user: User) => ({ id: user.id, email: user.email || 'N/A' })); // Explicitly type user in map
+    .filter((user: User) => !linkedAuthUserIds.has(user.id))
+    .map((user: User) => ({ id: user.id, email: user.email || 'N/A' }));
 
   return unlinkedUsers;
 }
@@ -76,12 +71,82 @@ export async function fetchAccountByAuthUserId(authUserId: string): Promise<Acco
     .eq('auth_user_id', authUserId)
     .single();
 
-  if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+  if (error && error.code !== 'PGRST116') {
     console.error('Error fetching account by auth_user_id:', error);
     throw new Error(error.message);
   }
 
   return data as Account | null;
+}
+
+/**
+ * Fetches AM accounts that are either unlinked or currently linked to the specified userId.
+ * This is used to populate the dropdown for linking an AM to a user profile.
+ */
+export async function fetchAvailableAmAccountsForLinking(userId: string): Promise<Account[]> {
+  if (!userId) {
+    throw new Error("User ID is required to fetch available AM accounts for linking.");
+  }
+
+  const { data, error } = await supabase
+    .from('accounts')
+    .select('*')
+    .eq('user_id', userId) // Ensure only AMs belonging to the current user's scope are fetched
+    .or('auth_user_id.is.null,auth_user_id.eq.' + userId) // Either unlinked OR linked to current user
+    .order('account_name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching available AM accounts for linking:', error);
+    throw new Error(error.message);
+  }
+
+  return data as Account[];
+}
+
+/**
+ * Links or unlinks a user to an AM account by updating the auth_user_id in the accounts table.
+ * This function handles clearing previous links and setting new ones.
+ */
+export async function updateAmAccountLink(userId: string, newAmAccountId: string | null): Promise<void> {
+  // 1. Find the currently linked AM account for this user (if any)
+  const { data: currentLinkedAm, error: fetchCurrentError } = await supabase
+    .from('accounts')
+    .select('id')
+    .eq('auth_user_id', userId)
+    .eq('user_id', userId) // Ensure it's within the user's scope
+    .maybeSingle(); // Use maybeSingle to handle no rows found gracefully
+
+  if (fetchCurrentError) {
+    console.error('Error fetching current linked AM account:', fetchCurrentError);
+    throw new Error(fetchCurrentError.message);
+  }
+
+  // 2. If there's a currently linked AM and it's different from the new one, unlink it
+  if (currentLinkedAm && currentLinkedAm.id !== newAmAccountId) {
+    const { error: unlinkError } = await supabase
+      .from('accounts')
+      .update({ auth_user_id: null })
+      .eq('id', currentLinkedAm.id);
+
+    if (unlinkError) {
+      console.error(`Error unlinking previous AM account ${currentLinkedAm.id}:`, unlinkError);
+      throw new Error(unlinkError.message);
+    }
+  }
+
+  // 3. If a new AM account is provided, link it to the user
+  if (newAmAccountId) {
+    const { error: linkError } = await supabase
+      .from('accounts')
+      .update({ auth_user_id: userId })
+      .eq('id', newAmAccountId)
+      .eq('user_id', userId); // Ensure it's within the user's scope
+
+    if (linkError) {
+      console.error(`Error linking new AM account ${newAmAccountId} to user ${userId}:`, linkError);
+      throw new Error(linkError.message);
+    }
+  }
 }
 
 
@@ -101,7 +166,7 @@ export async function insertAccount(account: Omit<Account, 'id' | 'created_at'>)
       district: account.district,
       credibom_email: account.credibom_email,
       role: account.role,
-      auth_user_id: account.auth_user_id || null, // NEW: Include auth_user_id
+      auth_user_id: account.auth_user_id || null,
     })
     .select()
     .single();
@@ -128,7 +193,7 @@ export async function updateAccount(id: string, account: Partial<Omit<Account, '
       district: account.district,
       credibom_email: account.credibom_email,
       role: account.role,
-      auth_user_id: account.auth_user_id === '' ? null : account.auth_user_id, // NEW: Handle empty string as null
+      auth_user_id: account.auth_user_id === '' ? null : account.auth_user_id,
     })
     .eq('id', id)
     .select()
@@ -180,8 +245,8 @@ export async function updateUserProfile(userId: string, profile: Partial<Omit<Us
  */
 export async function uploadUserAvatar(file: File, userId: string): Promise<string> {
   const fileExt = file.name.split('.').pop();
-  const fileName = `${userId}-${Date.now()}.${fileExt}`; // Unique file name
-  const filePath = `${userId}/avatars/${fileName}`; // Store under user's ID in 'avatars' subfolder
+  const fileName = `${userId}-${Date.now()}.${fileExt}`;
+  const filePath = `${userId}/avatars/${fileName}`;
 
   const { error: uploadError } = await supabase.storage
     .from('avatars')
