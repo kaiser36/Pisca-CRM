@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Account } from '@/types/crm';
-import { insertAccount, fetchAuthUsersNotLinkedToAccount } from '@/integrations/supabase/utils';
+import { insertAccount } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -30,7 +30,6 @@ const formSchema = z.object({
   credibom_email: z.string().email("Email inválido").nullable().optional().or(z.literal('')),
   role: z.string().nullable().optional(),
   imageFile: typeof window === 'undefined' ? z.any().optional() : z.instanceof(File).nullable().optional(),
-  auth_user_id: z.string().nullable().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -39,8 +38,6 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [availableAuthUsers, setAvailableAuthUsers] = useState<{ id: string; email: string }[]>([]);
-  const [isAuthUsersLoading, setIsAuthUsersLoading] = useState(true);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -60,22 +57,6 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const loadAuthUsers = async () => {
-      setIsAuthUsersLoading(true);
-      try {
-        const users = await fetchAuthUsersNotLinkedToAccount();
-        setAvailableAuthUsers(users);
-      } catch (err: any) {
-        console.error("Erro ao carregar utilizadores autenticados:", err);
-        showError(err.message || "Falha ao carregar a lista de utilizadores.");
-      } finally {
-        setIsAuthUsersLoading(false);
-      }
-    };
-    loadAuthUsers();
-  }, []);
-
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -88,30 +69,8 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
       credibom_email: '',
       role: 'user',
       imageFile: null,
-      auth_user_id: '',
     },
   });
-
-  const { watch, setValue } = form;
-  const formEmail = watch('email');
-  const formCredibomEmail = watch('credibom_email');
-
-  // Effect to auto-select auth_user_id based on email match
-  useEffect(() => {
-    if (!isAuthUsersLoading && availableAuthUsers.length > 0) {
-      const matchingUser = availableAuthUsers.find(user =>
-        (formEmail && user.email?.toLowerCase() === formEmail.toLowerCase()) ||
-        (formCredibomEmail && user.email?.toLowerCase() === formCredibomEmail.toLowerCase())
-      );
-
-      if (matchingUser) {
-        setValue('auth_user_id', matchingUser.id, { shouldDirty: true, shouldValidate: true });
-      } else if (form.getValues('auth_user_id') !== '') {
-        // If no match found, and a user was previously selected, clear it
-        setValue('auth_user_id', '', { shouldDirty: true, shouldValidate: true });
-      }
-    }
-  }, [formEmail, formCredibomEmail, availableAuthUsers, isAuthUsersLoading, setValue, form]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -171,7 +130,7 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
         district: values.district || null,
         credibom_email: values.credibom_email || null,
         role: values.role || 'user',
-        auth_user_id: values.auth_user_id || null,
+        auth_user_id: null,
       };
 
       await insertAccount(newAccount);
@@ -193,15 +152,6 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
     { name: "district", label: "Distrito", type: "text" },
     { name: "credibom_email", label: "Email Credibom", type: "email" },
     { name: "role", label: "Função do AM", type: "select", options: ["user", "admin", "editor"] },
-    {
-      name: "auth_user_id",
-      label: "Associar a Utilizador",
-      type: "select",
-      options: availableAuthUsers.map(u => ({ value: u.id, label: u.email })),
-      placeholder: "Selecione um utilizador",
-      disabled: isAuthUsersLoading,
-      optional: true,
-    },
   ];
 
   return (
@@ -221,22 +171,15 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
                       <Select
                         onValueChange={(value) => formField.onChange(value === "null-user" ? null : value)}
                         value={formField.value === null ? "null-user" : (formField.value as string)}
-                        disabled={field.disabled}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder={field.placeholder || `Selecione uma ${field.label.toLowerCase()}`} />
+                          <SelectValue placeholder={`Selecione uma ${field.label.toLowerCase()}`} />
                         </SelectTrigger>
                         <SelectContent>
-                          {field.optional && <SelectItem value="null-user">Nenhum</SelectItem>}
-                          {field.options?.length === 0 && field.disabled ? (
-                            <SelectItem value="loading" disabled>A carregar...</SelectItem>
-                          ) : field.options?.length === 0 && !field.disabled ? (
-                            <SelectItem value="no-users" disabled>Nenhum utilizador disponível</SelectItem>
-                          ) : (
-                            field.options?.map((option: any) => (
-                              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
-                            ))
-                          )}
+                          {/* Removed field.optional check and "Nenhum" item as it's not applicable here */}
+                          {field.options?.map((option: any) => (
+                            <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     ) : (
