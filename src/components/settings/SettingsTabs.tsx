@@ -4,7 +4,8 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ExcelUploadCard from './ExcelUploadCard';
-import AdditionalExcelUploadCard from './AdditionalExcelUploadCard'; // Assuming this component exists
+import AdditionalExcelUploadCard from './AdditionalExcelUploadCard';
+import UserProfileForm from './UserProfileForm'; // NEW: Import UserProfileForm
 import { toast } from 'sonner';
 
 const SettingsTabs: React.FC = () => {
@@ -43,7 +44,7 @@ const SettingsTabs: React.FC = () => {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ExcelUploadCard onUploadSuccess={handleUploadSuccess} />
-                <AdditionalExcelUploadCard onUploadSuccess={handleUploadSuccess} /> {/* Assuming this also needs onUploadSuccess */}
+                <AdditionalExcelUploadCard onUploadSuccess={handleUploadSuccess} />
               </div>
             </CardContent>
           </Card>
@@ -55,7 +56,7 @@ const SettingsTabs: React.FC = () => {
               <CardTitle>Definições de Perfil</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>Conteúdo para o perfil do utilizador...</p>
+              <UserProfileForm /> {/* NEW: Render UserProfileForm here */}
             </CardContent>
           </Card>
         </TabsContent>
