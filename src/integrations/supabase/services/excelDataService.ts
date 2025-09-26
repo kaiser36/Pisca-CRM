@@ -69,8 +69,8 @@ export async function fetchCompanyAdditionalExcelData(
 
   let query = supabase
     .from('company_additional_excel_data')
-    .select('*', { count: 'exact' }) // Request count here
-    .eq('user_id', userId);
+    .select('*', { count: 'exact' }); // Request count here
+    // REMOVED: .eq('user_id', userId); // This filter is now handled by RLS policy
 
   // Apply search filter if searchTerm is provided
   if (searchTerm) {
