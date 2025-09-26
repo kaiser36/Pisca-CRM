@@ -91,7 +91,7 @@ const CompanyAdditionalOverviewCards: React.FC<CompanyAdditionalOverviewCardsPro
       </Card>
 
       {/* Main Overview Card - Aggregated Data */}
-      <Card className="p-6 shadow-subtle border-l-4 border-muted rounded-lg md:col-span-3">
+      <Card className="p-6 shadow-subtle border-l-4 border-primary rounded-lg md:col-span-3">
         <div className="flex flex-col items-center space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 flex-1 w-full">
             {renderField(Mail, "Email", companyAdditional["Email da empresa"] || crmCompany?.Company_Email)}

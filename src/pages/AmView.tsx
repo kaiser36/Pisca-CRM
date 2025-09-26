@@ -1,132 +1,97 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Layout } from '@/components/layout/Layout';
-import { fetchAccounts } from '@/integrations/supabase/services/accountManagementService'; // Usar o serviço correto
-import { useAuth } from '@/integrations/supabase/auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { RefreshCw, Search } from 'lucide-react';
+import Layout from '@/components/layout/Layout';
+import { fetchAccounts } from '@/integrations/supabase/utils';
+import { supabase } from '@/integrations/supabase/client';
 import { Account } from '@/types/crm';
+import AccountTable from '@/components/am/AccountTable';
+import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import AccountCreateForm from '@/components/am/AccountCreateForm';
 
-export default function AmView() {
-  const { user } = useAuth();
+const AmView: React.FC = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const loadAccounts = useCallback(async () => {
-    if (!user) {
-      setError('User not authenticated.');
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const fetchedAccounts = await fetchAccounts(user.id);
-      setAccounts(fetchedAccounts);
-    } catch (err: any) {
-      console.error('Failed to fetch accounts:', err);
-      setError(err.message || 'Failed to load accounts.');
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   useEffect(() => {
-    loadAccounts();
-  }, [loadAccounts]);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      } else {
+        setUserId(null);
+      }
+    });
 
-  const filteredAccounts = accounts.filter(account =>
-    account.account_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    account.am?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    account.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      }
+    });
 
-  if (loading) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-          <RefreshCw className="h-6 w-6 animate-spin mr-2" /> A carregar contas...
-        </div>
-      </Layout>
-    );
-  }
+    return () => subscription.unsubscribe();
+  }, []);
 
-  if (error) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-[calc(100vh-200px)] text-red-500">
-          <RefreshCw className="h-6 w-6 mr-2" /> Erro: {error}
-        </div>
-      </Layout>
-    );
-  }
+  const loadAccounts = useCallback(async () => {
+    if (!userId) {
+      setIsLoading(false);
+      setError("Utilizador não autenticado. Por favor, faça login para ver os dados dos AMs.");
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await fetchAccounts(userId);
+      setAccounts(data);
+    } catch (err: any) {
+      console.error("Erro ao carregar contas de AM:", err);
+      setError(err.message || "Falha ao carregar os dados das contas de AM.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId) {
+      loadAccounts();
+    }
+  }, [userId, loadAccounts]);
 
   return (
     <Layout>
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Visão Geral do AM</h2>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Minhas Contas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2 mb-4">
-              <Input
-                placeholder="Pesquisar por nome, AM ou email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
-              />
-              <Button variant="outline" onClick={loadAccounts}>
-                <RefreshCw className="h-4 w-4 mr-2" /> Atualizar
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">Gestão de AMs</h1>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Conta
               </Button>
-            </div>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome da Conta</TableHead>
-                    <TableHead>AM</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Telefone</TableHead>
-                    <TableHead>Distrito</TableHead>
-                    <TableHead>Função</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAccounts.length > 0 ? (
-                    filteredAccounts.map((account) => (
-                      <TableRow key={account.id}>
-                        <TableCell className="font-medium">{account.account_name}</TableCell>
-                        <TableCell>{account.am}</TableCell>
-                        <TableCell>{account.email}</TableCell>
-                        <TableCell>{account.phone_number}</TableCell>
-                        <TableCell>{account.district}</TableCell>
-                        <TableCell>{account.role}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center">
-                        Nenhuma conta encontrada.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Criar Nova Conta de AM</DialogTitle>
+              </DialogHeader>
+              <AccountCreateForm
+                onSave={() => {
+                  setIsCreateDialogOpen(false);
+                  loadAccounts();
+                }}
+                onCancel={() => setIsCreateDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+        <div className="grid grid-cols-1 gap-6">
+          <AccountTable accounts={accounts} isLoading={isLoading} error={error} onAccountChanged={loadAccounts} />
+        </div>
       </div>
     </Layout>
   );
-}
+};
+
+export default AmView;
