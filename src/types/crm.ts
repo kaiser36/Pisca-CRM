@@ -210,6 +210,7 @@ export interface Account {
   district: string | null;
   credibom_email: string | null;
   role: string | null;
+  auth_user_id?: string | null; // NEW: Link to auth.users.id
 }
 
 export interface DealProduct {

@@ -5,16 +5,16 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Account } from '@/types/crm';
-import { updateAccount } from '@/integrations/supabase/utils';
+import { updateAccount, fetchAuthUsersNotLinkedToAccount } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, Image as ImageIcon, XCircle } from 'lucide-react'; // Import Image and XCircle icons
+import { Loader2, Image as ImageIcon, XCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Import Avatar components
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface AccountEditFormProps {
   account: Account;
@@ -31,8 +31,8 @@ const formSchema = z.object({
   district: z.string().nullable().optional(),
   credibom_email: z.string().email("Email inválido").nullable().optional().or(z.literal('')),
   role: z.string().nullable().optional(),
-  // Add a field for the file input, but it won't be part of the final DB payload directly
   imageFile: typeof window === 'undefined' ? z.any().optional() : z.instanceof(File).nullable().optional(),
+  auth_user_id: z.string().nullable().optional(), // NEW: Field for linking to auth.users.id
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -40,8 +40,10 @@ type FormData = z.infer<typeof formSchema>;
 const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null); // State for selected image file
-  const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(account.photo_url || null); // State to manage current photo URL
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(account.photo_url || null);
+  const [availableAuthUsers, setAvailableAuthUsers] = useState<{ id: string; email: string }[]>([]);
+  const [isAuthUsersLoading, setIsAuthUsersLoading] = useState(true);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -61,6 +63,29 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const loadAuthUsers = async () => {
+      setIsAuthUsersLoading(true);
+      try {
+        const users = await fetchAuthUsersNotLinkedToAccount();
+        // If the current account is linked to a user, add that user to the options
+        if (account.auth_user_id && account.email) {
+          const isCurrentLinkedUserInList = users.some(u => u.id === account.auth_user_id);
+          if (!isCurrentLinkedUserInList) {
+            users.unshift({ id: account.auth_user_id, email: account.email });
+          }
+        }
+        setAvailableAuthUsers(users);
+      } catch (err: any) {
+        console.error("Erro ao carregar utilizadores autenticados:", err);
+        showError(err.message || "Falha ao carregar a lista de utilizadores.");
+      } finally {
+        setIsAuthUsersLoading(false);
+      }
+    };
+    loadAuthUsers();
+  }, [account.auth_user_id, account.email]);
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -73,6 +98,7 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
       credibom_email: account.credibom_email || '',
       role: account.role || 'user',
       imageFile: null,
+      auth_user_id: account.auth_user_id || '', // Default to empty string
     },
   });
 
@@ -80,11 +106,11 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
     if (event.target.files && event.target.files[0]) {
       setSelectedImage(event.target.files[0]);
       form.setValue('imageFile', event.target.files[0]);
-      setCurrentPhotoUrl(URL.createObjectURL(event.target.files[0])); // Show preview of new image
+      setCurrentPhotoUrl(URL.createObjectURL(event.target.files[0]));
     } else {
       setSelectedImage(null);
       form.setValue('imageFile', null);
-      setCurrentPhotoUrl(account.photo_url || null); // Revert to original if no new file
+      setCurrentPhotoUrl(account.photo_url || null);
     }
   };
 
@@ -97,12 +123,11 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
 
     setIsSubmitting(true);
     try {
-      // Extract file path from URL
       const urlParts = account.photo_url.split('/avatars/');
       if (urlParts.length < 2) {
         throw new Error("URL de imagem inválido para remoção.");
       }
-      const filePath = urlParts[1]; // e.g., 'user_id/filename.jpg'
+      const filePath = urlParts[1];
 
       const { error: deleteError } = await supabase.storage
         .from('avatars')
@@ -118,7 +143,7 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
       setSelectedImage(null);
       form.setValue('photo_url', null);
       showSuccess("Fotografia eliminada com sucesso!");
-      onSave(); // Refresh parent data
+      onSave();
     } catch (error: any) {
       console.error("Erro ao eliminar fotografia:", error);
       showError(error.message || "Falha ao eliminar a fotografia.");
@@ -130,13 +155,13 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
   const uploadImage = async (file: File, currentUserId: string): Promise<string | null> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = `${currentUserId}/${fileName}`; // Store under user's ID
+    const filePath = `${currentUserId}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: false, // Do not upsert, create new or handle existing
+        upsert: false,
       });
 
     if (uploadError) {
@@ -158,33 +183,29 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
     }
 
     setIsSubmitting(true);
-    let imageUrl: string | null = values.photo_url || null; // Start with existing URL or manually entered URL
+    let imageUrl: string | null = values.photo_url || null;
 
     try {
       if (selectedImage) {
-        // If a new image is selected, upload it
         imageUrl = await uploadImage(selectedImage, userId);
       } else if (currentPhotoUrl === null && account.photo_url !== null) {
-        // If currentPhotoUrl was explicitly set to null (removed), and original had a photo
         imageUrl = null;
       } else if (!selectedImage && currentPhotoUrl !== null && account.photo_url !== currentPhotoUrl) {
-        // If no new image selected, but photo_url was manually changed (e.g., pasted a new URL)
         imageUrl = values.photo_url;
       } else if (!selectedImage && currentPhotoUrl !== null && account.photo_url === currentPhotoUrl) {
-        // If no new image selected, and no change to photo_url, keep original
         imageUrl = account.photo_url;
       }
-
 
       const updatedAccount: Partial<Omit<Account, 'id' | 'created_at' | 'user_id'>> = {
         account_name: values.account_name,
         am: values.am || null,
         phone_number: values.phone_number || null,
         email: values.email || null,
-        photo_url: imageUrl, // Use the new or existing image URL
+        photo_url: imageUrl,
         district: values.district || null,
         credibom_email: values.credibom_email || null,
         role: values.role || 'user',
+        auth_user_id: values.auth_user_id || null, // NEW: Include auth_user_id
       };
 
       await updateAccount(account.id, updatedAccount);
@@ -206,6 +227,15 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
     { name: "district", label: "Distrito", type: "text" },
     { name: "credibom_email", label: "Email Credibom", type: "email" },
     { name: "role", label: "Função do AM", type: "select", options: ["user", "admin", "editor"] },
+    {
+      name: "auth_user_id",
+      label: "Associar a Utilizador",
+      type: "select",
+      options: availableAuthUsers.map(u => ({ value: u.id, label: u.email })),
+      placeholder: "Selecione um utilizador",
+      disabled: isAuthUsersLoading,
+      optional: true,
+    },
   ];
 
   return (
@@ -222,14 +252,21 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
                   <FormLabel>{field.label} {field.required && <span className="text-red-500">*</span>}</FormLabel>
                   <FormControl>
                     {field.type === "select" ? (
-                      <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
+                      <Select onValueChange={formField.onChange} value={formField.value as string} disabled={field.disabled}>
                         <SelectTrigger>
-                          <SelectValue placeholder={`Selecione uma ${field.label.toLowerCase()}`} />
+                          <SelectValue placeholder={field.placeholder || `Selecione uma ${field.label.toLowerCase()}`} />
                         </SelectTrigger>
                         <SelectContent>
-                          {field.options?.map(option => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
-                          ))}
+                          {field.optional && <SelectItem value="">Nenhum</SelectItem>}
+                          {field.options?.length === 0 && field.disabled ? (
+                            <SelectItem value="loading" disabled>A carregar...</SelectItem>
+                          ) : field.options?.length === 0 && !field.disabled ? (
+                            <SelectItem value="no-users" disabled>Nenhum utilizador disponível</SelectItem>
+                          ) : (
+                            field.options?.map((option: any) => (
+                              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                     ) : (
@@ -246,7 +283,6 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
               )}
             />
           ))}
-          {/* Image Upload Field */}
           <FormItem className="md:col-span-2">
             <FormLabel>Fotografia do AM</FormLabel>
             <div className="flex items-center space-x-4">
@@ -286,7 +322,6 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
             </div>
             <FormMessage />
           </FormItem>
-          {/* Existing Photo URL (optional, if you want to allow direct URL input) */}
           <FormField
             control={form.control}
             name="photo_url"
@@ -300,11 +335,11 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
                     value={field.value || ''}
                     onChange={(e) => {
                       field.onChange(e);
-                      setCurrentPhotoUrl(e.target.value); // Update preview if URL is manually changed
-                      setSelectedImage(null); // Clear file input if URL is manually entered
+                      setCurrentPhotoUrl(e.target.value);
+                      setSelectedImage(null);
                     }}
                     placeholder="https://example.com/avatar.jpg"
-                    disabled={!!selectedImage || isSubmitting} // Disable if a file is selected or submitting
+                    disabled={!!selectedImage || isSubmitting}
                   />
                 </FormControl>
                 <FormMessage />

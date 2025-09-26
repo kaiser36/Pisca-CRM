@@ -4,15 +4,17 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { UserProfile } from '@/types/crm'; // Import UserProfile
+import { UserProfile, Account } from '@/types/crm'; // Import UserProfile and Account
+import { fetchAccountByAuthUserId } from '@/integrations/supabase/utils'; // Import fetchAccountByAuthUserId
 
 interface SessionContextType {
   session: Session | null;
   user: User | null;
-  profile: UserProfile | null; // Add profile to context
+  profile: UserProfile | null;
+  amAccount: Account | null; // NEW: Add amAccount to context
   isLoading: boolean;
   signOut: () => Promise<void>;
-  refreshProfile: () => Promise<void>; // Add refreshProfile
+  refreshProfile: () => Promise<void>;
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
@@ -21,6 +23,7 @@ export const SessionContextProvider: React.FC<{ children: ReactNode }> = ({ chil
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [amAccount, setAmAccount] = useState<Account | null>(null); // NEW: State for AM account
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,7 +35,7 @@ export const SessionContextProvider: React.FC<{ children: ReactNode }> = ({ chil
       .eq('id', userId)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+    if (error && error.code !== 'PGRST116') {
       console.error('Error fetching user profile:', error);
       return null;
     }
@@ -43,8 +46,12 @@ export const SessionContextProvider: React.FC<{ children: ReactNode }> = ({ chil
     if (user) {
       const userProfile = await fetchUserProfile(user.id);
       setProfile(userProfile);
+      // Also refresh AM account if user is linked
+      const linkedAmAccount = await fetchAccountByAuthUserId(user.id);
+      setAmAccount(linkedAmAccount);
     } else {
       setProfile(null);
+      setAmAccount(null);
     }
   };
 
@@ -57,12 +64,16 @@ export const SessionContextProvider: React.FC<{ children: ReactNode }> = ({ chil
       if (currentSession?.user) {
         const userProfile = await fetchUserProfile(currentSession.user.id);
         setProfile(userProfile);
+        // NEW: Fetch AM account if linked
+        const linkedAmAccount = await fetchAccountByAuthUserId(currentSession.user.id);
+        setAmAccount(linkedAmAccount);
+
         if (location.pathname === '/login') {
-          navigate('/'); // Redirect to home if logged in and on login page
+          navigate('/');
         }
       } else {
         setProfile(null);
-        // Redirect to login if not authenticated and trying to access a protected route
+        setAmAccount(null); // NEW: Clear AM account on sign out
         const protectedRoutes = ['/', '/crm', '/company-additional-data', '/settings', '/accounts', '/am-view', '/products', '/campaigns', '/pisca-console'];
         if (protectedRoutes.some(route => location.pathname.startsWith(route))) {
           navigate('/login');
@@ -71,7 +82,6 @@ export const SessionContextProvider: React.FC<{ children: ReactNode }> = ({ chil
       setIsLoading(false);
     });
 
-    // Initial session check
     supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
       console.log('Initial session check:', initialSession);
       setSession(initialSession);
@@ -80,6 +90,10 @@ export const SessionContextProvider: React.FC<{ children: ReactNode }> = ({ chil
       if (initialSession?.user) {
         const userProfile = await fetchUserProfile(initialSession.user.id);
         setProfile(userProfile);
+        // NEW: Fetch AM account if linked
+        const linkedAmAccount = await fetchAccountByAuthUserId(initialSession.user.id);
+        setAmAccount(linkedAmAccount);
+
         if (location.pathname === '/login') {
           navigate('/');
         }
@@ -104,13 +118,14 @@ export const SessionContextProvider: React.FC<{ children: ReactNode }> = ({ chil
       setSession(null);
       setUser(null);
       setProfile(null);
+      setAmAccount(null); // NEW: Clear AM account on sign out
       navigate('/login');
     }
     setIsLoading(false);
   };
 
   return (
-    <SessionContext.Provider value={{ session, user, profile, isLoading, signOut, refreshProfile }}>
+    <SessionContext.Provider value={{ session, user, profile, amAccount, isLoading, signOut, refreshProfile }}>
       {children}
     </SessionContext.Provider>
   );

@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Account } from '@/types/crm';
-import { insertAccount } from '@/integrations/supabase/utils';
+import { insertAccount, fetchAuthUsersNotLinkedToAccount } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -29,8 +29,8 @@ const formSchema = z.object({
   district: z.string().nullable().optional(),
   credibom_email: z.string().email("Email inválido").nullable().optional().or(z.literal('')),
   role: z.string().nullable().optional(),
-  // Add a field for the file input, but it won't be part of the final DB payload directly
   imageFile: typeof window === 'undefined' ? z.any().optional() : z.instanceof(File).nullable().optional(),
+  auth_user_id: z.string().nullable().optional(), // NEW: Field for linking to auth.users.id
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -38,7 +38,9 @@ type FormData = z.infer<typeof formSchema>;
 const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null); // State for selected image file
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [availableAuthUsers, setAvailableAuthUsers] = useState<{ id: string; email: string }[]>([]);
+  const [isAuthUsersLoading, setIsAuthUsersLoading] = useState(true);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -58,6 +60,22 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const loadAuthUsers = async () => {
+      setIsAuthUsersLoading(true);
+      try {
+        const users = await fetchAuthUsersNotLinkedToAccount();
+        setAvailableAuthUsers(users);
+      } catch (err: any) {
+        console.error("Erro ao carregar utilizadores autenticados:", err);
+        showError(err.message || "Falha ao carregar a lista de utilizadores.");
+      } finally {
+        setIsAuthUsersLoading(false);
+      }
+    };
+    loadAuthUsers();
+  }, []);
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -68,8 +86,9 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
       photo_url: '',
       district: '',
       credibom_email: '',
-      role: 'user', // Default role
+      role: 'user',
       imageFile: null,
+      auth_user_id: '', // Default to empty string
     },
   });
 
@@ -86,7 +105,7 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
   const uploadImage = async (file: File, currentUserId: string): Promise<string | null> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = `${currentUserId}/${fileName}`; // Store under user's ID
+    const filePath = `${currentUserId}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('avatars')
@@ -127,10 +146,11 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
         am: values.am || null,
         phone_number: values.phone_number || null,
         email: values.email || null,
-        photo_url: imageUrl, // Use the uploaded image URL
+        photo_url: imageUrl,
         district: values.district || null,
         credibom_email: values.credibom_email || null,
         role: values.role || 'user',
+        auth_user_id: values.auth_user_id || null, // NEW: Include auth_user_id
       };
 
       await insertAccount(newAccount);
@@ -152,6 +172,15 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
     { name: "district", label: "Distrito", type: "text" },
     { name: "credibom_email", label: "Email Credibom", type: "email" },
     { name: "role", label: "Função do AM", type: "select", options: ["user", "admin", "editor"] },
+    {
+      name: "auth_user_id",
+      label: "Associar a Utilizador",
+      type: "select",
+      options: availableAuthUsers.map(u => ({ value: u.id, label: u.email })),
+      placeholder: "Selecione um utilizador",
+      disabled: isAuthUsersLoading,
+      optional: true,
+    },
   ];
 
   return (
@@ -168,14 +197,21 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
                   <FormLabel>{field.label} {field.required && <span className="text-red-500">*</span>}</FormLabel>
                   <FormControl>
                     {field.type === "select" ? (
-                      <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
+                      <Select onValueChange={formField.onChange} value={formField.value as string} disabled={field.disabled}>
                         <SelectTrigger>
-                          <SelectValue placeholder={`Selecione uma ${field.label.toLowerCase()}`} />
+                          <SelectValue placeholder={field.placeholder || `Selecione uma ${field.label.toLowerCase()}`} />
                         </SelectTrigger>
                         <SelectContent>
-                          {field.options?.map(option => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
-                          ))}
+                          {field.optional && <SelectItem value="">Nenhum</SelectItem>}
+                          {field.options?.length === 0 && field.disabled ? (
+                            <SelectItem value="loading" disabled>A carregar...</SelectItem>
+                          ) : field.options?.length === 0 && !field.disabled ? (
+                            <SelectItem value="no-users" disabled>Nenhum utilizador disponível</SelectItem>
+                          ) : (
+                            field.options?.map((option: any) => (
+                              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                     ) : (
@@ -192,7 +228,6 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
               )}
             />
           ))}
-          {/* Image Upload Field */}
           <FormItem className="md:col-span-2">
             <FormLabel>Fotografia do AM</FormLabel>
             <FormControl>
@@ -211,7 +246,6 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
             )}
             <FormMessage />
           </FormItem>
-          {/* Existing Photo URL (optional, if you want to allow direct URL input) */}
           <FormField
             control={form.control}
             name="photo_url"
@@ -225,7 +259,7 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
                     value={field.value || ''}
                     onChange={field.onChange}
                     placeholder="https://example.com/avatar.jpg"
-                    disabled={!!selectedImage} // Disable if a file is selected
+                    disabled={!!selectedImage}
                   />
                 </FormControl>
                 <FormMessage />
