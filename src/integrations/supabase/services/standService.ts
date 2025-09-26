@@ -98,7 +98,7 @@ export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, 
       leads_recebidas: stand.Leads_Recebidas,
       leads_pendentes: stand.Leads_Pendentes,
       leads_expiradas: stand.leads_expiradas,
-      Leads_Financiadas: stand.Leads_Financiadas,
+      leads_financiadas: stand.Leads_Financiadas, // Corrected casing here
       whatsapp: stand.Whatsapp,
       stand_name: stand.Stand_Name,
     };
