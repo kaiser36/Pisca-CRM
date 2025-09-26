@@ -2,12 +2,12 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import ExcelUploadCard from './ExcelUploadCard';
 import AdditionalExcelUploadCard from './AdditionalExcelUploadCard';
 import UserProfileSettings from './UserProfileSettings';
 import { toast } from 'sonner';
-import CrmDataExcelTemplateCard from './CrmDataExcelTemplateCard'; // Import the template cards
+import CrmDataExcelTemplateCard from './CrmDataExcelTemplateCard';
 import AdditionalCompanyDataExcelTemplateCard from './AdditionalCompanyDataExcelTemplateCard';
 import AccountContactExcelTemplateCard from './AccountContactExcelTemplateCard';
 import DealExcelTemplateCard from './DealExcelTemplateCard';
