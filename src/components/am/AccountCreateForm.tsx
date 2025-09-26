@@ -197,12 +197,16 @@ const AccountCreateForm: React.FC<AccountCreateFormProps> = ({ onSave, onCancel 
                   <FormLabel>{field.label} {field.required && <span className="text-red-500">*</span>}</FormLabel>
                   <FormControl>
                     {field.type === "select" ? (
-                      <Select onValueChange={formField.onChange} value={formField.value as string} disabled={field.disabled}>
+                      <Select
+                        onValueChange={(value) => formField.onChange(value === "null-user" ? null : value)}
+                        value={formField.value === null ? "null-user" : (formField.value as string)}
+                        disabled={field.disabled}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder={field.placeholder || `Selecione uma ${field.label.toLowerCase()}`} />
                         </SelectTrigger>
                         <SelectContent>
-                          {field.optional && <SelectItem value="">Nenhum</SelectItem>}
+                          {field.optional && <SelectItem value="null-user">Nenhum</SelectItem>}
                           {field.options?.length === 0 && field.disabled ? (
                             <SelectItem value="loading" disabled>A carregar...</SelectItem>
                           ) : field.options?.length === 0 && !field.disabled ? (
