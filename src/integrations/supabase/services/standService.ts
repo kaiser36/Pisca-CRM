@@ -69,14 +69,17 @@ export async function fetchStandsForCompanyDbIds(userId: string, companyDbIds: s
  */
 export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, string>): Promise<void> {
   console.log(`[upsertStands] Attempting to upsert ${stands.length} stands.`);
-  const standsToUpsert = stands.map(stand => {
+  
+  const uniqueStandsToUpsertMap = new Map<string, any>();
+
+  stands.forEach(stand => {
     const companyDbId = companyDbIdMap.get(stand.Company_id);
     if (!companyDbId) {
       console.warn(`Company DB ID not found for Excel Company_id: ${stand.Company_id}. Skipping stand: ${stand.Stand_ID}`);
       return null; // Skip stands that cannot be linked to a company
     }
 
-    return {
+    const standData = {
       company_db_id: companyDbId,
       stand_id: stand.Stand_ID,
       company_id_excel: stand.Company_id,
@@ -98,14 +101,20 @@ export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, 
       leads_recebidas: stand.Leads_Recebidas,
       leads_pendentes: stand.Leads_Pendentes,
       leads_expiradas: stand.leads_expiradas,
-      leads_financiadas: stand.Leads_Financiadas, // Corrected casing here
+      leads_financiadas: stand.Leads_Financiadas,
       whatsapp: stand.Whatsapp,
       stand_name: stand.Stand_Name,
     };
-  }).filter(Boolean); // Filter out nulls
+    
+    // Create a unique key for the map based on the onConflict columns
+    const uniqueKey = `${standData.stand_id}-${standData.company_db_id}`;
+    uniqueStandsToUpsertMap.set(uniqueKey, standData);
+  });
+
+  const standsToUpsert = Array.from(uniqueStandsToUpsertMap.values());
 
   if (standsToUpsert.length === 0) {
-    console.log('[upsertStands] No stands to upsert after filtering.');
+    console.log('[upsertStands] No stands to upsert after filtering and deduplication.');
     return;
   }
 
@@ -117,7 +126,7 @@ export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, 
     console.error('[upsertStands] Error upserting stands:', error);
     throw new Error(error.message);
   }
-  console.log(`[upsertStands] Successfully upserted ${standsToUpsert.length} stands.`);
+  console.log(`[upsertStands] Successfully upserted ${standsToUpsert.length} unique stands.`);
 }
 
 /**
