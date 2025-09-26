@@ -132,11 +132,14 @@ export async function deleteAccount(id: string): Promise<void> {
 export async function fetchDistinctAccountRoles(): Promise<string[]> {
   const { data, error } = await supabase
     .from('accounts')
-    .select('role', { distinct: true }); // Corrigido: Use select com a opção distinct
+    .select('role'); // Apenas seleciona a coluna 'role'
 
   if (error) {
     console.error('Error fetching distinct account roles:', error);
     throw new Error(error.message);
   }
-  return data.map(row => row.role).filter((role): role is string => role !== null);
+
+  // Processa os dados para obter roles distintos em JavaScript
+  const distinctRoles = Array.from(new Set(data.map(row => row.role))).filter((role): role is string => role !== null);
+  return distinctRoles;
 }
