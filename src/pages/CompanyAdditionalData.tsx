@@ -56,6 +56,7 @@ const CompanyAdditionalData: React.FC = () => {
   }, []);
 
   const loadCompanies = useCallback(async () => {
+    console.log(`[CompanyAdditionalData] Loading companies for userId: ${userId}`); // NEW: Log userId
     if (!userId) {
       setIsLoading(false);
       setError("Utilizador não autenticado. Por favor, faça login para ver os dados adicionais das empresas.");
@@ -82,7 +83,7 @@ const CompanyAdditionalData: React.FC = () => {
       }));
 
       setCompanies(augmentedCompanies);
-      console.log(`CompanyAdditionalData: Set ${augmentedCompanies.length} companies into state.`);
+      console.log(`CompanyAdditionalData: Set ${augmentedCompanies.length} companies into state. Total count from DB: ${totalCount}`); // Updated log
 
       const params = new URLSearchParams(location.search);
       const companyIdFromUrl = params.get('companyId');
@@ -190,6 +191,7 @@ const CompanyAdditionalData: React.FC = () => {
             searchTerm={searchTerm}
             onSearchChange={handleSearchChange}
             isSearching={isSearching}
+            totalCompanies={totalCompanies} // Pass totalCompanies
           />
           {totalPages > 1 && (
             <div className="mt-4 flex justify-center">

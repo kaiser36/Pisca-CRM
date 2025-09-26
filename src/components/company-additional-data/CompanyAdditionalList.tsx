@@ -14,6 +14,7 @@ interface CompanyAdditionalListProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
   isSearching: boolean;
+  totalCompanies: number; // NEW: Add totalCompanies prop
 }
 
 const CompanyAdditionalList: React.FC<CompanyAdditionalListProps> = ({
@@ -23,6 +24,7 @@ const CompanyAdditionalList: React.FC<CompanyAdditionalListProps> = ({
   searchTerm,
   onSearchChange,
   isSearching,
+  totalCompanies, // Use totalCompanies
 }) => {
   return (
     <div className="flex flex-col h-full">
@@ -41,10 +43,12 @@ const CompanyAdditionalList: React.FC<CompanyAdditionalListProps> = ({
       </div>
       <ScrollArea className="flex-1 pr-4">
         <div className="space-y-3"> {/* Adjusted spacing */}
-          {companies.length === 0 && !isSearching ? (
-            <p className="text-muted-foreground text-center py-4">Nenhuma empresa encontrada.</p>
+          {companies.length === 0 && !isSearching && totalCompanies === 0 ? (
+            <p className="text-muted-foreground text-center py-4">Nenhuma empresa adicional encontrada na base de dados.</p>
           ) : companies.length === 0 && isSearching ? (
-            <p className="text-muted-foreground text-center py-4">A pesquisar...</p>
+            <p className="text-muted-foreground text-center py-4">A pesquisar empresas adicionais...</p>
+          ) : companies.length === 0 && totalCompanies > 0 && !isSearching ? (
+            <p className="text-muted-foreground text-center py-4">Nenhuma empresa corresponde à sua pesquisa.</p>
           ) : (
             companies.map((company) => (
               <Card
