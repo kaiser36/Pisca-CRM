@@ -132,8 +132,7 @@ export async function deleteAccount(id: string): Promise<void> {
 export async function fetchDistinctAccountRoles(): Promise<string[]> {
   const { data, error } = await supabase
     .from('accounts')
-    .select('role')
-    .distinct(); // Corrected: Use .distinct() method
+    .select('role', { distinct: true }); // Corrigido: Use select com a opção distinct
 
   if (error) {
     console.error('Error fetching distinct account roles:', error);
