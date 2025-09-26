@@ -1,13 +1,17 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
-import { useSession } from '@/context/SessionContext'; // Use useSession
+import { useSession } from '@/context/SessionContext';
+import { parseGenericExcel } from '@/lib/general-excel-parser';
+import { upsertCompanyAdditionalExcelData } from '@/integrations/supabase/utils';
+import { CompanyAdditionalExcelData } from '@/types/crm';
+import { Progress } from '@/components/ui/progress';
 
 interface AdditionalExcelUploadCardProps {
   onUploadSuccess: () => void;
@@ -16,11 +20,13 @@ interface AdditionalExcelUploadCardProps {
 const AdditionalExcelUploadCard: React.FC<AdditionalExcelUploadCardProps> = ({ onUploadSuccess }) => {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useSession(); // Use useSession
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const { user } = useSession();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       setFile(event.target.files[0]);
+      setUploadProgress(0);
     } else {
       setFile(null);
     }
@@ -42,14 +48,71 @@ const AdditionalExcelUploadCard: React.FC<AdditionalExcelUploadCardProps> = ({ o
     }
 
     setIsLoading(true);
-    // Simulate an upload process
-    await new Promise(resolve => setTimeout(resolve, 1500)); 
-    
+    setUploadProgress(0);
+
     try {
-      // In a real scenario, you would parse and upload the additional data here
-      console.log("Simulating upload of additional Excel data:", file.name);
+      setUploadProgress(20);
+      const parsedData = await parseGenericExcel(file);
+      setUploadProgress(60);
+
+      if (parsedData.length === 0) {
+        toast.warning("Nenhum dado encontrado no ficheiro Excel.", {
+          description: "Verifique se o ficheiro está formatado corretamente.",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      const dataToUpsert: CompanyAdditionalExcelData[] = parsedData.map((row: Record<string, any>) => {
+        const excelCompanyId = String(row['excel_company_id (OBRIGATÓRIO)'] || row['excel_company_id'] || '');
+        if (!excelCompanyId) {
+          throw new Error(`Linha inválida: 'excel_company_id' em falta. Linha: ${JSON.stringify(row)}`);
+        }
+
+        return {
+          user_id: user.id,
+          excel_company_id: excelCompanyId,
+          "Nome Comercial": String(row['Nome Comercial'] || '') || null,
+          "Email da empresa": String(row['Email da empresa'] || '') || null,
+          "STAND_POSTAL_CODE": String(row['STAND_POSTAL_CODE'] || '') || null,
+          "Distrito": String(row['Distrito'] || '') || null,
+          "Cidade": String(row['Cidade'] || '') || null,
+          "Morada": String(row['Morada'] || '') || null,
+          "AM_OLD": String(row['AM_OLD'] || '') || null,
+          "AM": String(row['AM'] || '') || null,
+          "Stock STV": row['Stock STV'] !== undefined && row['Stock STV'] !== null ? Number(row['Stock STV']) : null,
+          "API": String(row['API'] || '') || null,
+          "Site": String(row['Site'] || '') || null,
+          "Stock na empresa": row['Stock na empresa'] !== undefined && row['Stock na empresa'] !== null ? Number(row['Stock na empresa']) : null,
+          "Logotipo": String(row['Logotipo'] || '') || null,
+          "Classificação": String(row['Classificação'] || '') || null,
+          "Percentagem de Importados": row['Percentagem de Importados'] !== undefined && row['Percentagem de Importados'] !== null ? Number(row['Percentagem de Importados']) : null,
+          "Onde compra as viaturas": String(row['Onde compra as viaturas'] || '') || null,
+          "Concorrencia": String(row['Concorrencia'] || '') || null,
+          "Investimento redes sociais": row['Investimento redes sociais'] !== undefined && row['Investimento redes sociais'] !== null ? Number(row['Investimento redes sociais']) : null,
+          "Investimento em portais": row['Investimento em portais'] !== undefined && row['Investimento em portais'] !== null ? Number(row['Investimento em portais']) : null,
+          "Mercado b2b": row['Mercado b2b (1 para Sim, 0 para Não)'] === '1' || row['Mercado b2b'] === true,
+          "Utiliza CRM": row['Utiliza CRM (1 para Sim, 0 para Não)'] === '1' || row['Utiliza CRM'] === true,
+          "Qual o CRM": String(row['Qual o CRM'] || '') || null,
+          "Plano Indicado": String(row['Plano Indicado'] || '') || null,
+          "Mediador de credito": row['Mediador de credito (1 para Sim, 0 para Não)'] === '1' || row['Mediador de credito'] === true,
+          "Link do Banco de Portugal": String(row['Link do Banco de Portugal'] || '') || null,
+          "Financeiras com acordo": String(row['Financeiras com acordo'] || '') || null,
+          "Data ultima visita": String(row['Data ultima visita (YYYY-MM-DD)'] || '') || null,
+          "Grupo": String(row['Grupo'] || '') || null,
+          "Marcas representadas": String(row['Marcas representadas'] || '') || null,
+          "Tipo de empresa": String(row['Tipo de empresa'] || '') || null,
+          "Quer CT": row['Quer CT (1 para Sim, 0 para Não)'] === '1' || row['Quer CT'] === true,
+          "Quer ser parceiro Credibom": row['Quer ser parceiro Credibom (1 para Sim, 0 para Não)'] === '1' || row['Quer ser parceiro Credibom'] === true,
+          "Autobiz": String(row['Autobiz'] || '') || null,
+        };
+      });
+
+      await upsertCompanyAdditionalExcelData(dataToUpsert, user.id);
+      setUploadProgress(100);
+
       toast.success("Dados adicionais carregados com sucesso!", {
-        description: `Ficheiro '${file.name}' processado.`,
+        description: `${dataToUpsert.length} registos de dados adicionais foram atualizados.`,
       });
       onUploadSuccess();
     } catch (error: any) {
@@ -57,6 +120,7 @@ const AdditionalExcelUploadCard: React.FC<AdditionalExcelUploadCardProps> = ({ o
       toast.error("Erro durante o carregamento do ficheiro adicional.", {
         description: error.message || "Ocorreu um erro inesperado ao processar o ficheiro.",
       });
+      setUploadProgress(0);
     } finally {
       setIsLoading(false);
       setFile(null);
@@ -67,22 +131,38 @@ const AdditionalExcelUploadCard: React.FC<AdditionalExcelUploadCardProps> = ({ o
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle>Carregar Ficheiro Excel Adicional</CardTitle>
+        <CardDescription className="text-muted-foreground">
+          Carregue um ficheiro Excel com informações adicionais das empresas.
+          A coluna "excel_company_id" é obrigatória e deve corresponder a um `company_id` existente na tabela `companies`.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid w-full items-center gap-1.5">
           <Label htmlFor="additional-excel-file">Ficheiro Excel Adicional</Label>
-          <Input id="additional-excel-file" type="file" accept=".xlsx, .xls" onChange={handleFileChange} />
+          <Input type="file" accept=".xlsx, .xls, .csv" onChange={handleFileChange} />
         </div>
-        <Button onClick={handleUpload} disabled={!file || isLoading} className="w-full">
+        <Button onClick={handleUpload} disabled={!file || isLoading || !user?.id} className="w-full">
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              A carregar...
+              A carregar ({uploadProgress}%)
             </>
           ) : (
-            "Carregar Dados Adicionais"
+            <>
+              <Upload className="mr-2 h-4 w-4" />
+              Carregar Dados Adicionais
+            </>
           )}
         </Button>
+        {isLoading && (
+          <Progress value={uploadProgress} className="w-full mt-2" />
+        )}
+        {!user?.id && (
+          <p className="text-sm text-red-500">Por favor, faça login para carregar dados.</p>
+        )}
+        <p className="text-sm text-muted-foreground">
+          Certifique-se de que o ficheiro Excel/CSV segue o modelo fornecido.
+        </p>
       </CardContent>
     </Card>
   );
