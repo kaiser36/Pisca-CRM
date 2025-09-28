@@ -16,6 +16,7 @@ import Campaigns from "./pages/Campaigns";
 import EasyvistaTypeManagement from "./pages/EasyvistaTypeManagement";
 import PiscaConsole from "./pages/PiscaConsole";
 import Login from "./pages/Login"; // Import the new Login page
+import Analytics from "./pages/Analytics"; // Import the new Analytics page
 import { CrmDataProvider } from "@/context/CrmDataContext";
 import { SessionContextProvider } from "@/context/SessionContext"; // Import SessionContextProvider
 
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/am-view" element={<AmView />} />
               <Route path="/products" element={<Products />} />
               <Route path="/campaigns" element={<Campaigns />} />
+              <Route path="/analytics" element={<Analytics />} /> {/* Add the Analytics route */}
               <Route path="/pisca-console" element={<PiscaConsole />} />
               {/* A rota catch-all "*" deve ser sempre a última */}
               <Route path="*" element={<NotFound />} />
