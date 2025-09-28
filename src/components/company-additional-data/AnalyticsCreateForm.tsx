@@ -4,11 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Analytics, Company, CompanyAdditionalExcelData } from '@/types/crm';
+import { Analytics, Company, CompanyAdditionalExcelData, Campaign } from '@/types/crm'; // NEW: Import Campaign
 import { insertAnalytics, fetchCompaniesByExcelCompanyIds, fetchCompanyAdditionalExcelData } from '@/integrations/supabase/utils';
+import { fetchCampaigns } from '@/integrations/supabase/services/campaignService'; // CORRECTED: Import fetchCampaigns from campaignService
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
-import { useSession } from '@/context/SessionContext'; // NEW: Import useSession
+import { useSession } from '@/context/SessionContext';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,15 +76,16 @@ const formSchema = z.object({
     (val) => (val === "" ? null : Number(val)),
     z.number().min(0, "Não pode ser negativo").nullable().optional()
   ),
-  phone_views_percentage: z.preprocess( // NEW
+  phone_views_percentage: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().min(0, "Não pode ser negativo").max(100, "Não pode ser superior a 100").nullable().optional()
   ),
-  whatsapp_interactions_percentage: z.preprocess( // NEW
+  whatsapp_interactions_percentage: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().min(0, "Não pode ser negativo").max(100, "Não pode ser superior a 100").nullable().optional()
   ),
-  total_leads: z.number().nullable().optional(), // NEW: Calculated, read-only
+  total_leads: z.number().nullable().optional(),
+  campaign_id: z.string().nullable().optional(), // NEW: Add campaign_id to schema
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -94,7 +96,8 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ companyExcelI
   const [companyDbId, setCompanyDbId] = useState<string | null>(null);
   const [companyDetails, setCompanyDetails] = useState<Company | null>(null);
   const [additionalCompanyDetails, setAdditionalCompanyDetails] = useState<CompanyAdditionalExcelData | null>(null);
-  const { profile } = useSession(); // NEW: Get user profile for default percentages
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]); // NEW: State for campaigns
+  const { profile } = useSession();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -134,9 +137,10 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ companyExcelI
       favorites: 0,
       total_cost: 0,
       revenue: 0,
-      phone_views_percentage: profile?.phone_views_conversion_percentage ?? 100, // Default from profile or 100
-      whatsapp_interactions_percentage: profile?.whatsapp_interactions_conversion_percentage ?? 100, // Default from profile or 100
-      total_leads: 0, // Calculated
+      phone_views_percentage: profile?.phone_views_conversion_percentage ?? 100,
+      whatsapp_interactions_percentage: profile?.whatsapp_interactions_conversion_percentage ?? 100,
+      total_leads: 0,
+      campaign_id: null, // NEW: Set default campaign_id
     },
   });
 
@@ -157,7 +161,7 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ companyExcelI
   }, [phoneViews, whatsappInteractions, leadsEmail, phoneViewsPercentage, whatsappInteractionsPercentage, setValue]);
 
   useEffect(() => {
-    const loadCompanyData = async () => {
+    const loadCompanyAndCampaignData = async () => { // Renamed function
       if (!userId || !companyExcelId) return;
       try {
         const companies = await fetchCompaniesByExcelCompanyIds(userId, [companyExcelId]);
@@ -168,14 +172,19 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ companyExcelI
         const { data: additionalData } = await fetchCompanyAdditionalExcelData(userId, 1, 1, companyExcelId);
         const currentAdditionalData = additionalData.find(c => c.excel_company_id === companyExcelId);
         setAdditionalCompanyDetails(currentAdditionalData || null);
+
+        // NEW: Fetch campaigns
+        const fetchedCampaigns = await fetchCampaigns(userId);
+        setCampaigns(fetchedCampaigns);
+
       } catch (err: any) {
-        console.error("Erro ao carregar dados da empresa para o formulário de análise:", err);
-        showError(err.message || "Falha ao carregar dados da empresa.");
+        console.error("Erro ao carregar dados da empresa ou campanhas para o formulário de análise:", err);
+        showError(err.message || "Falha ao carregar dados da empresa ou campanhas.");
       }
     };
 
     if (userId) {
-      loadCompanyData();
+      loadCompanyAndCampaignData();
     }
   }, [userId, companyExcelId]);
 
@@ -191,7 +200,7 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ companyExcelI
 
     setIsSubmitting(true);
     try {
-      const newAnalytics: Omit<Analytics, 'id' | 'created_at' | 'updated_at'> = {
+      const newAnalytics: Omit<Analytics, 'id' | 'created_at' | 'updated_at'> = { // ADDED 'updated_at' to Omit
         user_id: userId,
         company_db_id: companyDbId,
         company_excel_id: companyExcelId,
@@ -212,9 +221,10 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ companyExcelI
         favorites: values.favorites || null,
         total_cost: values.total_cost || null,
         revenue: values.revenue || null,
-        phone_views_percentage: values.phone_views_percentage || null, // NEW
-        whatsapp_interactions_percentage: values.whatsapp_interactions_percentage || null, // NEW
-        total_leads: values.total_leads || null, // NEW
+        phone_views_percentage: values.phone_views_percentage || null,
+        whatsapp_interactions_percentage: values.whatsapp_interactions_percentage || null,
+        total_leads: values.total_leads || null,
+        campaign_id: values.campaign_id || null, // NEW
       };
 
       await insertAnalytics(newAnalytics);
@@ -231,17 +241,18 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ companyExcelI
   const fields = [
     { name: "title", label: "Título", type: "text", required: true },
     { name: "category", label: "Categoria", type: "select", options: ["Financeira", "Marketing", "Operacional", "Vendas", "Outro"] },
+    { name: "campaign_id", label: "Campanha", type: "select-campaign", options: campaigns }, // NEW: Campaign select field
     { name: "analysis_date", label: "Data da Análise", type: "date" },
     { name: "start_date", label: "Data de Início", type: "date" },
     { name: "end_date", label: "Data de Fim", type: "date" },
     { name: "views", label: "Visualizações", type: "number" },
     { name: "clicks", label: "Cliques", type: "number" },
     { name: "phone_views", label: "Visualizações do Telefone", type: "number" },
-    { name: "phone_views_percentage", label: "Conversão Tel. (%)", type: "number" }, // NEW
+    { name: "phone_views_percentage", label: "Conversão Tel. (%)", type: "number" },
     { name: "whatsapp_interactions", label: "Interações WhatsApp", type: "number" },
-    { name: "whatsapp_interactions_percentage", label: "Conversão Whats. (%)", type: "number" }, // NEW
+    { name: "whatsapp_interactions_percentage", label: "Conversão Whats. (%)", type: "number" },
     { name: "leads_email", label: "Leads (email)", type: "number" },
-    { name: "total_leads", label: "Total de Leads", type: "number", readOnly: true }, // NEW: Read-only
+    { name: "total_leads", label: "Total de Leads", type: "number", readOnly: true },
     { name: "location_clicks", label: "Cliques na Localização", type: "number" },
     { name: "total_ads", label: "Total de Anúncios", type: "number" },
     { name: "favorites", label: "Favoritos", type: "number" },
@@ -315,6 +326,18 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ companyExcelI
                         <SelectContent>
                           {field.options?.map(option => (
                             <SelectItem key={option} value={option}>{option}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : field.type === "select-campaign" ? (
+                      <Select onValueChange={formField.onChange} value={formField.value as string || ''}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma campanha" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Nenhuma Campanha</SelectItem>
+                          {campaigns.map(campaign => (
+                            <SelectItem key={campaign.id} value={campaign.id!}>{campaign.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>

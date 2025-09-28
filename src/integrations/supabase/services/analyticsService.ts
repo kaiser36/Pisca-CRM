@@ -1,111 +1,102 @@
-import { supabase } from '../client';
-import { Analytics } from '@/types/crm';
+// src/integrations/supabase/services/analyticsService.ts
+import { supabase } from '../client'; // CORRECTED: Changed from '../supabaseClient' to '../client'
+import { Analytics } from '../../../types/crm'; // Removed Campaign import as it's now in campaignService
 
-/**
- * Inserts a new analytics record into the analytics table.
- */
-export async function insertAnalytics(analytics: Omit<Analytics, 'id' | 'created_at' | 'updated_at'>): Promise<Analytics> {
+// Fetch all analytics for a company, now including campaign data
+export const fetchAnalyticsByCompanyExcelId = async (
+  companyExcelId: string,
+  userId: string,
+  includeArchived: boolean = false
+): Promise<Analytics[]> => {
+  let query = supabase
+    .from('analytics')
+    .select('*, campaign:campaign_id (id, name)') // Fetch related campaign data
+    .eq('company_excel_id', companyExcelId)
+    .eq('user_id', userId);
+
+  // Apply archive filter if not includeArchived
+  if (!includeArchived) {
+    query = query.not('category', 'eq', 'Arquivo');
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error fetching analytics:', error);
+    return [];
+  }
+
+  // Map the fetched data to the Analytics interface
+  return data.map((item: any) => ({ // Use 'any' for item to handle dynamic 'campaign' property
+    ...item,
+    campaign_id: item.campaign?.id || null, // Access campaign_id and campaign_name from the joined data
+    campaign_name: item.campaign?.name || null,
+  })) as Analytics[];
+};
+
+// Insert a new analytics record, including campaign_id
+export const insertAnalytics = async (
+  analytics: Omit<Analytics, 'id' | 'created_at' | 'updated_at'> // ADDED 'updated_at' to Omit
+): Promise<Analytics | null> => {
+  // Destructure the analytics object and handle undefined campaign_id
+  const { campaign_id, ...analyticsData } = analytics;
   const { data, error } = await supabase
     .from('analytics')
     .insert({
-      user_id: analytics.user_id,
-      company_db_id: analytics.company_db_id || null,
-      company_excel_id: analytics.company_excel_id,
-      title: analytics.title,
-      description: analytics.description || null,
-      analysis_date: analytics.analysis_date || null,
-      category: analytics.category || null,
-      result: analytics.result || null,
-      start_date: analytics.start_date || null, // NEW
-      end_date: analytics.end_date || null,     // NEW
-      views: analytics.views || null,           // NEW
-      clicks: analytics.clicks || null,         // NEW
-      phone_views: analytics.phone_views || null, // NEW
-      whatsapp_interactions: analytics.whatsapp_interactions || null, // NEW
-      leads_email: analytics.leads_email || null, // NEW
-      location_clicks: analytics.location_clicks || null, // NEW
-      total_ads: analytics.total_ads || null,   // NEW
-      favorites: analytics.favorites || null,   // NEW
-      total_cost: analytics.total_cost || null, // NEW
-      revenue: analytics.revenue || null,       // NEW
+      ...analyticsData,
+      ...(campaign_id && { campaign_id }), // Conditionally include campaign_id
     })
-    .select()
+    .select('*')
     .single();
 
   if (error) {
     console.error('Error inserting analytics:', error);
-    throw new Error(error.message);
+    return null;
   }
+  // No need to map data here, Supabase returns the right format
   return data as Analytics;
-}
+};
 
-/**
- * Fetches all analytics records for a given company_excel_id and user_id.
- */
-export async function fetchAnalyticsByCompanyExcelId(userId: string, companyExcelId: string): Promise<Analytics[]> {
+// Update an existing analytics record, including campaign_id
+export const updateAnalytics = async (
+  analyticsId: string,
+  // CORRECTED TYPE: Omit fields that are not updated by the form or are handled by the service
+  updatedAnalytics: Partial<Omit<Analytics, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'company_excel_id'>>
+): Promise<Analytics | null> => {
+  // Destructure updatedAnalytics to conditionally include campaign_id
+  const { campaign_id, ...updateData } = updatedAnalytics;
+
+  // Set the update object
+  const updateObj = {
+    ...updateData,
+    ...(campaign_id && { campaign_id }), // Conditionally include campaign_id
+    updated_at: new Date().toISOString(), // This is added by the service
+  };
+
   const { data, error } = await supabase
     .from('analytics')
+    .update(updateObj)
+    .eq('id', analyticsId)
     .select('*')
-    .eq('user_id', userId)
-    .eq('company_excel_id', companyExcelId)
-    .order('analysis_date', { ascending: false });
-
-  if (error) {
-    console.error(`Error fetching analytics for company_excel_id ${companyExcelId}:`, error);
-    throw new Error(error.message);
-  }
-  return data as Analytics[];
-}
-
-/**
- * Updates an existing analytics record in the analytics table.
- */
-export async function updateAnalytics(id: string, analytics: Partial<Omit<Analytics, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'company_excel_id'>>): Promise<Analytics> {
-  const { data, error } = await supabase
-    .from('analytics')
-    .update({
-      title: analytics.title,
-      description: analytics.description,
-      analysis_date: analytics.analysis_date,
-      category: analytics.category,
-      result: analytics.result,
-      company_db_id: analytics.company_db_id,
-      start_date: analytics.start_date, // NEW
-      end_date: analytics.end_date,     // NEW
-      views: analytics.views,           // NEW
-      clicks: analytics.clicks,         // NEW
-      phone_views: analytics.phone_views, // NEW
-      whatsapp_interactions: analytics.whatsapp_interactions, // NEW
-      leads_email: analytics.leads_email, // NEW
-      location_clicks: analytics.location_clicks, // NEW
-      total_ads: analytics.total_ads,   // NEW
-      favorites: analytics.favorites,   // NEW
-      total_cost: analytics.total_cost, // NEW
-      revenue: analytics.revenue,       // NEW
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id)
-    .select()
     .single();
 
   if (error) {
-    console.error(`Error updating analytics with id ${id}:`, error);
-    throw new Error(error.message);
+    console.error('Error updating analytics:', error);
+    return null;
   }
   return data as Analytics;
-}
+};
 
-/**
- * Deletes an analytics record from the analytics table.
- */
-export async function deleteAnalytics(id: string): Promise<void> {
+// Delete an analytics record
+export const deleteAnalytics = async (analyticsId: string): Promise<boolean> => {
   const { error } = await supabase
     .from('analytics')
     .delete()
-    .eq('id', id);
+    .eq('id', analyticsId);
 
   if (error) {
-    console.error(`Error deleting analytics with id ${id}:`, error);
-    throw new Error(error.message);
+    console.error('Error deleting analytics:', error);
+    return false;
   }
-}
+  return true;
+};
