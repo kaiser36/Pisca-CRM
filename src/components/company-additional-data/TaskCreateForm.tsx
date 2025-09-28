@@ -5,7 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Task, Account, Company, CompanyAdditionalExcelData } from '@/types/crm'; // Import CompanyAdditionalExcelData
-import { insertTask, fetchEmployeesByCompanyExcelId, fetchAccounts, fetchCompaniesByExcelCompanyIds, fetchCompanyAdditionalExcelData } from '@/integrations/supabase/utils'; // Import fetchCompanyAdditionalExcelData
+import { insertTask, fetchEmployeesByCompanyExcelId, fetchAccounts, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils';
+import { fetchCompanyAdditionalExcelData } from '@/integrations/supabase/services/companyAdditionalExcelDataService'; // Corrected import
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 

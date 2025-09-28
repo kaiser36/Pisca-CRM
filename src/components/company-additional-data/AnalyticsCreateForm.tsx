@@ -5,7 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Analytics, Company, CompanyAdditionalExcelData, Campaign } from '@/types/crm'; // NEW: Import Campaign
-import { insertAnalytics, fetchCompaniesByExcelCompanyIds, fetchCompanyAdditionalExcelData } from '@/integrations/supabase/utils';
+import { insertAnalytics, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils';
+import { fetchCompanyAdditionalExcelData } from '@/integrations/supabase/services/companyAdditionalExcelDataService'; // Corrected import
 import { fetchCampaigns } from '@/integrations/supabase/services/campaignService'; // CORRECTED: Import fetchCampaigns from campaignService
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';

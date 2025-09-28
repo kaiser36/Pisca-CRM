@@ -6,7 +6,8 @@ from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Easyvista, EasyvistaStatus, Account, EasyvistaType, Company, CompanyAdditionalExcelData } from '@/types/crm'; // Import Company and CompanyAdditionalExcelData
-import { insertEasyvista, fetchAccounts, fetchEasyvistaTypes, fetchCompaniesByExcelCompanyIds, fetchCompanyAdditionalExcelData } from '@/integrations/supabase/utils'; // Import fetchCompaniesByExcelCompanyIds and fetchCompanyAdditionalExcelData
+import { insertEasyvista, fetchAccounts, fetchEasyvistaTypes, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils';
+import { fetchCompanyAdditionalExcelData } from '@/integrations/supabase/services/companyAdditionalExcelDataService'; // Corrected import
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
