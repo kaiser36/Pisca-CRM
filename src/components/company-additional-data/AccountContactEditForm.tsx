@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { AccountContact } from '@/types/crm';
-import { insertAccountContact } from '@/integrations/supabase/utils';
+import { updateAccountContact } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -17,17 +17,15 @@ import { Loader2, CalendarIcon } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 
-interface AccountContactCreateFormProps {
-  companyExcelId: string;
+interface AccountContactEditFormProps {
+  accountContact: AccountContact;
   onSave: () => void;
   onCancel: () => void;
-  commercialName?: string | null;
-  companyName?: string | null;
 }
 
 const formSchema = z.object({
@@ -68,12 +66,10 @@ interface FormFieldConfig {
   conditional?: (values: FormData) => boolean;
 }
 
-const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
-  companyExcelId,
+const AccountContactEditForm: React.FC<AccountContactEditFormProps> = ({
+  accountContact,
   onSave,
   onCancel,
-  commercialName,
-  companyName,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -99,12 +95,12 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
 
   useEffect(() => {
     const fetchCompanyDbId = async () => {
-      if (userId && companyExcelId) {
+      if (userId && accountContact.company_excel_id) {
         const { data, error } = await supabase
           .from('companies')
           .select('id')
           .eq('user_id', userId)
-          .eq('company_id', companyExcelId)
+          .eq('company_id', accountContact.company_excel_id)
           .single();
 
         if (error && error.code !== 'PGRST116') {
@@ -114,39 +110,39 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
         } else if (data) {
           setCompanyDbId(data.id);
         } else {
-          showError(`Empresa com ID Excel '${companyExcelId}' não encontrada no CRM principal.`);
+          showError(`Empresa com ID Excel '${accountContact.company_excel_id}' não encontrada no CRM principal.`);
           setCompanyDbId(null);
         }
       }
     };
 
     fetchCompanyDbId();
-  }, [userId, companyExcelId]);
+  }, [userId, accountContact.company_excel_id]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      account_am: '',
-      contact_type: null,
-      report_text: '',
-      contact_date: new Date(),
-      contact_method: null,
-      commercial_name: commercialName || '',
-      company_name: companyName || '',
-      crm_id: '',
-      stand_name: '',
-      subject: '',
-      contact_person_name: '',
-      company_group: '',
-      account_armatis: '',
-      quarter: '',
-      is_credibom_partner: false,
-      send_email: false,
-      email_type: null,
-      email_subject: '',
-      email_body: '',
-      attachment_url: '',
-      sending_email: null,
+      account_am: accountContact.account_am || '',
+      contact_type: accountContact.contact_type || null,
+      report_text: accountContact.report_text || '',
+      contact_date: accountContact.contact_date ? parseISO(accountContact.contact_date) : undefined,
+      contact_method: accountContact.contact_method || null,
+      commercial_name: accountContact.commercial_name || '',
+      company_name: accountContact.company_name || '',
+      crm_id: accountContact.crm_id || '',
+      stand_name: accountContact.stand_name || '',
+      subject: accountContact.subject || '',
+      contact_person_name: accountContact.contact_person_name || '',
+      company_group: accountContact.company_group || '',
+      account_armatis: accountContact.account_armatis || '',
+      quarter: accountContact.quarter || '',
+      is_credibom_partner: accountContact.is_credibom_partner || false,
+      send_email: accountContact.send_email || false,
+      email_type: accountContact.email_type || null,
+      email_subject: accountContact.email_subject || '',
+      email_body: accountContact.email_body || '',
+      attachment_url: accountContact.attachment_url || '',
+      sending_email: accountContact.sending_email || null,
     },
   });
 
@@ -154,7 +150,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
-      showError("Utilizador não autenticado. Por favor, faça login para criar o contacto.");
+      showError("Utilizador não autenticado. Por favor, faça login para guardar os dados.");
       return;
     }
     if (!companyDbId) {
@@ -164,10 +160,9 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      const newContact: Omit<AccountContact, 'id' | 'created_at'> = {
-        user_id: userId,
+      const updatedContact: Partial<Omit<AccountContact, 'id' | 'created_at' | 'user_id'>> = {
         company_db_id: companyDbId,
-        company_excel_id: companyExcelId,
+        company_excel_id: accountContact.company_excel_id,
         account_am: values.account_am || null,
         contact_type: values.contact_type || null,
         report_text: values.report_text || null,
@@ -191,12 +186,12 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
         sending_email: values.send_email ? (values.sending_email || null) : null,
       };
 
-      await insertAccountContact(newContact);
-      showSuccess("Contacto de conta criado com sucesso!");
+      await updateAccountContact(accountContact.id!, updatedContact);
+      showSuccess("Contacto de conta atualizado com sucesso!");
       onSave();
     } catch (error: any) {
-      console.error("Erro ao criar contacto de conta:", error);
-      showError(error.message || "Falha ao criar o contacto de conta.");
+      console.error("Erro ao atualizar contacto de conta:", error);
+      showError(error.message || "Falha ao atualizar o contacto de conta.");
     } finally {
       setIsSubmitting(false);
     }
@@ -277,14 +272,14 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
               />
             ) : field.type === "select" ? (
               <Select
-                onValueChange={(value) => formField.onChange(value === `null-${field.name.toLowerCase().replace(/\s/g, '-')}` ? null : value)}
-                value={formField.value === null ? `null-${field.name.toLowerCase().replace(/\s/g, '-')}` : (formField.value as string)}
+                onValueChange={(value) => formField.onChange(value === `null-${field.name}` ? null : value)}
+                value={(formField.value as string | null) || `null-${field.name}`}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={field.placeholder || `Selecione um ${field.label.toLowerCase()}`} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={`null-${field.name.toLowerCase().replace(/\s/g, '-')}`}>Nenhum</SelectItem>
+                  <SelectItem value={`null-${field.name}`}>Nenhum</SelectItem>
                   {field.options?.map((option: any) => (
                     <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
                   ))}
@@ -310,11 +305,11 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-4">
         <p className="text-sm text-muted-foreground">
-          A criar contacto para a empresa com ID Excel: <span className="font-semibold">{companyExcelId}</span>
+          A editar contacto para a empresa com ID Excel: <span className="font-semibold">{accountContact.company_excel_id}</span>
         </p>
         {!companyDbId && (
           <p className="text-sm text-red-500">
-            Não foi possível encontrar a empresa no CRM principal com o ID Excel fornecido. O contacto não poderá ser criado.
+            Não foi possível encontrar a empresa no CRM principal com o ID Excel fornecido. O contacto não poderá ser atualizado.
           </p>
         )}
 
@@ -359,10 +354,10 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                A Criar...
+                A Guardar...
               </>
             ) : (
-              "Criar Contacto"
+              "Guardar Alterações"
             )}
           </Button>
         </div>
@@ -371,4 +366,4 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
   );
 };
 
-export default AccountContactCreateForm;
+export default AccountContactEditForm;
