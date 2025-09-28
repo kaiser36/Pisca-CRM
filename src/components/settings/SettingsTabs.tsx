@@ -28,7 +28,7 @@ const SettingsTabs: React.FC = () => {
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Configurações</h1>
       <Tabs defaultValue="data-upload" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4 h-10 rounded-lg bg-muted/70 p-1"> {/* Adjusted grid-cols back to 4 */}
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4 h-10 rounded-lg bg-muted/70 p-1">
           <TabsTrigger value="data-upload" className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold">
             Carregar Dados
           </TabsTrigger>
@@ -41,6 +41,9 @@ const SettingsTabs: React.FC = () => {
           <TabsTrigger value="integrations" className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold">
             Integrações
           </TabsTrigger>
+          {/* <TabsTrigger value="notifications" className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold">
+            Notificações
+          </TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="data-upload" className="mt-6">
@@ -98,6 +101,18 @@ const SettingsTabs: React.FC = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Removed Notifications tab as it was empty */}
+        {/* <TabsContent value="notifications" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Definições de Notificações</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>Conteúdo para notificações...</p>
+            </CardContent>
+          </Card>
+        </TabsContent> */}
       </Tabs>
     </div>
   );

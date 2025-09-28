@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Calendar, Tag, Info, Edit, Trash, MoreHorizontal, FileText, BarChart3, Eye, MousePointerClick, Phone, MessageSquareText, Mail, MapPin, List, Heart, DollarSign, TrendingUp, Percent, Users } from 'lucide-react';
+import { Terminal, Calendar, Tag, Info, Edit, Trash, MoreHorizontal, FileText, BarChart3, Eye, MousePointerClick, Phone, MessageSquareText, Mail, MapPin, List, Heart, DollarSign, TrendingUp } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -88,11 +88,7 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
   };
 
   const renderField = (Icon: React.ElementType, label: string, value: string | number | boolean | null | undefined) => {
-    // Do not render if value is null, undefined, empty string, or 0 for non-currency/non-percentage fields
-    if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '') || 
-        (typeof value === 'number' && value === 0 && !label.includes('Custo') && !label.includes('Receita') && !label.includes('Percentagem'))) {
-      return null;
-    }
+    if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '') || (typeof value === 'number' && value === 0 && !label.includes('Custo') && !label.includes('Receita'))) return null;
 
     let displayValue: React.ReactNode = value;
     if (label.includes('Data') && typeof value === 'string') {
@@ -103,8 +99,6 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
       }
     } else if (label.includes('Custo Total') || label.includes('Receita')) {
       displayValue = `${Number(value).toFixed(2)} €`;
-    } else if (label.includes('Percentagem') && typeof value === 'number') {
-      displayValue = `${value.toFixed(0)}%`;
     } else if (typeof value === 'number') {
       displayValue = value.toLocaleString('pt-PT');
     }
@@ -199,16 +193,13 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
                   {renderField(Eye, "Visualizações", analysis.views)}
                   {renderField(MousePointerClick, "Cliques", analysis.clicks)}
                   {renderField(Phone, "Visualizações do Telefone", analysis.phone_views)}
-                  {renderField(Percent, "Percentagem Visualizações Telefone", analysis.phone_views_percentage)} {/* NEW */}
                   {renderField(MessageSquareText, "Interações WhatsApp", analysis.whatsapp_interactions)}
-                  {renderField(Percent, "Percentagem Interações WhatsApp", analysis.whatsapp_interactions_percentage)} {/* NEW */}
                   {renderField(Mail, "Leads (email)", analysis.leads_email)}
                   {renderField(MapPin, "Cliques na Localização", analysis.location_clicks)}
                   {renderField(List, "Total de Anúncios", analysis.total_ads)}
                   {renderField(Heart, "Favoritos", analysis.favorites)}
                   {renderField(DollarSign, "Custo Total", analysis.total_cost)}
                   {renderField(TrendingUp, "Receita", analysis.revenue)}
-                  {renderField(Users, "Leads Totais", analysis.total_leads)} {/* NEW */}
                 </div>
                 {analysis.description && (
                   <>
