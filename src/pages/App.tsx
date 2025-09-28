@@ -15,6 +15,7 @@ import Products from "./Products"; // Corrigido
 import Campaigns from "./Campaigns"; // Corrigido
 import EasyvistaTypeManagement from "./EasyvistaTypeManagement"; // Corrigido
 import { CrmDataProvider } from "@/context/CrmDataContext";
+import Analytics from "./Analytics"; // NEW: Import Analytics page
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/am-view" element={<AmView />} />
             <Route path="/products" element={<Products />} />
             <Route path="/campaigns" element={<Campaigns />} />
+            <Route path="/analytics" element={<Analytics />} /> {/* NEW: Analytics Route */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

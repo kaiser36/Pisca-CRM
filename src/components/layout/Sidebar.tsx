@@ -4,7 +4,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2, UserCog, Info, Users, Package, ListTodo, Gift, Settings2, Monitor } from 'lucide-react';
+import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2, UserCog, Info, Users, Package, ListTodo, Gift, Settings2, Monitor, BarChart2 } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -95,6 +95,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           >
             <Monitor className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
             {!isCollapsed && "Consola Pisca"}
+          </Button>
+        </Link>
+        <Link to="/analytics">
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              isCollapsed ? "px-2" : "px-4",
+              isActive('/analytics') && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+            )}
+          >
+            <BarChart2 className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
+            {!isCollapsed && "Análise"}
           </Button>
         </Link>
 
