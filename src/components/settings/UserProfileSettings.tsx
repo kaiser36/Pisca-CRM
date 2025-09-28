@@ -22,14 +22,6 @@ const formSchema = z.object({
   last_name: z.string().min(1, "O apelido é obrigatório").nullable().optional(),
   avatarFile: typeof window === 'undefined' ? z.any().optional() : z.instanceof(File).nullable().optional(),
   am_account_id: z.string().nullable().optional(), // NEW: Field for linking to AM account
-  phone_views_conversion_percentage: z.preprocess( // NEW
-    (val) => (val === "" ? null : Number(val)),
-    z.number().min(0, "A percentagem não pode ser negativa").max(100, "A percentagem não pode ser superior a 100").nullable().optional()
-  ),
-  whatsapp_interactions_conversion_percentage: z.preprocess( // NEW
-    (val) => (val === "" ? null : Number(val)),
-    z.number().min(0, "A percentagem não pode ser negativa").max(100, "A percentagem não pode ser superior a 100").nullable().optional()
-  ),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -49,8 +41,6 @@ const UserProfileSettings: React.FC = () => {
       last_name: profile?.last_name || '',
       avatarFile: null,
       am_account_id: amAccount?.id || '', // NEW: Initialize with current linked AM
-      phone_views_conversion_percentage: profile?.phone_views_conversion_percentage ?? 100, // NEW
-      whatsapp_interactions_conversion_percentage: profile?.whatsapp_interactions_conversion_percentage ?? 100, // NEW
     },
   });
 
@@ -61,8 +51,6 @@ const UserProfileSettings: React.FC = () => {
       last_name: profile?.last_name || '',
       avatarFile: null,
       am_account_id: amAccount?.id || '',
-      phone_views_conversion_percentage: profile?.phone_views_conversion_percentage ?? 100, // NEW
-      whatsapp_interactions_conversion_percentage: profile?.whatsapp_interactions_conversion_percentage ?? 100, // NEW
     });
     setCurrentAvatarUrl(profile?.avatar_url || null);
     setSelectedImage(null);
@@ -151,8 +139,6 @@ const UserProfileSettings: React.FC = () => {
         first_name: values.first_name || null,
         last_name: values.last_name || null,
         avatar_url: newAvatarUrl,
-        phone_views_conversion_percentage: values.phone_views_conversion_percentage, // NEW
-        whatsapp_interactions_conversion_percentage: values.whatsapp_interactions_conversion_percentage, // NEW
       };
       await updateUserProfile(user.id, updatedProfileData);
 

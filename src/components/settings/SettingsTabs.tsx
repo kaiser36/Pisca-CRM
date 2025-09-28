@@ -14,7 +14,6 @@ import DealExcelTemplateCard from './DealExcelTemplateCard';
 import EmployeeExcelTemplateCard from './EmployeeExcelTemplateCard';
 import TaskExcelTemplateCard from './TaskExcelTemplateCard';
 import EasyvistaExcelTemplateCard from './EasyvistaExcelTemplateCard';
-import ConversionPercentageSettings from './ConversionPercentageSettings'; // NEW: Import ConversionPercentageSettings
 
 const SettingsTabs: React.FC = () => {
   const handleUploadSuccess = () => {
@@ -29,7 +28,7 @@ const SettingsTabs: React.FC = () => {
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Configurações</h1>
       <Tabs defaultValue="data-upload" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 h-10 rounded-lg bg-muted/70 p-1"> {/* Adjusted grid-cols to 5 */}
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4 h-10 rounded-lg bg-muted/70 p-1"> {/* Adjusted grid-cols back to 4 */}
           <TabsTrigger value="data-upload" className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold">
             Carregar Dados
           </TabsTrigger>
@@ -38,9 +37,6 @@ const SettingsTabs: React.FC = () => {
           </TabsTrigger>
           <TabsTrigger value="user-profile" className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold">
             Perfil do Utilizador
-          </TabsTrigger>
-          <TabsTrigger value="conversion-percentages" className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"> {/* NEW Tab */}
-            Percentagens
           </TabsTrigger>
           <TabsTrigger value="integrations" className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold">
             Integrações
@@ -90,10 +86,6 @@ const SettingsTabs: React.FC = () => {
               <UserProfileSettings />
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="conversion-percentages" className="mt-6"> {/* NEW Tab Content */}
-          <ConversionPercentageSettings />
         </TabsContent>
 
         <TabsContent value="integrations" className="mt-6">

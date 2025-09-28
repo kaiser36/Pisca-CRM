@@ -320,8 +320,6 @@ export interface UserProfile { // NEW: User profile interface
   last_name: string | null;
   avatar_url: string | null;
   updated_at: string | null;
-  phone_views_conversion_percentage?: number | null; // NEW
-  whatsapp_interactions_conversion_percentage?: number | null; // NEW
 }
 
 export interface Analytics { // NEW: Analytics interface

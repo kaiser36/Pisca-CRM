@@ -19,7 +19,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useSession } from '@/context/SessionContext'; // NEW: Import useSession
+// Removed: import { useSession } from '@/context/SessionContext';
 
 interface AnalyticsCreateFormProps {
   companyExcelId: string;
@@ -75,11 +75,11 @@ const formSchema = z.object({
     (val) => (val === "" ? null : Number(val)),
     z.number().min(0, "Não pode ser negativo").nullable().optional()
   ),
-  phone_views_percentage: z.preprocess( // NEW
+  phone_views_percentage: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().min(0, "A percentagem não pode ser negativa").max(100, "A percentagem não pode ser superior a 100").nullable().optional()
   ),
-  whatsapp_interactions_percentage: z.preprocess( // NEW
+  whatsapp_interactions_percentage: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().min(0, "A percentagem não pode ser negativa").max(100, "A percentagem não pode ser superior a 100").nullable().optional()
   ),
@@ -93,7 +93,7 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ companyExcelI
   const [companyDbId, setCompanyDbId] = useState<string | null>(null);
   const [companyDetails, setCompanyDetails] = useState<Company | null>(null);
   const [additionalCompanyDetails, setAdditionalCompanyDetails] = useState<CompanyAdditionalExcelData | null>(null);
-  const { profile } = useSession(); // NEW: Get profile from session
+  // Removed: const { profile } = useSession();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -156,8 +156,8 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ companyExcelI
       favorites: 0,
       total_cost: 0,
       revenue: 0,
-      phone_views_percentage: profile?.phone_views_conversion_percentage ?? 100, // NEW: Use profile default
-      whatsapp_interactions_percentage: profile?.whatsapp_interactions_conversion_percentage ?? 100, // NEW: Use profile default
+      phone_views_percentage: 100, // Default to 100%
+      whatsapp_interactions_percentage: 100, // Default to 100%
     },
   });
 
@@ -203,9 +203,9 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ companyExcelI
         favorites: values.favorites || null,
         total_cost: values.total_cost || null,
         revenue: values.revenue || null,
-        phone_views_percentage: values.phone_views_percentage || 100, // NEW
-        whatsapp_interactions_percentage: values.whatsapp_interactions_percentage || 100, // NEW
-        total_leads: totalLeads, // NEW: Calculated value
+        phone_views_percentage: values.phone_views_percentage || 100,
+        whatsapp_interactions_percentage: values.whatsapp_interactions_percentage || 100,
+        total_leads: totalLeads,
       };
 
       await insertAnalytics(newAnalytics);
@@ -228,9 +228,9 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ companyExcelI
     { name: "views", label: "Visualizações", type: "number" },
     { name: "clicks", label: "Cliques", type: "number" },
     { name: "phone_views", label: "Visualizações do Telefone", type: "number" },
-    { name: "phone_views_percentage", label: "Percentagem Visualizações Telefone (%)", type: "number" }, // NEW
+    { name: "phone_views_percentage", label: "Percentagem Visualizações Telefone (%)", type: "number" },
     { name: "whatsapp_interactions", label: "Interações WhatsApp", type: "number" },
-    { name: "whatsapp_interactions_percentage", label: "Percentagem Interações WhatsApp (%)", type: "number" }, // NEW
+    { name: "whatsapp_interactions_percentage", label: "Percentagem Interações WhatsApp (%)", type: "number" },
     { name: "leads_email", label: "Leads (email)", type: "number" },
     { name: "location_clicks", label: "Cliques na Localização", type: "number" },
     { name: "total_ads", label: "Total de Anúncios", type: "number" },
