@@ -346,4 +346,7 @@ export interface Analytics { // NEW: Analytics interface
   favorites?: number | null; // NEW
   total_cost?: number | null; // NEW
   revenue?: number | null; // NEW
+  phone_views_percentage?: number | null; // NEW: Percentage for phone views to count towards total leads
+  whatsapp_interactions_percentage?: number | null; // NEW: Percentage for WhatsApp interactions to count towards total leads
+  total_leads?: number | null; // NEW: Calculated metric for total leads
 }
