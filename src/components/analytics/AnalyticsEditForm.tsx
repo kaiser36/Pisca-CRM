@@ -17,7 +17,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Loader2 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { fetchCompaniesWithStands } from '@/integrations/supabase/services/companyService';
-import { Combobox } from '../ui/combobox';
+import { Combobox } from '@/components/ui/combobox';
 
 const formSchema = z.object({
   company_db_id: z.string().min(1, "Selecione uma empresa"),
