@@ -5,18 +5,18 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useSession } from '@/context/SessionContext';
-import { fetchCompaniesWithStands } from '@/integrations/supabase/services/companyService';
-import { createAnalytic } from '@/integrations/supabase/services/analyticsService';
-import { Company } from '@/types/crm';
+import { updateAnalytic } from '@/integrations/supabase/services/analyticsService';
+import { Analytics as AnalyticsType, Company } from '@/types/crm';
 import { showSuccess, showError } from '@/utils/toast';
 import { Loader2 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
+import { fetchCompaniesWithStands } from '@/integrations/supabase/services/companyService';
 import { Combobox } from '../ui/combobox';
 
 const formSchema = z.object({
@@ -37,32 +37,20 @@ const formSchema = z.object({
   revenue: z.coerce.number().nonnegative().optional(),
 });
 
-interface AnalyticsCreateFormProps {
+interface AnalyticsEditFormProps {
+  analytic: AnalyticsType;
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
   onSuccess: () => void;
 }
 
-const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ onSuccess }) => {
+const AnalyticsEditForm: React.FC<AnalyticsEditFormProps> = ({ analytic, isOpen, setIsOpen, onSuccess }) => {
   const { user } = useSession();
-  const [isOpen, setIsOpen] = useState(false);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoadingCompanies, setIsLoadingCompanies] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      views: 0,
-      clicks: 0,
-      phone_views: 0,
-      whatsapp_interactions: 0,
-      leads_email: 0,
-      location_clicks: 0,
-      total_ads: 0,
-      favorites: 0,
-      total_cost: 0,
-      revenue: 0,
-    },
   });
 
   useEffect(() => {
@@ -75,12 +63,33 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ onSuccess }) 
     }
   }, [isOpen, user]);
 
+  useEffect(() => {
+    if (analytic) {
+      form.reset({
+        ...analytic,
+        company_db_id: analytic.company_db_id || "",
+        start_date: analytic.start_date ? new Date(analytic.start_date) : undefined,
+        end_date: analytic.end_date ? new Date(analytic.end_date) : undefined,
+        views: analytic.views ?? 0,
+        clicks: analytic.clicks ?? 0,
+        phone_views: analytic.phone_views ?? 0,
+        whatsapp_interactions: analytic.whatsapp_interactions ?? 0,
+        leads_email: analytic.leads_email ?? 0,
+        location_clicks: analytic.location_clicks ?? 0,
+        total_ads: analytic.total_ads ?? 0,
+        favorites: analytic.favorites ?? 0,
+        total_cost: analytic.total_cost ?? 0,
+        revenue: analytic.revenue ?? 0,
+      });
+    }
+  }, [analytic, form, isOpen]);
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!user) {
-      showError("Utilizador não autenticado.");
+    if (!user || !analytic.id) {
+      showError("Dados inválidos para atualização.");
       return;
     }
-
+    
     const selectedCompany = companies.find(c => c.id === values.company_db_id);
     if (!selectedCompany) {
       showError("Empresa selecionada inválida.");
@@ -88,32 +97,25 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ onSuccess }) 
     }
 
     try {
-      await createAnalytic({
+      await updateAnalytic(analytic.id, {
         ...values,
-        user_id: user.id,
         company_excel_id: selectedCompany.Company_id,
         start_date: values.start_date.toISOString(),
         end_date: values.end_date.toISOString(),
-        title: values.title,
-        description: values.description || undefined,
       });
-      showSuccess("Análise de campanha criada com sucesso!");
-      form.reset();
+      showSuccess("Análise de campanha atualizada com sucesso!");
       setIsOpen(false);
       onSuccess();
     } catch (error: any) {
-      showError(`Erro ao criar análise: ${error.message}`);
+      showError(`Erro ao atualizar análise: ${error.message}`);
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button>Nova Análise</Button>
-      </DialogTrigger>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Criar Nova Análise de Campanha</DialogTitle>
+          <DialogTitle>Editar Análise de Campanha</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -220,12 +222,10 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ onSuccess }) 
               </div>
             </ScrollArea>
             <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="secondary">Cancelar</Button>
-              </DialogClose>
+                <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Criar Análise
+                Guardar Alterações
               </Button>
             </DialogFooter>
           </form>
@@ -235,4 +235,4 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ onSuccess }) 
   );
 };
 
-export default AnalyticsCreateForm;
+export default AnalyticsEditForm;

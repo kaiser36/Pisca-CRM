@@ -42,3 +42,36 @@ export async function createAnalytic(analyticData: Omit<Analytics, 'id' | 'creat
     }
     return data;
 }
+
+/**
+ * Updates an existing analytic entry.
+ */
+export async function updateAnalytic(analyticId: string, analyticData: Partial<Omit<Analytics, 'id' | 'created_at' | 'updated_at' | 'company_commercial_name' | 'user_id'>>) {
+    const { data, error } = await supabase
+        .from('analytics')
+        .update(analyticData)
+        .eq('id', analyticId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error updating analytic:', error);
+        throw error;
+    }
+    return data;
+}
+
+/**
+ * Deletes an analytic entry.
+ */
+export async function deleteAnalytic(analyticId: string): Promise<void> {
+    const { error } = await supabase
+        .from('analytics')
+        .delete()
+        .eq('id', analyticId);
+
+    if (error) {
+        console.error('Error deleting analytic:', error);
+        throw new Error(error.message);
+    }
+}

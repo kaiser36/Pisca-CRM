@@ -4,12 +4,17 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Analytics } from '@/types/crm';
 import { format } from 'date-fns';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { MoreHorizontal } from 'lucide-react';
 
 interface AnalyticsTableProps {
   analytics: Analytics[];
+  onEdit: (analytic: Analytics) => void;
+  onDelete: (analyticId: string) => void;
 }
 
-const AnalyticsTable: React.FC<AnalyticsTableProps> = ({ analytics }) => {
+const AnalyticsTable: React.FC<AnalyticsTableProps> = ({ analytics, onEdit, onDelete }) => {
   const formatCurrency = (value?: number | null) => {
     if (value == null) return 'N/A';
     return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(value);
@@ -33,12 +38,13 @@ const AnalyticsTable: React.FC<AnalyticsTableProps> = ({ analytics }) => {
             <TableHead>Leads</TableHead>
             <TableHead>Custo Total</TableHead>
             <TableHead>Receita</TableHead>
+            <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {analytics.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center">Nenhuma análise encontrada.</TableCell>
+              <TableCell colSpan={9} className="text-center">Nenhuma análise encontrada.</TableCell>
             </TableRow>
           ) : (
             analytics.map(item => (
@@ -51,6 +57,20 @@ const AnalyticsTable: React.FC<AnalyticsTableProps> = ({ analytics }) => {
                 <TableCell>{item.leads_email ?? 0}</TableCell>
                 <TableCell>{formatCurrency(item.total_cost)}</TableCell>
                 <TableCell>{formatCurrency(item.revenue)}</TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Abrir menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onEdit(item)}>Editar</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onDelete(item.id!)} className="text-destructive">Apagar</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
               </TableRow>
             ))
           )}
