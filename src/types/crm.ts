@@ -150,7 +150,7 @@ export interface AccountContact {
   send_email?: boolean | null;
   email_type?: string | null;
   email_subject?: string | null;
-email_body?: string | null;
+  email_body?: string | null;
   attachment_url?: string | null;
   sending_email?: string | null;
   created_at?: string;
@@ -320,28 +320,4 @@ export interface UserProfile { // NEW: User profile interface
   last_name: string | null;
   avatar_url: string | null;
   updated_at: string | null;
-}
-
-export interface Analytics {
-  id?: string;
-  user_id: string;
-  company_db_id?: string | null;
-  company_excel_id: string;
-  title: string;
-  description?: string | null;
-  start_date?: string | null;
-  end_date?: string | null;
-  views?: number | null;
-  clicks?: number | null;
-  phone_views?: number | null;
-  whatsapp_interactions?: number | null;
-  leads_email?: number | null;
-  location_clicks?: number | null;
-  total_ads?: number | null;
-  favorites?: number | null;
-  total_cost?: number | null;
-  revenue?: number | null;
-  created_at?: string;
-  updated_at?: string;
-  company_commercial_name?: string; // For display
 }
