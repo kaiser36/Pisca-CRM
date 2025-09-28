@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Calendar, Tag, Info, Edit, Trash, MoreHorizontal, FileText, BarChart3 } from 'lucide-react';
+import { Terminal, Calendar, Tag, Info, Edit, Trash, MoreHorizontal, FileText, BarChart3, Eye, MousePointerClick, Phone, MessageSquareText, Mail, MapPin, List, Heart, DollarSign, TrendingUp } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -88,7 +88,7 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
   };
 
   const renderField = (Icon: React.ElementType, label: string, value: string | number | boolean | null | undefined) => {
-    if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) return null;
+    if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '') || (typeof value === 'number' && value === 0 && !label.includes('Custo') && !label.includes('Receita'))) return null;
 
     let displayValue: React.ReactNode = value;
     if (label.includes('Data') && typeof value === 'string') {
@@ -97,6 +97,10 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
       } catch {
         displayValue = String(value);
       }
+    } else if (label.includes('Custo Total') || label.includes('Receita')) {
+      displayValue = `${Number(value).toFixed(2)} €`;
+    } else if (typeof value === 'number') {
+      displayValue = value.toLocaleString('pt-PT');
     }
 
     return (
@@ -184,6 +188,18 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {renderField(Calendar, "Data da Análise", analysis.analysis_date)}
                   {renderField(Tag, "Categoria", analysis.category)}
+                  {renderField(Calendar, "Data de Início", analysis.start_date)}
+                  {renderField(Calendar, "Data de Fim", analysis.end_date)}
+                  {renderField(Eye, "Visualizações", analysis.views)}
+                  {renderField(MousePointerClick, "Cliques", analysis.clicks)}
+                  {renderField(Phone, "Visualizações do Telefone", analysis.phone_views)}
+                  {renderField(MessageSquareText, "Interações WhatsApp", analysis.whatsapp_interactions)}
+                  {renderField(Mail, "Leads (email)", analysis.leads_email)}
+                  {renderField(MapPin, "Cliques na Localização", analysis.location_clicks)}
+                  {renderField(List, "Total de Anúncios", analysis.total_ads)}
+                  {renderField(Heart, "Favoritos", analysis.favorites)}
+                  {renderField(DollarSign, "Custo Total", analysis.total_cost)}
+                  {renderField(TrendingUp, "Receita", analysis.revenue)}
                 </div>
                 {analysis.description && (
                   <>

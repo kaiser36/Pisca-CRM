@@ -334,4 +334,16 @@ export interface Analytics { // NEW: Analytics interface
   result?: string | null;
   created_at?: string;
   updated_at?: string;
+  start_date?: string | null; // NEW
+  end_date?: string | null; // NEW
+  views?: number | null; // NEW
+  clicks?: number | null; // NEW
+  phone_views?: number | null; // NEW
+  whatsapp_interactions?: number | null; // NEW
+  leads_email?: number | null; // NEW
+  location_clicks?: number | null; // NEW
+  total_ads?: number | null; // NEW
+  favorites?: number | null; // NEW
+  total_cost?: number | null; // NEW
+  revenue?: number | null; // NEW
 }

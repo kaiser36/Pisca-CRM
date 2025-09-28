@@ -32,6 +32,48 @@ const formSchema = z.object({
   analysis_date: z.date().nullable().optional(),
   category: z.string().nullable().optional(),
   result: z.string().nullable().optional(),
+  start_date: z.date().nullable().optional(), // NEW
+  end_date: z.date().nullable().optional(),   // NEW
+  views: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
+  ), // NEW
+  clicks: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
+  ), // NEW
+  phone_views: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
+  ), // NEW
+  whatsapp_interactions: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
+  ), // NEW
+  leads_email: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
+  ), // NEW
+  location_clicks: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
+  ), // NEW
+  total_ads: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
+  ), // NEW
+  favorites: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
+  ), // NEW
+  total_cost: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().min(0, "Não pode ser negativo").nullable().optional()
+  ), // NEW
+  revenue: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().min(0, "Não pode ser negativo").nullable().optional()
+  ), // NEW
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -92,6 +134,18 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ companyExcelI
       analysis_date: new Date(),
       category: '',
       result: '',
+      start_date: undefined, // NEW
+      end_date: undefined,   // NEW
+      views: 0,              // NEW
+      clicks: 0,             // NEW
+      phone_views: 0,        // NEW
+      whatsapp_interactions: 0, // NEW
+      leads_email: 0,        // NEW
+      location_clicks: 0,    // NEW
+      total_ads: 0,          // NEW
+      favorites: 0,          // NEW
+      total_cost: 0,         // NEW
+      revenue: 0,            // NEW
     },
   });
 
@@ -116,6 +170,18 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ companyExcelI
         analysis_date: values.analysis_date ? values.analysis_date.toISOString() : null,
         category: values.category || null,
         result: values.result || null,
+        start_date: values.start_date ? values.start_date.toISOString() : null, // NEW
+        end_date: values.end_date ? values.end_date.toISOString() : null,     // NEW
+        views: values.views || null,           // NEW
+        clicks: values.clicks || null,         // NEW
+        phone_views: values.phone_views || null, // NEW
+        whatsapp_interactions: values.whatsapp_interactions || null, // NEW
+        leads_email: values.leads_email || null, // NEW
+        location_clicks: values.location_clicks || null, // NEW
+        total_ads: values.total_ads || null,   // NEW
+        favorites: values.favorites || null,   // NEW
+        total_cost: values.total_cost || null, // NEW
+        revenue: values.revenue || null,       // NEW
       };
 
       await insertAnalytics(newAnalytics);
@@ -133,6 +199,18 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ companyExcelI
     { name: "title", label: "Título", type: "text", required: true },
     { name: "category", label: "Categoria", type: "select", options: ["Financeira", "Marketing", "Operacional", "Vendas", "Outro"] },
     { name: "analysis_date", label: "Data da Análise", type: "date" },
+    { name: "start_date", label: "Data de Início", type: "date" }, // NEW
+    { name: "end_date", label: "Data de Fim", type: "date" },     // NEW
+    { name: "views", label: "Visualizações", type: "number" },           // NEW
+    { name: "clicks", label: "Cliques", type: "number" },         // NEW
+    { name: "phone_views", label: "Visualizações do Telefone", type: "number" }, // NEW
+    { name: "whatsapp_interactions", label: "Interações WhatsApp", type: "number" }, // NEW
+    { name: "leads_email", label: "Leads (email)", type: "number" }, // NEW
+    { name: "location_clicks", label: "Cliques na Localização", type: "number" }, // NEW
+    { name: "total_ads", label: "Total de Anúncios", type: "number" },   // NEW
+    { name: "favorites", label: "Favoritos", type: "number" },   // NEW
+    { name: "total_cost", label: "Custo Total (€)", type: "number" }, // NEW
+    { name: "revenue", label: "Receita (€)", type: "number" },       // NEW
     { name: "description", label: "Descrição", type: "textarea", colSpan: 2 },
     { name: "result", label: "Resultado", type: "textarea", colSpan: 2 },
   ];
@@ -208,8 +286,14 @@ const AnalyticsCreateForm: React.FC<AnalyticsCreateFormProps> = ({ companyExcelI
                       <Input
                         type={field.type}
                         {...formField}
-                        value={formField.value as string || ''}
-                        onChange={formField.onChange}
+                        value={formField.value as string | number || ''}
+                        onChange={(e) => {
+                          if (field.type === "number") {
+                            formField.onChange(e.target.value === '' ? null : Number(e.target.value));
+                          } else {
+                            formField.onChange(e.target.value);
+                          }
+                        }}
                       />
                     )}
                   </FormControl>
