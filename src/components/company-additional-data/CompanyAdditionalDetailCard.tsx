@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus, Upload, Archive, Save, ArrowRight, Download, Hourglass, XCircle as ExpiredIcon, ListTodo
+  Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus, Upload, Archive, Save, ArrowRight, Download, Hourglass, XCircle as ExpiredIcon, ListTodo, BarChart2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,6 +27,7 @@ import EasyvistaList from './EasyvistaList';
 import DealList from './DealList';
 import EmployeeList from './EmployeeList';
 import TaskList from './TaskList';
+import AnalyticsList from './AnalyticsList';
 
 interface CompanyAdditionalDetailCardProps {
   company: CompanyAdditionalExcelData | null;
@@ -41,6 +42,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   const [isCreateDealDialogOpen, setIsCreateDealDialogOpen] = useState(false);
   const [isCreateEmployeeDialogOpen, setIsCreateEmployeeDialogOpen] = useState(false);
   const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false);
+  const [isCreateAnalysisDialogOpen, setIsCreateAnalysisDialogOpen] = useState(false);
   const [deals, setDeals] = useState<Negocio[]>([]);
   const [isDealsLoading, setIsDealsLoading] = useState(true);
   const [dealsError, setDealsError] = useState<string | null>(null);
@@ -257,6 +259,8 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
             setIsCreateEmployeeDialogOpen={setIsCreateEmployeeDialogOpen}
             isCreateTaskDialogOpen={isCreateTaskDialogOpen}
             setIsCreateTaskDialogOpen={setIsCreateTaskDialogOpen}
+            isCreateAnalysisDialogOpen={isCreateAnalysisDialogOpen}
+            setIsCreateAnalysisDialogOpen={setIsCreateAnalysisDialogOpen}
           />
         </CardHeader>
         <CardContent className="space-y-6">
@@ -274,7 +278,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
           />
 
           <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-7 h-10 rounded-lg bg-muted/70 p-1">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-8 h-10 rounded-lg bg-muted/70 p-1">
               <TabsTrigger
                 value="details"
                 className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
@@ -316,6 +320,12 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
               >
                 Tarefas
+              </TabsTrigger>
+              <TabsTrigger
+                value="analytics"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+              >
+                Análises
               </TabsTrigger>
             </TabsList>
             <TabsContent value="details" className="mt-4 space-y-6">
@@ -369,6 +379,12 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
                 <ListTodo className="mr-2 h-5 w-5" /> Tarefas
               </h3>
               <TaskList companyExcelId={company.excel_company_id} onTaskChanged={onDataUpdated} />
+            </TabsContent>
+            <TabsContent value="analytics" className="mt-4">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+                <BarChart2 className="mr-2 h-5 w-5" /> Análises de Campanhas
+              </h3>
+              <AnalyticsList companyExcelId={company.excel_company_id} onAnalyticsChanged={onDataUpdated} />
             </TabsContent>
           </Tabs>
         </CardContent>
