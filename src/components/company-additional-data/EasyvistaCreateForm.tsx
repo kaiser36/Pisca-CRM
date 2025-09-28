@@ -221,7 +221,7 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
         company_excel_id: companyExcelId,
         company_db_id: companyDbId, // NEW: Include company_db_id
         "Nome comercial": values["Nome comercial"] || null,
-        "Status": values["Status"] === 'null-status' ? null : values["Status"], // Handle 'null-status'
+        "Status": values["Status"], // Handle 'null-status'
         "Account": values["Account"] === 'null-account' ? null : values["Account"], // Handle 'null-account'
         "Titulo": values["Titulo"] || null,
         "Descrição": values["Descrição"] || null,
@@ -229,7 +229,7 @@ const EasyvistaCreateForm: React.FC<EasyvistaCreateFormProps> = ({
         "Tipo de report": values["Tipo de report"] === 'null-report-type' ? null : values["Tipo de report"], // Handle 'null-report-type'
         "PV": values["PV"] || false,
         "Tipo EVS": values["Tipo EVS"] === 'null-easyvista-type' ? null : values["Tipo EVS"], // Handle 'null-easyvista-type'
-        "Urgência": values["Urgência"] === 'null-urgency' ? null : values["Urgência"], // Handle 'null-urgency'
+        "Urgência": values["Urgência"], // Handle 'null-urgency'
         "Email Pisca": values["Email Pisca"] || null,
         "Pass Pisca": values["Pass Pisca"] || null,
         "Client ID": values["Client ID"] || null,
