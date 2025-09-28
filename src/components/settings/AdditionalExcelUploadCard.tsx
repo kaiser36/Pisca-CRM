@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -9,7 +9,7 @@ import { Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from '@/context/SessionContext';
 import { parseGenericExcel } from '@/lib/general-excel-parser';
-import { upsertCompanyAdditionalExcelData } from '@/integrations/supabase/services/companyAdditionalExcelDataService'; // Corrected import
+import { upsertCompanyAdditionalExcelData } from '@/integrations/supabase/utils';
 import { CompanyAdditionalExcelData } from '@/types/crm';
 import { Progress } from '@/components/ui/progress';
 

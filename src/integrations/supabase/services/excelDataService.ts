@@ -3,6 +3,7 @@ import { CompanyAdditionalExcelData } from '@/types/crm';
 
 /**
  * Upserts specific company additional Excel data into the company_additional_excel_data table.
+ * This function now operates independently of the 'companies' table, as requested.
  */
 export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalExcelData[], userId: string): Promise<void> {
   const uniqueDataMap = new Map<string, CompanyAdditionalExcelData>();
@@ -34,7 +35,7 @@ export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalEx
     uniqueDataMap.set(key, {
       ...row,
       user_id: userId, // Ensure user_id is correctly set
-      company_db_id: companyDbId, // Populate company_db_id
+      company_db_id: companyDbId, // NEW: Populate company_db_id
       created_at: row.created_at || new Date().toISOString(), // Set created_at if not present
     });
   });

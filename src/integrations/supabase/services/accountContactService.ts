@@ -37,24 +37,6 @@ export async function fetchAccountContactsByCompanyExcelId(userId: string, compa
 }
 
 /**
- * Updates an existing account contact.
- */
-export async function updateAccountContact(id: string, updates: Partial<AccountContact>): Promise<AccountContact> {
-  const { data, error } = await supabase
-    .from('account_contacts')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error updating account contact:', error);
-    throw new Error(error.message);
-  }
-  return data as AccountContact;
-}
-
-/**
  * Upserts account contact data into the account_contacts table.
  */
 export async function upsertAccountContacts(contacts: AccountContact[], userId: string): Promise<void> {

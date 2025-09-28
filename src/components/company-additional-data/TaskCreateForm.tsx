@@ -5,8 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Task, Account, Company, CompanyAdditionalExcelData } from '@/types/crm'; // Import CompanyAdditionalExcelData
-import { insertTask, fetchEmployeesByCompanyExcelId, fetchAccounts, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils';
-import { fetchCompanyAdditionalExcelData } from '@/integrations/supabase/services/companyAdditionalExcelDataService'; // Corrected import
+import { insertTask, fetchEmployeesByCompanyExcelId, fetchAccounts, fetchCompaniesByExcelCompanyIds, fetchCompanyAdditionalExcelData } from '@/integrations/supabase/utils'; // Import fetchCompanyAdditionalExcelData
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -166,9 +165,9 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
         title: values.title,
         description: values.description || null,
         due_date: values.due_date ? values.due_date.toISOString() : null,
-        status: values.status, // Handle 'null-status'
-        priority: values.priority, // Handle 'null-priority'
-        assigned_to_employee_id: values.assigned_to_employee_id === 'null-employee' ? null : values.assigned_to_employee_id, // Handle 'null-employee'
+        status: values.status,
+        priority: values.priority,
+        assigned_to_employee_id: values.assigned_to_employee_id || null,
         assigned_to_employee_name: values.assigned_to_employee_name || null,
       };
 
@@ -258,8 +257,8 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
                       />
                     ) : field.type === "select" ? (
                       <Select
-                        onValueChange={(value) => formField.onChange(value === `null-${field.name.toLowerCase().replace(/\s/g, '-')}` ? null : value)} // Handle null for specific field
-                        value={formField.value === null ? `null-${field.name.toLowerCase().replace(/\s/g, '-')}` : (formField.value as string)} // Ensure value is never empty string
+                        onValueChange={formField.onChange}
+                        value={String(formField.value || '')}
                         disabled={field.disabled}
                       >
                         <SelectTrigger>
@@ -272,7 +271,6 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
                           )}
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={`null-${field.name.toLowerCase().replace(/\s/g, '-')}`}>Nenhum</SelectItem> {/* Add a "None" option */}
                           {field.options?.length === 0 ? (
                             <SelectItem value="no-options" disabled>Nenhuma opção disponível</SelectItem>
                           ) : (

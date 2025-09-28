@@ -264,8 +264,8 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
                       />
                     ) : field.type === "select" ? (
                       <Select
-                        onValueChange={(value) => formField.onChange(value === `null-${field.name.toLowerCase().replace(/\s/g, '-')}` ? null : value)} // Handle null for specific field
-                        value={formField.value === null ? `null-${field.name.toLowerCase().replace(/\s/g, '-')}` : (formField.value as string)} // Ensure value is never empty string
+                        onValueChange={formField.onChange}
+                        value={String(formField.value || '')}
                         disabled={field.disabled}
                       >
                         <SelectTrigger>
@@ -278,7 +278,6 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
                           )}
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={`null-${field.name.toLowerCase().replace(/\s/g, '-')}`}>Nenhum</SelectItem> {/* Add a "None" option */}
                           {field.options?.length === 0 ? (
                             <SelectItem value="no-options" disabled>Nenhuma opção disponível</SelectItem>
                           ) : (

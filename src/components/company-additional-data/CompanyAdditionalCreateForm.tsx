@@ -232,7 +232,7 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
         "Cidade": values["Cidade"],
         "Morada": values["Morada"],
         "AM_OLD": values["AM_OLD"],
-        "AM": values["AM"] === 'null-am' ? null : values["AM"], // Handle 'null-am'
+        "AM": values["AM"], // Use selected AM
         "Stock STV": values["Stock STV"],
         "API": values["API"],
         "Site": values["Site"],
@@ -356,15 +356,11 @@ const CompanyAdditionalCreateForm: React.FC<CompanyAdditionalCreateFormProps> = 
                         onChange={formField.onChange}
                       />
                     ) : field.type === "select" ? (
-                      <Select
-                        onValueChange={(value) => formField.onChange(value === "null-am" ? null : value)} // Handle 'null-am'
-                        value={formField.value === null ? "null-am" : (formField.value as string)} // Ensure value is never empty string
-                      >
+                      <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
                         <SelectTrigger>
                           <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="null-am">Nenhum</SelectItem> {/* Add a "None" option */}
                           {field.options?.map(option => (
                             <SelectItem key={option} value={option}>{option}</SelectItem>
                           ))}

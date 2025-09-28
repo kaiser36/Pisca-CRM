@@ -5,8 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { CompanyAdditionalExcelData, Account } from '@/types/crm';
-import { upsertCompanyAdditionalExcelData } from '@/integrations/supabase/services/companyAdditionalExcelDataService'; // Corrected import
-import { fetchAccounts, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils'; // Import fetchAccounts and fetchCompaniesByExcelCompanyIds
+import { upsertCompanyAdditionalExcelData, fetchAccounts, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils'; // Import fetchAccounts and fetchCompaniesByExcelCompanyIds
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -271,15 +270,11 @@ const CompanyAdditionalEditForm: React.FC<CompanyAdditionalEditFormProps> = ({ c
                         onChange={formField.onChange}
                       />
                     ) : field.type === "select" ? (
-                      <Select
-                        onValueChange={(value) => formField.onChange(value === "null-am" ? null : value)} // Handle 'null-am'
-                        value={formField.value === null ? "null-am" : (formField.value as string)} // Ensure value is never empty string
-                      >
+                      <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
                         <SelectTrigger>
                           <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="null-am">Nenhum</SelectItem> {/* Add a "None" option */}
                           {field.options?.map(option => (
                             <SelectItem key={option} value={option}>{option}</SelectItem>
                           ))}
@@ -310,7 +305,7 @@ const CompanyAdditionalEditForm: React.FC<CompanyAdditionalEditFormProps> = ({ c
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting || !userId || !companyDbId || !form.formState.isValid}>
+          <Button type="submit" disabled={isSubmitting || !userId || !companyDbId}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
