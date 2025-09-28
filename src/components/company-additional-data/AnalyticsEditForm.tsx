@@ -19,6 +19,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useSession } from '@/context/SessionContext'; // NEW: Import useSession
 
 interface AnalyticsEditFormProps {
   analytics: Analytics;
@@ -92,6 +93,7 @@ const AnalyticsEditForm: React.FC<AnalyticsEditFormProps> = ({ analytics, onSave
   const [companyDbId, setCompanyDbId] = useState<string | null>(null);
   const [companyDetails, setCompanyDetails] = useState<Company | null>(null);
   const [additionalCompanyDetails, setAdditionalCompanyDetails] = useState<CompanyAdditionalExcelData | null>(null);
+  const { profile } = useSession(); // NEW: Get profile from session
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -154,8 +156,8 @@ const AnalyticsEditForm: React.FC<AnalyticsEditFormProps> = ({ analytics, onSave
       favorites: analytics.favorites || 0,
       total_cost: analytics.total_cost || 0,
       revenue: analytics.revenue || 0,
-      phone_views_percentage: analytics.phone_views_percentage ?? 100, // NEW default
-      whatsapp_interactions_percentage: analytics.whatsapp_interactions_percentage ?? 100, // NEW default
+      phone_views_percentage: analytics.phone_views_percentage ?? profile?.phone_views_conversion_percentage ?? 100, // NEW: Use profile default as fallback
+      whatsapp_interactions_percentage: analytics.whatsapp_interactions_percentage ?? profile?.whatsapp_interactions_conversion_percentage ?? 100, // NEW: Use profile default as fallback
     },
   });
 

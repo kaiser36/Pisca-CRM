@@ -227,7 +227,12 @@ export async function deleteAccount(id: string): Promise<void> {
 export async function updateUserProfile(userId: string, profile: Partial<Omit<UserProfile, 'id' | 'updated_at'>>): Promise<UserProfile> {
   const { data, error } = await supabase
     .from('profiles')
-    .update({ ...profile, updated_at: new Date().toISOString() })
+    .update({ 
+      ...profile, 
+      updated_at: new Date().toISOString(),
+      phone_views_conversion_percentage: profile.phone_views_conversion_percentage, // NEW
+      whatsapp_interactions_conversion_percentage: profile.whatsapp_interactions_conversion_percentage, // NEW
+    })
     .eq('id', userId)
     .select()
     .single();
