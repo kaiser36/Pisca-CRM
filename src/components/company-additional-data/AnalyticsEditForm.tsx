@@ -8,6 +8,7 @@ import { Analytics, Company, CompanyAdditionalExcelData } from '@/types/crm';
 import { updateAnalytics, fetchCompaniesByExcelCompanyIds, fetchCompanyAdditionalExcelData } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
+import { useSession } from '@/context/SessionContext'; // NEW: Import useSession
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,48 +33,57 @@ const formSchema = z.object({
   analysis_date: z.date().nullable().optional(),
   category: z.string().nullable().optional(),
   result: z.string().nullable().optional(),
-  start_date: z.date().nullable().optional(), // NEW
-  end_date: z.date().nullable().optional(),   // NEW
+  start_date: z.date().nullable().optional(),
+  end_date: z.date().nullable().optional(),
   views: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
-  ), // NEW
+  ),
   clicks: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
-  ), // NEW
+  ),
   phone_views: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
-  ), // NEW
+  ),
   whatsapp_interactions: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
-  ), // NEW
+  ),
   leads_email: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
-  ), // NEW
+  ),
   location_clicks: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
-  ), // NEW
+  ),
   total_ads: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
-  ), // NEW
+  ),
   favorites: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().int("Deve ser um número inteiro").min(0, "Não pode ser negativo").nullable().optional()
-  ), // NEW
+  ),
   total_cost: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().min(0, "Não pode ser negativo").nullable().optional()
-  ), // NEW
+  ),
   revenue: z.preprocess(
     (val) => (val === "" ? null : Number(val)),
     z.number().min(0, "Não pode ser negativo").nullable().optional()
-  ), // NEW
+  ),
+  phone_views_percentage: z.preprocess( // NEW
+    (val) => (val === "" ? null : Number(val)),
+    z.number().min(0, "Não pode ser negativo").max(100, "Não pode ser superior a 100").nullable().optional()
+  ),
+  whatsapp_interactions_percentage: z.preprocess( // NEW
+    (val) => (val === "" ? null : Number(val)),
+    z.number().min(0, "Não pode ser negativo").max(100, "Não pode ser superior a 100").nullable().optional()
+  ),
+  total_leads: z.number().nullable().optional(), // NEW: Calculated, read-only
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -84,6 +94,7 @@ const AnalyticsEditForm: React.FC<AnalyticsEditFormProps> = ({ analytics, onSave
   const [companyDbId, setCompanyDbId] = useState<string | null>(null);
   const [companyDetails, setCompanyDetails] = useState<Company | null>(null);
   const [additionalCompanyDetails, setAdditionalCompanyDetails] = useState<CompanyAdditionalExcelData | null>(null);
+  const { profile } = useSession(); // NEW: Get user profile for default percentages
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -102,6 +113,48 @@ const AnalyticsEditForm: React.FC<AnalyticsEditFormProps> = ({ analytics, onSave
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: analytics.title || '',
+      description: analytics.description || '',
+      analysis_date: analytics.analysis_date ? parseISO(analytics.analysis_date) : undefined,
+      category: analytics.category || '',
+      result: analytics.result || '',
+      start_date: analytics.start_date ? parseISO(analytics.start_date) : undefined,
+      end_date: analytics.end_date ? parseISO(analytics.end_date) : undefined,
+      views: analytics.views || 0,
+      clicks: analytics.clicks || 0,
+      phone_views: analytics.phone_views || 0,
+      whatsapp_interactions: analytics.whatsapp_interactions || 0,
+      leads_email: analytics.leads_email || 0,
+      location_clicks: analytics.location_clicks || 0,
+      total_ads: analytics.total_ads || 0,
+      favorites: analytics.favorites || 0,
+      total_cost: analytics.total_cost || 0,
+      revenue: analytics.revenue || 0,
+      phone_views_percentage: analytics.phone_views_percentage ?? profile?.phone_views_conversion_percentage ?? 100, // Default from existing or profile or 100
+      whatsapp_interactions_percentage: analytics.whatsapp_interactions_percentage ?? profile?.whatsapp_interactions_conversion_percentage ?? 100, // Default from existing or profile or 100
+      total_leads: analytics.total_leads || 0, // Calculated
+    },
+  });
+
+  const { watch, setValue } = form;
+  const phoneViews = watch("phone_views");
+  const whatsappInteractions = watch("whatsapp_interactions");
+  const leadsEmail = watch("leads_email");
+  const phoneViewsPercentage = watch("phone_views_percentage");
+  const whatsappInteractionsPercentage = watch("whatsapp_interactions_percentage");
+
+  // Effect to calculate total_leads
+  useEffect(() => {
+    const calculatedLeads = 
+      ((phoneViews || 0) * (phoneViewsPercentage ?? 100) / 100) +
+      ((whatsappInteractions || 0) * (whatsappInteractionsPercentage ?? 100) / 100) +
+      (leadsEmail || 0);
+    setValue("total_leads", calculatedLeads);
+  }, [phoneViews, whatsappInteractions, leadsEmail, phoneViewsPercentage, whatsappInteractionsPercentage, setValue]);
 
   useEffect(() => {
     const loadCompanyData = async () => {
@@ -126,29 +179,6 @@ const AnalyticsEditForm: React.FC<AnalyticsEditFormProps> = ({ analytics, onSave
     }
   }, [userId, analytics.company_excel_id]);
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: analytics.title || '',
-      description: analytics.description || '',
-      analysis_date: analytics.analysis_date ? parseISO(analytics.analysis_date) : undefined,
-      category: analytics.category || '',
-      result: analytics.result || '',
-      start_date: analytics.start_date ? parseISO(analytics.start_date) : undefined, // NEW
-      end_date: analytics.end_date ? parseISO(analytics.end_date) : undefined,     // NEW
-      views: analytics.views || 0,           // NEW
-      clicks: analytics.clicks || 0,         // NEW
-      phone_views: analytics.phone_views || 0, // NEW
-      whatsapp_interactions: analytics.whatsapp_interactions || 0, // NEW
-      leads_email: analytics.leads_email || 0, // NEW
-      location_clicks: analytics.location_clicks || 0, // NEW
-      total_ads: analytics.total_ads || 0,   // NEW
-      favorites: analytics.favorites || 0,   // NEW
-      total_cost: analytics.total_cost || 0, // NEW
-      revenue: analytics.revenue || 0,       // NEW
-    },
-  });
-
   const onSubmit = async (values: FormData) => {
     if (!userId) {
       showError("Utilizador não autenticado. Por favor, faça login para guardar os dados.");
@@ -168,18 +198,22 @@ const AnalyticsEditForm: React.FC<AnalyticsEditFormProps> = ({ analytics, onSave
         category: values.category || null,
         result: values.result || null,
         company_db_id: companyDbId,
-        start_date: values.start_date ? values.start_date.toISOString() : null, // NEW
-        end_date: values.end_date ? values.end_date.toISOString() : null,     // NEW
-        views: values.views || null,           // NEW
-        clicks: values.clicks || null,         // NEW
-        phone_views: values.phone_views || null, // NEW
-        whatsapp_interactions: values.whatsapp_interactions || null, // NEW
-        leads_email: values.leads_email || null, // NEW
-        location_clicks: values.location_clicks || null, // NEW
-        total_ads: values.total_ads || null,   // NEW
-        favorites: values.favorites || null,   // NEW
-        total_cost: values.total_cost || null, // NEW
-        revenue: values.revenue || null,       // NEW
+        start_date: values.start_date ? values.start_date.toISOString() : null,
+        end_date: values.end_date ? values.end_date.toISOString() : null,
+        views: values.views || null,
+        clicks: values.clicks || null,
+        phone_views: values.phone_views || null,
+        whatsapp_interactions: values.whatsapp_interactions || null,
+        leads_email: values.leads_email || null,
+        location_clicks: values.location_clicks || null,
+        total_ads: values.total_ads || null,
+        favorites: values.favorites || null,
+        total_cost: values.total_cost || null,
+        revenue: values.revenue || null,
+        phone_views_percentage: values.phone_views_percentage || null, // NEW
+        whatsapp_interactions_percentage: values.whatsapp_interactions_percentage || null, // NEW
+        total_leads: values.total_leads || null, // NEW
+        updated_at: new Date().toISOString(),
       };
 
       await updateAnalytics(analytics.id!, updatedAnalytics);
@@ -197,18 +231,21 @@ const AnalyticsEditForm: React.FC<AnalyticsEditFormProps> = ({ analytics, onSave
     { name: "title", label: "Título", type: "text", required: true },
     { name: "category", label: "Categoria", type: "select", options: ["Financeira", "Marketing", "Operacional", "Vendas", "Outro"] },
     { name: "analysis_date", label: "Data da Análise", type: "date" },
-    { name: "start_date", label: "Data de Início", type: "date" }, // NEW
-    { name: "end_date", label: "Data de Fim", type: "date" },     // NEW
-    { name: "views", label: "Visualizações", type: "number" },           // NEW
-    { name: "clicks", label: "Cliques", type: "number" },         // NEW
-    { name: "phone_views", label: "Visualizações do Telefone", type: "number" }, // NEW
-    { name: "whatsapp_interactions", label: "Interações WhatsApp", type: "number" }, // NEW
-    { name: "leads_email", label: "Leads (email)", type: "number" }, // NEW
-    { name: "location_clicks", label: "Cliques na Localização", type: "number" }, // NEW
-    { name: "total_ads", label: "Total de Anúncios", type: "number" },   // NEW
-    { name: "favorites", label: "Favoritos", type: "number" },   // NEW
-    { name: "total_cost", label: "Custo Total (€)", type: "number" }, // NEW
-    { name: "revenue", label: "Receita (€)", type: "number" },       // NEW
+    { name: "start_date", label: "Data de Início", type: "date" },
+    { name: "end_date", label: "Data de Fim", type: "date" },
+    { name: "views", label: "Visualizações", type: "number" },
+    { name: "clicks", label: "Cliques", type: "number" },
+    { name: "phone_views", label: "Visualizações do Telefone", type: "number" },
+    { name: "phone_views_percentage", label: "Conversão Tel. (%)", type: "number" }, // NEW
+    { name: "whatsapp_interactions", label: "Interações WhatsApp", type: "number" },
+    { name: "whatsapp_interactions_percentage", label: "Conversão Whats. (%)", type: "number" }, // NEW
+    { name: "leads_email", label: "Leads (email)", type: "number" },
+    { name: "total_leads", label: "Total de Leads", type: "number", readOnly: true }, // NEW: Read-only
+    { name: "location_clicks", label: "Cliques na Localização", type: "number" },
+    { name: "total_ads", label: "Total de Anúncios", type: "number" },
+    { name: "favorites", label: "Favoritos", type: "number" },
+    { name: "total_cost", label: "Custo Total (€)", type: "number" },
+    { name: "revenue", label: "Receita (€)", type: "number" },
     { name: "description", label: "Descrição", type: "textarea", colSpan: 2 },
     { name: "result", label: "Resultado", type: "textarea", colSpan: 2 },
   ];
@@ -292,6 +329,7 @@ const AnalyticsEditForm: React.FC<AnalyticsEditFormProps> = ({ analytics, onSave
                             formField.onChange(e.target.value);
                           }
                         }}
+                        readOnly={field.readOnly}
                       />
                     )}
                   </FormControl>

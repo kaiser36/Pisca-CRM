@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Calendar, Tag, Info, Edit, Trash, MoreHorizontal, FileText, BarChart3, Eye, MousePointerClick, Phone, MessageSquareText, Mail, MapPin, List, Heart, DollarSign, TrendingUp } from 'lucide-react';
+import { Terminal, Calendar, Tag, Info, Edit, Trash, MoreHorizontal, FileText, BarChart3, Eye, MousePointerClick, Phone, MessageSquareText, Mail, MapPin, List, Heart, DollarSign, TrendingUp, Users } from 'lucide-react'; // Added Users icon
 import { Separator } from '@/components/ui/separator';
 import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import AnalyticsEditForm from './AnalyticsEditForm';
-import { Badge } from '@/components/ui/badge'; // Import Badge component
+import { Badge } from '@/components/ui/badge';
+import AnalyticsDashboard from './AnalyticsDashboard'; // NEW: Import AnalyticsDashboard
 
 interface AnalyticsListProps {
   companyExcelId: string;
@@ -88,7 +89,7 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
   };
 
   const renderField = (Icon: React.ElementType, label: string, value: string | number | boolean | null | undefined) => {
-    if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '') || (typeof value === 'number' && value === 0 && !label.includes('Custo') && !label.includes('Receita'))) return null;
+    if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '') || (typeof value === 'number' && value === 0 && !label.includes('Custo') && !label.includes('Receita') && !label.includes('Leads'))) return null; // Added Leads to condition
 
     let displayValue: React.ReactNode = value;
     if (label.includes('Data') && typeof value === 'string') {
@@ -134,6 +135,8 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
   return (
     <ScrollArea className="h-full w-full pr-4">
       <div className="space-y-4">
+        <AnalyticsDashboard analyticsData={analytics} /> {/* NEW: Render the dashboard */}
+
         {analytics.length === 0 ? (
           <p className="text-muted-foreground text-center py-4">Nenhuma análise encontrada para esta empresa.</p>
         ) : (
@@ -195,6 +198,7 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
                   {renderField(Phone, "Visualizações do Telefone", analysis.phone_views)}
                   {renderField(MessageSquareText, "Interações WhatsApp", analysis.whatsapp_interactions)}
                   {renderField(Mail, "Leads (email)", analysis.leads_email)}
+                  {renderField(Users, "Total de Leads", analysis.total_leads)} {/* NEW: Display total_leads */}
                   {renderField(MapPin, "Cliques na Localização", analysis.location_clicks)}
                   {renderField(List, "Total de Anúncios", analysis.total_ads)}
                   {renderField(Heart, "Favoritos", analysis.favorites)}
