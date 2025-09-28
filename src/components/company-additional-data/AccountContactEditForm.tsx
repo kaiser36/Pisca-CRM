@@ -280,11 +280,15 @@ const AccountContactEditForm: React.FC<AccountContactEditFormProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='---NULL---'>Nenhum</SelectItem>
-                  {field.options?.map((option: any) => {
+                  {field.options?.map((option, index) => {
                     const optionValue = typeof option === 'string' ? option : option.value;
-                    const optionLabel = typeof option === 'string' ? option : option.label;
-                    if (optionValue === '') return null; 
-                    return <SelectItem key={optionValue} value={optionValue}>{optionLabel}</SelectItem>
+                    const optionLabel = typeof option === 'string' ? option : (option.label || option.value);
+
+                    if (typeof optionValue !== 'string' || optionValue === '') {
+                      return null;
+                    }
+
+                    return <SelectItem key={`${optionValue}-${index}`} value={optionValue}>{optionLabel}</SelectItem>;
                   })}
                 </SelectContent>
               </Select>
