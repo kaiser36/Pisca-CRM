@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { AccountContact } from '@/types/crm';
-import { updateAccountContact } from '@/integrations/supabase/utils';
+import { updateAccountContact } from '@/integrations/supabase/services/accountContactService';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -272,17 +272,20 @@ const AccountContactEditForm: React.FC<AccountContactEditFormProps> = ({
               />
             ) : field.type === "select" ? (
               <Select
-                onValueChange={(value) => formField.onChange(value === `null-${field.name}` ? null : value)}
-                value={(formField.value as string | null) || `null-${field.name}`}
+                onValueChange={(value) => formField.onChange(value === '---NULL---' ? null : value)}
+                value={(formField.value as string | null) || '---NULL---'}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={field.placeholder || `Selecione um ${field.label.toLowerCase()}`} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={`null-${field.name}`}>Nenhum</SelectItem>
-                  {field.options?.map((option: any) => (
-                    <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
-                  ))}
+                  <SelectItem value='---NULL---'>Nenhum</SelectItem>
+                  {field.options?.map((option: any) => {
+                    const optionValue = typeof option === 'string' ? option : option.value;
+                    const optionLabel = typeof option === 'string' ? option : option.label;
+                    if (optionValue === '') return null; 
+                    return <SelectItem key={optionValue} value={optionValue}>{optionLabel}</SelectItem>
+                  })}
                 </SelectContent>
               </Select>
             ) : (
