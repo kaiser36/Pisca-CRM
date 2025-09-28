@@ -7,13 +7,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { PlusCircle, Eye, Handshake, UserPlus, ListTodo, Pencil } from 'lucide-react';
+import { PlusCircle, Eye, Handshake, UserPlus, ListTodo, Pencil, BarChart3 } from 'lucide-react'; // NEW: Import BarChart3 icon
 import CompanyAdditionalEditForm from './CompanyAdditionalEditForm';
 import AccountContactCreateForm from './AccountContactCreateForm';
 import EasyvistaCreateForm from './EasyvistaCreateForm';
 import DealCreateForm from './DealCreateForm';
 import EmployeeCreateForm from './EmployeeCreateForm';
 import TaskCreateForm from './TaskCreateForm';
+import AnalyticsCreateForm from './AnalyticsCreateForm'; // NEW: Import AnalyticsCreateForm
 
 interface CompanyAdditionalHeaderProps {
   company: CompanyAdditionalExcelData;
@@ -33,6 +34,8 @@ interface CompanyAdditionalHeaderProps {
   setIsCreateEmployeeDialogOpen: (open: boolean) => void;
   isCreateTaskDialogOpen: boolean;
   setIsCreateTaskDialogOpen: (open: boolean) => void;
+  isCreateAnalyticsDialogOpen: boolean; // NEW: Prop for Analytics dialog
+  setIsCreateAnalyticsDialogOpen: (open: boolean) => void; // NEW: Setter for Analytics dialog
 }
 
 const CompanyAdditionalHeader: React.FC<CompanyAdditionalHeaderProps> = ({
@@ -53,6 +56,8 @@ const CompanyAdditionalHeader: React.FC<CompanyAdditionalHeaderProps> = ({
   setIsCreateEmployeeDialogOpen,
   isCreateTaskDialogOpen,
   setIsCreateTaskDialogOpen,
+  isCreateAnalyticsDialogOpen, // NEW
+  setIsCreateAnalyticsDialogOpen, // NEW
 }) => {
   const crmCompany = company.crmCompany;
 
@@ -168,6 +173,28 @@ const CompanyAdditionalHeader: React.FC<CompanyAdditionalHeaderProps> = ({
                 onDataUpdated();
               }}
               onCancel={() => setIsCreateTaskDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
+
+        {/* NEW: Dialog for Analytics */}
+        <Dialog open={isCreateAnalyticsDialogOpen} onOpenChange={setIsCreateAnalyticsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:text-primary">
+              <BarChart3 className="mr-2 h-4 w-4" /> Nova Análise
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Criar Nova Análise</DialogTitle>
+            </DialogHeader>
+            <AnalyticsCreateForm
+              companyExcelId={company.excel_company_id}
+              onSave={() => {
+                setIsCreateAnalyticsDialogOpen(false);
+                onDataUpdated();
+              }}
+              onCancel={() => setIsCreateAnalyticsDialogOpen(false)}
             />
           </DialogContent>
         </Dialog>

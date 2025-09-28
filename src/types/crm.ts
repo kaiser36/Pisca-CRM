@@ -321,3 +321,17 @@ export interface UserProfile { // NEW: User profile interface
   avatar_url: string | null;
   updated_at: string | null;
 }
+
+export interface Analytics { // NEW: Analytics interface
+  id?: string;
+  user_id: string;
+  company_db_id?: string;
+  company_excel_id: string;
+  title: string;
+  description?: string | null;
+  analysis_date?: string | null; // ISO string for timestamp
+  category?: string | null;
+  result?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
