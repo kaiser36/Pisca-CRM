@@ -214,15 +214,15 @@ const EasyvistaEditForm: React.FC<EasyvistaEditFormProps> = ({ easyvista, onSave
         company_db_id: companyDbId, // NEW: Include company_db_id
         "Nome comercial": values["Nome comercial"] || null,
         "Data Criação": easyvista["Data Criação"],
-        "Status": values["Status"], // Handle 'null-status'
-        "Account": values["Account"] === 'null-account' ? null : values["Account"], // Handle 'null-account'
+        "Status": values["Status"],
+        "Account": values["Account"] === 'null-account' ? null : values["Account"],
         "Titulo": values["Titulo"] || null,
         "Descrição": values["Descrição"] || null,
         "Anexos": values["Anexos"] ? [values["Anexos"]] : null,
-        "Tipo de report": values["Tipo de report"] === 'null-report-type' ? null : values["Tipo de report"], // Handle 'null-report-type'
+        "Tipo de report": values["Tipo de report"] === 'null-report-type' ? null : values["Tipo de report"],
         "PV": values["PV"] || false,
-        "Tipo EVS": values["Tipo EVS"] === 'null-easyvista-type' ? null : values["Tipo EVS"], // Handle 'null-easyvista-type'
-        "Urgência": values["Urgência"], // Handle 'null-urgency'
+        "Tipo EVS": values["Tipo EVS"] === 'null-easyvista-type' ? null : values["Tipo EVS"],
+        "Urgência": values["Urgência"],
         "Email Pisca": values["Email Pisca"] || null,
         "Pass Pisca": values["Pass Pisca"] || null,
         "Client ID": values["Client ID"] || null,
@@ -268,7 +268,7 @@ const EasyvistaEditForm: React.FC<EasyvistaEditFormProps> = ({ easyvista, onSave
     { name: "Status", label: "Status", type: "select", options: statusOptions, alwaysVisible: true },
     { name: "Account", label: "Account", type: "select", options: availableAMs.map(am => ({ value: am.account_name || am.am || '', label: am.account_name || am.am || 'N/A' })).filter(opt => opt.value !== ''), placeholder: "Selecione um AM", disabled: isAMsLoading || availableAMs.length === 0, alwaysVisible: true },
     { name: "Tipo de report", label: "Tipo de Report", type: "select", options: ["Geral", "Específico a um cliente"], alwaysVisible: true },
-    { name: "Tipo EVS", label: "Tipo EVS", type: "select", options: easyvistaTypes.map(type => type.name), placeholder: "Selecione um Tipo EVS", disabled: isTypesLoading || easyvistaTypes.length === 0, alwaysVisible: true },
+    { name: "Tipo EVS", label: "Tipo EVS", type: "select", options: easyvistaTypes.map(type => type.name).filter(name => name.trim() !== ''), placeholder: "Selecione um Tipo EVS", disabled: isTypesLoading || easyvistaTypes.length === 0, alwaysVisible: true },
     { name: "Titulo", label: "Título", type: "text", alwaysVisible: true },
     { name: "Descrição", label: "Descrição", type: "textarea", colSpan: 2, alwaysVisible: true },
     { name: "Anexos", label: "Anexos (URL)", type: "url", alwaysVisible: true },
