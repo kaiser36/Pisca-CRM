@@ -177,7 +177,7 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
         photo_url: imageUrl,
         district: values.district || null,
         credibom_email: values.credibom_email || null,
-        role: values.role || 'user',
+        role: values.role === 'null-role' ? null : values.role, // Handle 'null-role'
         auth_user_id: account.auth_user_id,
       };
 
@@ -217,14 +217,14 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({ account, onSave, onCa
                   <FormControl>
                     {field.type === "select" ? (
                       <Select
-                        onValueChange={(value) => formField.onChange(value === "null-user" ? null : value)}
-                        value={formField.value === null ? "null-user" : (formField.value as string)}
+                        onValueChange={(value) => formField.onChange(value === "null-role" ? null : value)} // Handle 'null-role'
+                        value={formField.value === null ? "null-role" : (formField.value as string)} // Ensure value is never empty string
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={`Selecione uma ${field.label.toLowerCase()}`} />
                         </SelectTrigger>
                         <SelectContent>
-                          {/* Removed field.optional check and "Nenhum" item as it's not applicable here */}
+                          <SelectItem value="null-role">Selecione a Função</SelectItem> {/* Add a "None" option */}
                           {field.options?.map((option: any) => (
                             <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
                           ))}

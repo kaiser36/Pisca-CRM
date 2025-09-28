@@ -271,11 +271,15 @@ const CompanyAdditionalEditForm: React.FC<CompanyAdditionalEditFormProps> = ({ c
                         onChange={formField.onChange}
                       />
                     ) : field.type === "select" ? (
-                      <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
+                      <Select
+                        onValueChange={(value) => formField.onChange(value === "null-am" ? null : value)} // Handle 'null-am'
+                        value={formField.value === null ? "null-am" : (formField.value as string)} // Ensure value is never empty string
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="null-am">Nenhum</SelectItem> {/* Add a "None" option */}
                           {field.options?.map(option => (
                             <SelectItem key={option} value={option}>{option}</SelectItem>
                           ))}

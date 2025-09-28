@@ -214,15 +214,15 @@ const EasyvistaEditForm: React.FC<EasyvistaEditFormProps> = ({ easyvista, onSave
         company_db_id: companyDbId, // NEW: Include company_db_id
         "Nome comercial": values["Nome comercial"] || null,
         "Data Criação": easyvista["Data Criação"],
-        "Status": values["Status"] || null,
-        "Account": values["Account"] || null,
+        "Status": values["Status"] === 'null-status' ? null : values["Status"], // Handle 'null-status'
+        "Account": values["Account"] === 'null-account' ? null : values["Account"], // Handle 'null-account'
         "Titulo": values["Titulo"] || null,
         "Descrição": values["Descrição"] || null,
         "Anexos": values["Anexos"] ? [values["Anexos"]] : null,
-        "Tipo de report": values["Tipo de report"] || null,
+        "Tipo de report": values["Tipo de report"] === 'null-report-type' ? null : values["Tipo de report"], // Handle 'null-report-type'
         "PV": values["PV"] || false,
-        "Tipo EVS": values["Tipo EVS"] || null,
-        "Urgência": values["Urgência"] || null,
+        "Tipo EVS": values["Tipo EVS"] === 'null-easyvista-type' ? null : values["Tipo EVS"], // Handle 'null-easyvista-type'
+        "Urgência": values["Urgência"] === 'null-urgency' ? null : values["Urgência"], // Handle 'null-urgency'
         "Email Pisca": values["Email Pisca"] || null,
         "Pass Pisca": values["Pass Pisca"] || null,
         "Client ID": values["Client ID"] || null,
@@ -333,11 +333,16 @@ const EasyvistaEditForm: React.FC<EasyvistaEditFormProps> = ({ easyvista, onSave
                         onChange={formField.onChange}
                       />
                     ) : field.type === "select" ? (
-                      <Select onValueChange={formField.onChange} defaultValue={formField.value as string} disabled={field.disabled}>
+                      <Select
+                        onValueChange={(value) => formField.onChange(value === `null-${field.name.toLowerCase().replace(/\s/g, '-')}` ? null : value)} // Handle null for specific field
+                        value={formField.value === null ? `null-${field.name.toLowerCase().replace(/\s/g, '-')}` : (formField.value as string)} // Ensure value is never empty string
+                        disabled={field.disabled}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder={field.placeholder || `Selecione um ${field.label.toLowerCase()}`} />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value={`null-${field.name.toLowerCase().replace(/\s/g, '-')}`}>Nenhum</SelectItem> {/* Add a "None" option */}
                           {field.name === "Urgência" ? (
                             (field.options as { value: string; label: string; color: string }[]).map(option => (
                               <SelectItem key={option.value} value={option.value}>
