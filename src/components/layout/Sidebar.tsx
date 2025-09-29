@@ -70,6 +70,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             {!isCollapsed && "Dashboard"}
           </Button>
         </Link>
+        
+        {/* Test link */}
+        <Link to="/test">
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              isCollapsed ? "px-2" : "px-4",
+              isActive('/test') && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+            )}
+          >
+            <Home className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
+            {!isCollapsed && "Test Page"}
+          </Button>
+        </Link>
         <Link to="/company-additional-data">
           <Button
             variant="ghost"

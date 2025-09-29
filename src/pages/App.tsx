@@ -19,6 +19,13 @@ import { CrmDataProvider } from "@/context/CrmDataContext";
 
 const queryClient = new QueryClient();
 
+const TestPage = () => (
+  <div className="p-8">
+    <h1 className="text-2xl font-bold">Test Page</h1>
+    <p>This is a test page to verify routing works.</p>
+  </div>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -31,9 +38,13 @@ const App = () => (
             <Route path="/crm" element={<CRM />} />
             <Route path="/company-additional-data" element={<CompanyAdditionalData />} />
             <Route path="/company-additional-data/:companyExcelId" element={<CompanyAdditionalDetailPage />} />
+            
+            <Route path="/test" element={<TestPage />} />
+            
             <Route path="/settings" element={<Settings />} />
             <Route path="/settings/easyvista-types" element={<EasyvistaTypeManagement />} />
             <Route path="/settings/contact-types" element={<ContactTypeManagement />} />
+            
             <Route path="/accounts" element={<Accounts />} />
             <Route path="/am-view" element={<AmView />} />
             <Route path="/products" element={<Products />} />
