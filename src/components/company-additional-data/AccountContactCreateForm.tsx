@@ -384,9 +384,8 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
                   </FormControl>
                   <FormMessage />
                 </FormItem>
-                );
-              }}
-            />
+              );
+            }}
           ))}
         </div>
         <div className="flex justify-end space-x-2 mt-6">
