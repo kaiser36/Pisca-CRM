@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { AccountContact, ContactType } from '@/types/crm';
-import { insertAccountContact, fetchContactTypesWithReports } from '@/integrations/supabase/utils';
+import { AccountContact } from '@/types/crm';
+import { insertAccountContact } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
@@ -64,8 +64,53 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [companyDbId, setCompanyDbId] = useState<string | null>(null);
-  const [contactTypes, setContactTypes] = useState<ContactType[]>([]);
+  const [companyDbId, setCompanyDbId] = useState<string | null>(null); // NEW: State for company_db_id
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      } else {
+        setUserId(null);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // NEW: Fetch company_db_id based on companyExcelId and userId
+  useEffect(() => {
+    const fetchCompanyDbId = async () => {
+      if (userId && companyExcelId) {
+        const { data, error } = await supabase
+          .from('companies')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('company_id', companyExcelId)
+          .single();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+          console.error('Error fetching company_db_id:', error);
+          showError(`Falha ao obter o ID interno da empresa: ${error.message}`);
+          setCompanyDbId(null);
+        } else if (data) {
+          setCompanyDbId(data.id);
+        } else {
+          showError(`Empresa com ID Excel '${companyExcelId}' não encontrada no CRM principal.`);
+          setCompanyDbId(null);
+        }
+      }
+    };
+
+    fetchCompanyDbId();
+  }, [userId, companyExcelId]);
+
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -94,68 +139,12 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     },
   });
 
-  const selectedContactType = form.watch('contact_type');
-  const reportOptions = contactTypes.find(ct => ct.name === selectedContactType)?.contact_report_options || [];
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-      } else {
-        setUserId(null);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      if (userId) {
-        // Fetch company_db_id
-        const { data: companyData, error: companyError } = await supabase
-          .from('companies')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('company_id', companyExcelId)
-          .single();
-
-        if (companyError && companyError.code !== 'PGRST116') {
-          console.error('Error fetching company_db_id:', companyError);
-          showError(`Falha ao obter o ID interno da empresa: ${companyError.message}`);
-          setCompanyDbId(null);
-        } else if (companyData) {
-          setCompanyDbId(companyData.id);
-        } else {
-          showError(`Empresa com ID Excel '${companyExcelId}' não encontrada no CRM principal.`);
-          setCompanyDbId(null);
-        }
-
-        // Fetch contact types
-        try {
-          const types = await fetchContactTypesWithReports(userId);
-          setContactTypes(types);
-        } catch (error: any) {
-          showError(`Erro ao carregar tipos de contato: ${error.message}`);
-        }
-      }
-    };
-
-    fetchInitialData();
-  }, [userId, companyExcelId]);
-
   const onSubmit = async (values: FormData) => {
     if (!userId) {
       showError("Utilizador não autenticado. Por favor, faça login para criar o contacto.");
       return;
     }
-    if (!companyDbId) {
+    if (!companyDbId) { // NEW: Check if companyDbId is available
       showError("Não foi possível associar o contacto a uma empresa válida. Por favor, verifique o ID Excel da empresa.");
       return;
     }
@@ -164,7 +153,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     try {
       const newContact: Omit<AccountContact, 'id' | 'created_at'> = {
         user_id: userId,
-        company_db_id: companyDbId,
+        company_db_id: companyDbId, // NEW: Use companyDbId
         company_excel_id: companyExcelId,
         account_am: values.account_am || null,
         contact_type: values.contact_type || null,
@@ -202,8 +191,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
 
   const fields = [
     { name: "account_am", label: "AM da Conta", type: "text" },
-    { name: "contact_type", label: "Tipo de Contacto", type: "dynamic_select", options: contactTypes.map(ct => ct.name) },
-    { name: "report_text", label: "Relatório", type: "dynamic_select", options: reportOptions.map(ro => ro.report_text) },
+    { name: "contact_type", label: "Tipo de Contacto", type: "select", options: ["Chamada", "Email", "Reunião", "Visita", "Outro"] },
     { name: "contact_date", label: "Data do Contacto", type: "date" },
     { name: "contact_method", label: "Meio de Contacto", type: "select", options: ["Telefone", "Email", "Presencial", "Videoconferência", "Outro"] },
     { name: "commercial_name", label: "Nome Comercial", type: "text" },
@@ -221,6 +209,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     { name: "email_subject", label: "Assunto do Email", type: "text" },
     { name: "attachment_url", label: "URL do Anexo", type: "url" },
     { name: "sending_email", label: "Email de Envio", type: "email" },
+    { name: "report_text", label: "Texto do Relatório", type: "textarea", colSpan: 2 },
     { name: "email_body", label: "Corpo do Email", type: "textarea", colSpan: 2 },
   ];
 
@@ -232,60 +221,72 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
         </p>
         {!companyDbId && (
           <p className="text-sm text-red-500">
-            A procurar empresa no CRM... Se esta mensagem persistir, o contacto não poderá ser criado.
+            Não foi possível encontrar a empresa no CRM principal com o ID Excel fornecido. O contacto não poderá ser criado.
           </p>
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {fields.map((fieldInfo) => (
+          {fields.map((field) => (
             <FormField
-              key={fieldInfo.name}
+              key={field.name}
               control={form.control}
-              name={fieldInfo.name as keyof FormData}
-              render={({ field }) => (
-                <FormItem className={fieldInfo.colSpan === 2 ? "md:col-span-2" : ""}>
-                  <FormLabel>{fieldInfo.label}</FormLabel>
+              name={field.name as keyof FormData}
+              render={({ field: formField }) => (
+                <FormItem className={field.colSpan === 2 ? "md:col-span-2" : ""}>
+                  <FormLabel>{field.label}</FormLabel>
                   <FormControl>
-                    {(() => {
-                      switch (fieldInfo.type) {
-                        case "boolean":
-                          return <Switch checked={field.value as boolean} onCheckedChange={field.onChange} />;
-                        case "date":
-                          return (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant={"outline"}
-                                  className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {field.value ? format(field.value as Date, "PPP") : <span>Selecione uma data</span>}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <Calendar mode="single" selected={field.value as Date} onSelect={field.onChange} initialFocus />
-                              </PopoverContent>
-                            </Popover>
-                          );
-                        case "textarea":
-                          return <Textarea {...field} value={field.value as string || ''} />;
-                        case "select":
-                        case "dynamic_select":
-                          return (
-                            <Select onValueChange={field.onChange} defaultValue={field.value as string}>
-                              <SelectTrigger>
-                                <SelectValue placeholder={`Selecione um ${fieldInfo.label.toLowerCase()}`} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {fieldInfo.options?.map(option => (
-                                  <SelectItem key={option} value={option}>{option}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          );
-                        default:
-                          return <Input type={fieldInfo.type} {...field} value={field.value as string || ''} />;
-                      }
-                    })()}
+                    {field.type === "boolean" ? (
+                      <Switch
+                        checked={formField.value as boolean}
+                        onCheckedChange={formField.onChange}
+                      />
+                    ) : field.type === "date" ? (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !formField.value && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formField.value ? format(formField.value as Date, "PPP") : <span>Selecione uma data</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={formField.value as Date}
+                            onSelect={formField.onChange}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    ) : field.type === "textarea" ? (
+                      <Textarea
+                        {...formField}
+                        value={formField.value as string || ''}
+                        onChange={formField.onChange}
+                      />
+                    ) : field.type === "select" ? (
+                      <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {field.options?.map(option => (
+                            <SelectItem key={option} value={option}>{option}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        type={field.type}
+                        {...formField}
+                        value={formField.value as string || ''}
+                        onChange={formField.onChange}
+                      />
+                    )}
                   </FormControl>
                   <FormMessage />
                 </FormItem>

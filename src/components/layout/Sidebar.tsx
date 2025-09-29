@@ -4,7 +4,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2, UserCog, Info, Users, Package, ListTodo, Gift, Settings2, Monitor, ListChecks } from 'lucide-react';
+import { Home, Building, Settings, ChevronLeft, ChevronRight, Building2, UserCog, Info, Users, Package, ListTodo, Gift, Settings2, Monitor } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -28,7 +28,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const [accordionValue, setAccordionValue] = React.useState<string | undefined>(undefined);
 
   React.useEffect(() => {
-    if (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view') || isPathActive('/products') || isPathActive('/campaigns') || isPathActive('/settings/easyvista-types') || isPathActive('/settings/contact-types') || isPathActive('/crm')) {
+    // Updated logic to include /crm in the settings accordion
+    if (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view') || isPathActive('/products') || isPathActive('/campaigns') || isPathActive('/settings/easyvista-types') || isPathActive('/crm')) {
       setAccordionValue('settings-accordion');
     } else {
       setAccordionValue(undefined);
@@ -70,7 +71,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             {!isCollapsed && "Dashboard"}
           </Button>
         </Link>
-        
         <Link to="/company-additional-data">
           <Button
             variant="ghost"
@@ -103,7 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             <AccordionTrigger className={cn(
               "flex items-center w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground py-2 px-4 rounded-md transition-colors",
               isCollapsed ? "px-2" : "px-4",
-              (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view') || isPathActive('/products') || isPathActive('/campaigns') || isPathActive('/settings/easyvista-types') || isPathActive('/settings/contact-types') || isPathActive('/crm')) && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+              (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view') || isPathActive('/products') || isPathActive('/campaigns') || isPathActive('/settings/easyvista-types') || isPathActive('/crm')) && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
             )}>
               <Settings className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
               {!isCollapsed && "Configurações"}
@@ -206,21 +206,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 >
                   <Settings2 className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
                   {!isCollapsed && "Tipos de Easyvista"}
-                </Button>
-              </Link>
-              <Link to="/settings/contact-types">
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                    isCollapsed ? "px-2" : "px-4",
-                    "pl-8",
-                    isActive('/settings/contact-types') && "bg-sidebar-accent text-sidebar-accent-foreground"
-                  )}
-                  onClick={() => console.log('Navegando para /settings/contact-types')}
-                >
-                  <ListChecks className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
-                  {!isCollapsed && "Tipos de Contato"}
                 </Button>
               </Link>
             </AccordionContent>
