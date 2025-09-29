@@ -4,10 +4,10 @@
 
 @layer base {
   :root {
-    --background: 0 0% 96%; /* #F5F5F5 */
-    --foreground: 222.2 84% 4.9%; /* Keep dark text */
+    --background: 240 5% 96.1%; /* Lighter, cooler gray */
+    --foreground: 222.2 84% 4.9%;
 
-    --card: 0 0% 96%; /* #F5F5F5 */
+    --card: 0 0% 100%; /* Pure white for cards */
     --card-foreground: 222.2 84% 4.9%;
 
     --popover: 0 0% 100%;
@@ -22,17 +22,17 @@
     --success: 122 39% 50%; /* #4CAF50 */
     --success-foreground: 210 40% 98%; /* White text */
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 240 5% 96.1%; /* Match background */
+    --muted-foreground: 240 3.8% 46.1%; /* Slightly darker muted text */
 
-    --accent: 210 40% 96.1%;
+    --accent: 240 5% 96.1%; /* Match background */
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 69% 50%; /* #D32F2F */
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 240 5.9% 90%; /* Softer border */
+    --input: 240 5.9% 90%; /* Softer input border */
     --ring: 207 77% 47%; /* Match primary */
 
     --radius: 0.75rem; /* Slightly more rounded */

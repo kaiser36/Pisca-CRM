@@ -8,6 +8,7 @@ import { Loader2, Building } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 import { Separator } from '@/components/ui/separator';
+import DashboardCard from './DashboardCard';
 
 interface CompanyOverviewDashboardProps {
   // Pode adicionar props se precisar de passar dados ou callbacks do pai
@@ -113,80 +114,78 @@ const CompanyOverviewDashboard: React.FC<CompanyOverviewDashboardProps> = () => 
   }, [userId, fetchCompanies]);
 
   return (
-    <Card className="w-full shadow-md">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center text-lg font-semibold">
-          <Building className="mr-2 h-5 w-5 text-blue-500" />
-          Número Total de Empresas
-        </CardTitle>
-        <CardDescription className="text-muted-foreground">
-          Visão geral e filtragem das empresas no seu CRM.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6"> {/* Increased spacing */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex flex-col space-y-1">
-            <Label htmlFor="plan-status-filter" className="text-sm font-medium">Estado do Plano</Label>
-            <Select value={planStatusFilter} onValueChange={setPlanStatusFilter} disabled={isLoading}>
-              <SelectTrigger id="plan-status-filter" className="h-9">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="active">Ativo</SelectItem>
-                <SelectItem value="inactive">Inativo</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+    <div className="space-y-6">
+      <Card className="shadow-md">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Filtros de Empresas</CardTitle>
+          <CardDescription>Refine a sua pesquisa de empresas.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex flex-col space-y-1">
+              <Label htmlFor="plan-status-filter" className="text-sm font-medium">Estado do Plano</Label>
+              <Select value={planStatusFilter} onValueChange={setPlanStatusFilter} disabled={isLoading}>
+                <SelectTrigger id="plan-status-filter" className="h-9">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="active">Ativo</SelectItem>
+                  <SelectItem value="inactive">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="flex flex-col space-y-1">
-            <Label htmlFor="credibom-partner-filter" className="text-sm font-medium">Parceiro Credibom</Label>
-            <Select value={credibomPartnerFilter} onValueChange={setCredibomPartnerFilter} disabled={isLoading}>
-              <SelectTrigger id="credibom-partner-filter" className="h-9">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="yes">Sim</SelectItem>
-                <SelectItem value="no">Não</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="flex flex-col space-y-1">
+              <Label htmlFor="credibom-partner-filter" className="text-sm font-medium">Parceiro Credibom</Label>
+              <Select value={credibomPartnerFilter} onValueChange={setCredibomPartnerFilter} disabled={isLoading}>
+                <SelectTrigger id="credibom-partner-filter" className="h-9">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="yes">Sim</SelectItem>
+                  <SelectItem value="no">Não</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="flex flex-col space-y-1">
-            <Label htmlFor="account-am-filter" className="text-sm font-medium">Account (AM)</Label>
-            <Select value={accountAMFilter} onValueChange={setAccountAMFilter} disabled={isLoading}>
-              <SelectTrigger id="account-am-filter" className="h-9">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {availableAMs.map(am => (
-                  <SelectItem key={am} value={am}>{am}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col space-y-1">
+              <Label htmlFor="account-am-filter" className="text-sm font-medium">Account (AM)</Label>
+              <Select value={accountAMFilter} onValueChange={setAccountAMFilter} disabled={isLoading}>
+                <SelectTrigger id="account-am-filter" className="h-9">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {availableAMs.map(am => (
+                    <SelectItem key={am} value={am}>{am}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center h-32">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-
-        <Separator className="my-4" />
-
-        {isLoading ? (
-          <div className="flex items-center justify-center h-24">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : error ? (
-          <div className="flex items-center justify-center h-24 text-red-500">
-            {error}
-          </div>
-        ) : (
-          <div className="text-center py-4">
-            <p className="text-6xl font-extrabold text-primary">{totalCompanies}</p>
-            <p className="text-lg text-muted-foreground mt-2">Empresas Encontradas</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      ) : error ? (
+        <div className="flex items-center justify-center h-32 text-red-500 bg-destructive/10 rounded-lg p-4">
+          {error}
+        </div>
+      ) : (
+        <DashboardCard
+          title="Total de Empresas"
+          value={totalCompanies.toString()}
+          description="Empresas correspondentes aos filtros selecionados."
+          icon={<Building className="w-8 h-8" />}
+          className="bg-gradient-to-br from-blue-500 to-sky-500"
+        />
+      )}
+    </div>
   );
 };
 

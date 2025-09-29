@@ -16,6 +16,7 @@ import {
   Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import DashboardCard from '@/components/dashboard/DashboardCard';
 
 interface KpiCardProps {
   title: string;
@@ -182,7 +183,7 @@ const AnalyticsKPIDashboard: React.FC<AnalyticsKPIDashboardProps> = ({ analytic 
       <h3 className="text-xl font-bold text-gray-800 dark:text-white">Dashboard KPIs</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
         {kpiData.map((kpi) => (
-          <KpiCard
+          <DashboardCard
             key={kpi.title}
             title={kpi.title}
             value={kpi.value}
