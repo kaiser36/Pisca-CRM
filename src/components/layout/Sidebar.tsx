@@ -28,7 +28,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const [accordionValue, setAccordionValue] = React.useState<string | undefined>(undefined);
 
   React.useEffect(() => {
-    // Updated logic to include /crm in the settings accordion
     if (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view') || isPathActive('/products') || isPathActive('/campaigns') || isPathActive('/settings/easyvista-types') || isPathActive('/settings/contact-types') || isPathActive('/crm')) {
       setAccordionValue('settings-accordion');
     } else {
