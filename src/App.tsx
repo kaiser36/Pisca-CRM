@@ -16,6 +16,7 @@ import Campaigns from "./pages/Campaigns";
 import EasyvistaTypeManagement from "./pages/EasyvistaTypeManagement";
 import PiscaConsole from "./pages/PiscaConsole";
 import Login from "./pages/Login"; // Import the new Login page
+import ContactTypes from "./pages/ContactTypes"; // Import the new ContactTypes page
 import { CrmDataProvider } from "@/context/CrmDataContext";
 import { SessionContextProvider } from "@/context/SessionContext"; // Import SessionContextProvider
 
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/company-additional-data/:companyExcelId" element={<CompanyAdditionalDetailPage />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/settings/easyvista-types" element={<EasyvistaTypeManagement />} />
+              <Route path="/settings/contact-types" element={<ContactTypes />} />
               <Route path="/accounts" element={<Accounts />} />
               <Route path="/am-view" element={<AmView />} />
               <Route path="/products" element={<Products />} />
