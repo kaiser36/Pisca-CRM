@@ -1,117 +1,132 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
-import { useSession } from '@/context/SessionContext';
-import { getCompanyAdditionalExcelDataByCompanyId, getCompanyByExcelId, getStandsByCompanyExcelId, getEasyvistasByCompanyExcelId } from '@/integrations/supabase/services/companyAdditionalDataService';
-import { CompanyAdditionalExcelData, Company, Stand, Easyvista } from '@/types/crm';
+import { useParams, useNavigate, useLocation } from 'react-router-dom'; // NEW: Import useLocation
+import Layout from '@/components/layout/Layout';
+import { CompanyAdditionalExcelData, Company } from '@/types/crm';
+import { fetchCompanyAdditionalExcelData, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils';
+import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import CompanyAdditionalDetailCard from '@/components/company-additional-data/CompanyAdditionalDetailCard';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Terminal, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import CompanyAdditionalDetailCard from '@/components/company-additional-data/CompanyAdditionalDetailCard';
 
 const CompanyAdditionalDetailPage: React.FC = () => {
-  const { user } = useSession();
-  const params = useParams();
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const companyId = params.id as string;
-
+  const { companyExcelId } = useParams<{ companyExcelId: string }>();
+  const navigate = useNavigate();
+  const location = useLocation(); // NEW: Initialize useLocation
   const [company, setCompany] = useState<CompanyAdditionalExcelData | null>(null);
-  const [crmCompany, setCrmCompany] = useState<Company | null>(null);
-  const [stands, setStands] = useState<Stand[]>([]);
-  const [easyvistas, setEasyvistas] = useState<Easyvista[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [initialTab, setInitialTab] = useState('overview');
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      } else {
+        setUserId(null);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const loadCompanyDetails = useCallback(async () => {
-    if (!user || !companyId) return;
-
+    if (!userId || !companyExcelId) {
+      setIsLoading(false);
+      setError("ID da empresa ou utilizador não autenticado.");
+      return;
+    }
     setIsLoading(true);
     setError(null);
-
     try {
-      const [companyData, crmCompanyData] = await Promise.all([
-        getCompanyAdditionalExcelDataByCompanyId(user.id, companyId),
-        getCompanyByExcelId(user.id, companyId)
-      ]);
+      // Fetch the specific additional company data
+      const { data: additionalData } = await fetchCompanyAdditionalExcelData(userId, 1, 1, companyExcelId);
+      const fetchedAdditionalCompany = additionalData.find(c => c.excel_company_id === companyExcelId);
 
-      if (!companyData) {
-        throw new Error('Dados adicionais da empresa não encontrados.');
-      }
-      if (!crmCompanyData) {
-        throw new Error('Dados da empresa no CRM não encontrados.');
+      if (!fetchedAdditionalCompany) {
+        setError("Empresa adicional não encontrada.");
+        return;
       }
 
-      setCompany(companyData);
-      setCrmCompany(crmCompanyData);
+      // Fetch CRM company data for the associated excel_company_id
+      const crmCompanies = await fetchCompaniesByExcelCompanyIds(userId, [companyExcelId]);
+      const crmCompany = crmCompanies.find(c => c.Company_id === companyExcelId);
 
-      const [standsData, easyvistasData] = await Promise.all([
-        getStandsByCompanyExcelId(user.id, companyId),
-        getEasyvistasByCompanyExcelId(user.id, companyId)
-      ]);
-
-      setStands(standsData);
-      setEasyvistas(easyvistasData);
+      setCompany({
+        ...fetchedAdditionalCompany,
+        crmCompany: crmCompany || undefined,
+      });
 
     } catch (err: any) {
-      const errorMessage = `Erro ao carregar detalhes da empresa: ${err.message}`;
-      setError(errorMessage);
-      showError(errorMessage);
+      console.error("Erro ao carregar detalhes da empresa adicional:", err);
+      setError(err.message || "Falha ao carregar os detalhes da empresa adicional.");
+      showError(err.message || "Falha ao carregar os detalhes da empresa adicional.");
     } finally {
       setIsLoading(false);
     }
-  }, [user, companyId]);
+  }, [userId, companyExcelId]);
 
   useEffect(() => {
-    loadCompanyDetails();
-  }, [loadCompanyDetails]);
-
-  useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab) {
-      setInitialTab(tab);
+    if (userId && companyExcelId) {
+      loadCompanyDetails();
     }
-  }, [searchParams]);
+  }, [userId, companyExcelId, loadCompanyDetails]);
+
+  const handleBack = () => {
+    navigate('/company-additional-data');
+  };
+
+  // NEW: Determine initial tab from URL
+  const queryParams = new URLSearchParams(location.search);
+  const initialTab = queryParams.get('tab') || 'details';
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-4">
-        <Skeleton className="h-12 w-1/4 mb-4" />
-        <Skeleton className="h-96 w-full" />
-      </div>
+      <Layout>
+        <div className="container mx-auto p-6">
+          <Skeleton className="h-10 w-48 mb-4" />
+          <Skeleton className="h-[500px] w-full" />
+        </div>
+      </Layout>
     );
   }
 
   if (error) {
     return (
-      <div className="container mx-auto p-4 text-center text-red-500">
-        <p>{error}</p>
-        <Button onClick={() => router.back()} className="mt-4">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-        </Button>
-      </div>
+      <Layout>
+        <div className="container mx-auto p-6">
+          <Button variant="outline" onClick={handleBack} className="mb-4">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar à Lista
+          </Button>
+          <Alert variant="destructive">
+            <Terminal className="h-4 w-4" />
+            <AlertTitle>Erro</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <Button onClick={() => router.back()} variant="outline" className="mb-4">
-        <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para a lista
-      </Button>
-      {company && crmCompany && (
-        <CompanyAdditionalDetailCard 
-          company={company} 
-          crmCompany={crmCompany}
-          stands={stands}
-          easyvistas={easyvistas}
-          onDataChange={loadCompanyDetails} 
-        />
-      )}
-    </div>
+    <Layout>
+      <div className="container mx-auto p-6">
+        <Button variant="outline" onClick={handleBack} className="mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar à Lista
+        </Button>
+        {company && <CompanyAdditionalDetailCard company={company} onDataUpdated={loadCompanyDetails} initialTab={initialTab} />} {/* NEW: Pass initialTab */}
+      </div>
+    </Layout>
   );
 };
 

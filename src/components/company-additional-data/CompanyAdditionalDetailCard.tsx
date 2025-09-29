@@ -1,213 +1,395 @@
 "use client";
 
-import React, { useMemo, useState, ElementType } from 'react';
-import { CompanyAdditionalExcelData, Company, Stand, Easyvista } from '@/types/crm';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect, useCallback } from 'react';
+import { CompanyAdditionalExcelData, Negocio, Company } from '@/types/crm';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Mail, MapPin, Building, Globe, DollarSign, Package, Repeat, TrendingUp, Car, CheckCircle, XCircle, Calendar, User, Phone, Tag, Info, Banknote, LinkIcon, Clock, Users, Factory, ShieldCheck, Pencil, Landmark, Briefcase, PlusCircle, MessageSquareMore, Eye, Wallet, BellRing, Handshake, UserPlus, Upload, Archive, Save, ArrowRight, Download, Hourglass, XCircle as ExpiredIcon, ListTodo, BarChart2
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, Building, Calendar, CheckCircle, DollarSign, Globe, Hash, Mail, MapPin, Percent, Phone, Shield, Star, Tag, User, Users, XCircle } from 'lucide-react';
+import { isPast, parseISO, differenceInMonths, differenceInDays, format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { fetchDealsByCompanyExcelId } from '@/integrations/supabase/utils';
+import { showError } from '@/utils/toast';
+
+// Import new modular components
+import CompanyAdditionalHeader from './CompanyAdditionalHeader';
 import CompanyAdditionalOverviewCards from './CompanyAdditionalOverviewCards';
+import CompanyAdditionalDetailsAccordion from './CompanyAdditionalDetailsAccordion';
+
+// Child list components (already modular)
+import StandCard from '@/components/crm/StandCard';
+import AccountContactList from './AccountContactList';
+import EasyvistaList from './EasyvistaList';
+import DealList from './DealList';
+import EmployeeList from './EmployeeList';
+import TaskList from './TaskList';
 import AnalyticsList from './AnalyticsList';
-import AnalyticsCreateFormForCompany from './AnalyticsCreateFormForCompany';
-import AccountContactsList from '@/components/account-contacts/AccountContactsList';
-import EmployeesList from '@/components/employees/EmployeesList';
-import DealsList from '@/components/deals/DealsList';
-import TasksList from '@/components/tasks/TasksList';
-import StandsList from '@/components/stands/StandsList';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface CompanyAdditionalDetailCardProps {
-  company: CompanyAdditionalExcelData;
-  crmCompany: Company;
-  stands: Stand[];
-  easyvistas: Easyvista[];
-  onDataChange: () => void;
+  company: CompanyAdditionalExcelData | null;
+  onDataUpdated: () => void;
+  initialTab?: string;
 }
 
-const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = ({
-  company,
-  crmCompany,
-  stands,
-  easyvistas,
-  onDataChange,
-}) => {
-  const [isCreateAnalyticsOpen, setIsCreateAnalyticsOpen] = useState(false);
+const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = ({ company, onDataUpdated, initialTab = 'details' }) => {
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCreateContactDialogOpen, setIsCreateContactDialogOpen] = useState(false);
+  const [isCreateEasyvistaDialogOpen, setIsCreateEasyvistaDialogOpen] = useState(false);
+  const [isCreateDealDialogOpen, setIsCreateDealDialogOpen] = useState(false);
+  const [isCreateEmployeeDialogOpen, setIsCreateEmployeeDialogOpen] = useState(false);
+  const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false);
+  const [isCreateAnalysisDialogOpen, setIsCreateAnalysisDialogOpen] = useState(false);
+  const [deals, setDeals] = useState<Negocio[]>([]);
+  const [isDealsLoading, setIsDealsLoading] = useState(true);
+  const [dealsError, setDealsError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState(initialTab);
 
-  const alerts = useMemo(() => {
-    const alertsList: string[] = [];
-    if (company['Email da empresa'] && crmCompany.company_email && company['Email da empresa'] !== crmCompany.company_email) {
-      alertsList.push('O email da empresa diverge entre a base de dados e o ficheiro excel.');
-    }
-    if (company.AM && crmCompany.am_current && company.AM !== crmCompany.am_current) {
-      alertsList.push('O Account Manager diverge entre a base de dados e o ficheiro excel.');
-    }
-    if (!crmCompany.is_crb_partner && (company['Quer ser parceiro Credibom'] || company['Mediador de credito'])) {
-      alertsList.push('Empresa mostra interesse em ser parceiro Credibom mas não está marcada como tal.');
-    }
-    return alertsList;
-  }, [company, crmCompany]);
+  // Update activeTab when initialTab prop changes
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
-  const totalPublicados = useMemo(() => stands.reduce((acc, stand) => acc + (stand.publicados || 0), 0), [stands]);
-  const totalArquivados = useMemo(() => stands.reduce((acc, stand) => acc + (stand.arquivados || 0), 0), [stands]);
-  const totalGuardados = useMemo(() => stands.reduce((acc, stand) => acc + (stand.guardados || 0), 0), [stands]);
-  const totalLeadsRecebidas = useMemo(() => stands.reduce((acc, stand) => acc + (stand.leads_recebidas || 0), 0), [stands]);
-  const totalLeadsPendentes = useMemo(() => stands.reduce((acc, stand) => acc + (stand.leads_pendentes || 0), 0), [stands]);
+  // Fetch userId on component mount
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      } else {
+        setUserId(null);
+      }
+    });
 
-  const renderField = (Icon: ElementType, label: string, value: string | number | boolean | null | undefined, isBoolean = false) => {
-    let displayValue: React.ReactNode = value?.toString() || <span className="text-gray-400">N/A</span>;
-    if (isBoolean) {
-      displayValue = value ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-red-500" />;
-    } else if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('www'))) {
-      displayValue = <a href={value.startsWith('http') ? value : `https://${value}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline truncate">{value}</a>;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Fetch deals when company or userId changes
+  useEffect(() => {
+    const loadDeals = async () => {
+      if (!userId || !company?.excel_company_id) {
+        setIsDealsLoading(false);
+        return;
+      }
+      setIsDealsLoading(true);
+      setDealsError(null);
+      try {
+        const fetchedDeals = await fetchDealsByCompanyExcelId(userId, company.excel_company_id);
+        setDeals(fetchedDeals);
+      } catch (err: any) {
+        console.error("Erro ao carregar negócios para alertas:", err);
+        setDealsError(err.message || "Falha ao carregar negócios para alertas.");
+        showError(err.message || "Falha ao carregar negócios para alertas.");
+      } finally {
+        setIsDealsLoading(false);
+      }
+    };
+
+    loadDeals();
+  }, [userId, company?.excel_company_id]);
+
+
+  if (!company) {
+    return (
+      <div className="flex items-center justify-center h-full text-muted-foreground p-4 rounded-lg border bg-card">
+        Selecione uma empresa para ver os detalhes adicionais.
+      </div>
+    );
+  }
+
+  const crmCompany = company.crmCompany;
+
+  // Helper to render fields consistently
+  const renderField = useCallback((Icon: React.ElementType, label: string, value: string | number | boolean | null | undefined) => {
+    if (value === null || value === undefined || value === '' || (typeof value === 'number' && value === 0 && !label.includes('Plafond') && !label.includes('Preço') && !label.includes('Bumps') && !label.includes('Investimento') && !label.includes('Stock') && !label.includes('Percentagem'))) return null;
+
+    let displayValue: React.ReactNode = value;
+    if (typeof value === 'boolean') {
+      displayValue = value ? (
+        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Sim</Badge>
+      ) : (
+        <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Não</Badge>
+      );
+    } else if (typeof value === 'number') {
+      displayValue = value.toLocaleString('pt-PT');
+    } else if (label.includes('Link') || label.includes('Site') || label.includes('Logotipo')) {
+      displayValue = (
+        <a href={String(value)} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+          {String(value)}
+        </a>
+      );
+    } else if (label.includes('Data')) {
+      try {
+        const date = parseISO(String(value));
+        if (!isNaN(date.getTime())) {
+          displayValue = format(date, 'dd/MM/yyyy');
+        } else {
+          displayValue = String(value);
+        }
+      } catch {
+        displayValue = String(value);
+      }
     }
 
     return (
-      <div className="flex items-start space-x-3">
-        <Icon className="h-5 w-5 text-gray-500 mt-1" />
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600">{label}</p>
-          <div className="text-sm text-gray-800 break-words">{displayValue}</div>
-        </div>
+      <div className="flex items-center text-sm">
+        <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
+        <span className="font-medium">{label}:</span> <span className="ml-1 text-foreground">{displayValue}</span>
       </div>
     );
-  };
+  }, []);
 
-  const piscaData = {
-    totalAds: totalPublicados,
-    plan: crmCompany?.last_plan,
-  };
+  const companyDisplayName = company["Nome Comercial"] || crmCompany?.Commercial_Name || crmCompany?.Company_Name || "Empresa Desconhecida";
+  const firstLetter = companyDisplayName.charAt(0).toUpperCase();
+  const isCompanyClosed = company["Classificação"] === "Empresa encerrada";
 
-  const easyvistasData = {
-    openTickets: easyvistas?.length,
-    status: easyvistas?.length > 0 ? 'Ativo' : 'Nenhum',
-  };
+  // Utility functions for date comparisons
+  const isVisitOld = useCallback((dateString: string | null | undefined): boolean => {
+    if (!dateString) return false;
+    try {
+      const date = parseISO(dateString);
+      return differenceInMonths(new Date(), date) >= 3;
+    } catch {
+      return false;
+    }
+  }, []);
 
-  const credibomData = {
-    isPartner: crmCompany?.is_crb_partner,
-    plafond: crmCompany?.plafond,
-  };
+  // Calculate aggregated stand data
+  const totalPublicados = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Publicados || 0), 0) || 0;
+  const totalArquivados = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Arquivados || 0), 0) || 0;
+  const totalGuardados = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Guardados || 0), 0) || 0;
+
+  // Calculate aggregated leads data
+  const totalLeadsRecebidas = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Leads_Recebidas || 0), 0) || 0;
+  const totalLeadsPendentes = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Leads_Pendentes || 0), 0) || 0;
+  const totalLeadsExpiradas = crmCompany?.stands.reduce((sum, stand) => sum + (stand.leads_expiradas || 0), 0) || 0; // Corrected here
+
+  // Alert logic
+  const alerts: string[] = [];
+
+  // 1. Se o plano estiver expirado
+  const planExpirationDate = crmCompany?.Plan_Expiration_Date || null;
+  if (planExpirationDate && isPast(parseISO(planExpirationDate))) {
+    alerts.push("O plano da empresa expirou!");
+  }
+
+  // 2. Se o plano ativo estiver não (incluindo null/undefined)
+  if (!crmCompany?.Plan_Active) {
+    alerts.push("O plano da empresa não está ativo!");
+  }
+
+  // 3. Se a data da ultima visita for mais de 3 meses
+  const lastVisitDate = company["Data ultima visita"] || crmCompany?.Last_Visit_Date || null;
+  if (isVisitOld(lastVisitDate)) {
+    alerts.push("A última visita foi há mais de 3 meses.");
+  }
+
+  // 4. Se o ultimo login foi à mais de uma semana atras (This alert was missing in the original logic, adding it based on previous context)
+  const lastLoginDate = crmCompany?.Last_Login_Date;
+  if (lastLoginDate) {
+    try {
+      const loginDate = parseISO(lastLoginDate);
+      if (differenceInDays(new Date(), loginDate) > 7) {
+        alerts.push(`Último login há mais de uma semana: ${format(loginDate, 'dd/MM/yyyy')}`);
+      }
+    } catch (e) {
+      console.warn(`Could not parse Last_Login_Date for CRM Company ${crmCompany?.Company_id}: ${lastLoginDate}`);
+    }
+  }
+
+  // 5. Negócios com data de fecho esperada expirada
+  if (!isDealsLoading && !dealsError) {
+    deals.forEach(deal => {
+      if (deal.expected_close_date) {
+        try {
+          const expectedCloseDate = parseISO(deal.expected_close_date);
+          if (isPast(expectedCloseDate)) {
+            alerts.push(`Negócio "${deal.deal_name}" com data de fecho esperada expirada: ${format(expectedCloseDate, 'dd/MM/yyyy')}`);
+          }
+        } catch (e) {
+          console.warn(`Could not parse expected_close_date for deal ${deal.id}: ${deal.expected_close_date}`);
+        }
+      }
+    });
+  }
+
+  // 6. Se ele for Parceiro Credibom e o Simulador Financiamento = Não
+  if (crmCompany?.Is_CRB_Partner === true && crmCompany?.Financing_Simulator_On === false) {
+    alerts.push("É Parceiro Credibom, mas o Simulador de Financiamento está desativado.");
+  }
+
+  // 7. Se ele tiver Plano ativo = Sim e Renovação Automática= Não
+  if (crmCompany?.Plan_Active === true && crmCompany?.Plan_Auto_Renewal === false) {
+    alerts.push("Plano ativo, mas a Renovação Automática está desativada.");
+  }
+
+  // 8. Se a classificação for "Empresa encerrada"
+  if (isCompanyClosed) {
+    alerts.push("⛔ Empresa encerrada.");
+  }
 
   return (
-    <Card className="w-full shadow-lg">
-      <CardHeader className="bg-gray-50 rounded-t-lg border-b">
-        <CardTitle className="text-2xl font-bold text-gray-800">{company['Nome Comercial']}</CardTitle>
-        <p className="text-sm text-gray-500">{crmCompany.company_name}</p>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="w-full justify-start rounded-none border-b bg-gray-50 p-0 h-auto">
-            <TabsTrigger value="overview" className="flex-1">Visão Geral</TabsTrigger>
-            <TabsTrigger value="analytics" className="flex-1">Análises</TabsTrigger>
-            <TabsTrigger value="contacts" className="flex-1">Contactos da Conta</TabsTrigger>
-            <TabsTrigger value="employees" className="flex-1">Colaboradores</TabsTrigger>
-            <TabsTrigger value="deals" className="flex-1">Negócios</TabsTrigger>
-            <TabsTrigger value="tasks" className="flex-1">Tarefas</TabsTrigger>
-            <TabsTrigger value="stands" className="flex-1">Stands</TabsTrigger>
-          </TabsList>
+    <ScrollArea className="h-full w-full pr-4">
+      <Card className="w-full shadow-md rounded-lg">
+        <CardHeader className="pb-4">
+          <CompanyAdditionalHeader
+            company={company}
+            companyDisplayName={companyDisplayName}
+            firstLetter={firstLetter}
+            isCompanyClosed={isCompanyClosed}
+            onDataUpdated={onDataUpdated}
+            isEditDialogOpen={isEditDialogOpen}
+            setIsEditDialogOpen={setIsEditDialogOpen}
+            isCreateContactDialogOpen={isCreateContactDialogOpen}
+            setIsCreateContactDialogOpen={setIsCreateContactDialogOpen}
+            isCreateEasyvistaDialogOpen={isCreateEasyvistaDialogOpen}
+            setIsCreateEasyvistaDialogOpen={setIsCreateEasyvistaDialogOpen}
+            isCreateDealDialogOpen={isCreateDealDialogOpen}
+            setIsCreateDealDialogOpen={setIsCreateDealDialogOpen}
+            isCreateEmployeeDialogOpen={isCreateEmployeeDialogOpen}
+            setIsCreateEmployeeDialogOpen={setIsCreateEmployeeDialogOpen}
+            isCreateTaskDialogOpen={isCreateTaskDialogOpen}
+            setIsCreateTaskDialogOpen={setIsCreateTaskDialogOpen}
+            isCreateAnalysisDialogOpen={isCreateAnalysisDialogOpen}
+            setIsCreateAnalysisDialogOpen={setIsCreateAnalysisDialogOpen}
+          />
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <CompanyAdditionalOverviewCards
+            companyAdditional={company}
+            crmCompany={crmCompany}
+            alerts={alerts}
+            totalPublicados={totalPublicados}
+            totalArquivados={totalArquivados}
+            totalGuardados={totalGuardados}
+            totalLeadsRecebidas={totalLeadsRecebidas}
+            totalLeadsPendentes={totalLeadsPendentes}
+            totalLeadsExpiradas={totalLeadsExpiradas}
+            renderField={renderField}
+          />
 
-          <TabsContent value="overview" className="p-6">
-            <div className="space-y-6">
-              {alerts.length > 0 && (
-                <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <AlertCircle className="h-5 w-5 text-yellow-400" />
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm text-yellow-700 font-semibold">Alertas</p>
-                      <ul className="mt-1 list-disc list-inside text-sm text-yellow-600">
-                        {alerts.map((alert, index) => <li key={index}>{alert}</li>)}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <CompanyAdditionalOverviewCards
-                piscaData={piscaData}
-                easyvistasData={easyvistasData}
-                credibomData={credibomData}
+          <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-8 h-10 rounded-lg bg-muted/70 p-1">
+              <TabsTrigger
+                value="details"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+              >
+                Detalhes
+              </TabsTrigger>
+              <TabsTrigger
+                value="stands"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+              >
+                Stands
+              </TabsTrigger>
+              <TabsTrigger
+                value="contacts"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+              >
+                Contactos
+              </TabsTrigger>
+              <TabsTrigger
+                value="easyvistas"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+              >
+                Easyvistas
+              </TabsTrigger>
+              <TabsTrigger
+                value="deals"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+              >
+                Negócios
+              </TabsTrigger>
+              <TabsTrigger
+                value="employees"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+              >
+                Colaboradores
+              </TabsTrigger>
+              <TabsTrigger
+                value="tasks"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+              >
+                Tarefas
+              </TabsTrigger>
+              <TabsTrigger
+                value="analytics"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+              >
+                Análises
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="details" className="mt-4 space-y-6">
+              <CompanyAdditionalDetailsAccordion
+                companyAdditional={company}
+                crmCompany={crmCompany}
+                renderField={renderField}
               />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
-                {renderField(Building, "Grupo", company.Grupo)}
-                {renderField(Tag, "Marcas Representadas", company['Marcas representadas'])}
-                {renderField(Star, "Classificação", company.Classificação)}
-                {renderField(Mail, "Email da Empresa", company['Email da empresa'])}
-                {renderField(Phone, "Contacto Principal", crmCompany.company_contact_person)}
-                {renderField(Globe, "Site", company.Site)}
-                {renderField(MapPin, "Morada", `${company.Morada}, ${company.Cidade}, ${company['STAND_POSTAL_CODE']}, ${company.Distrito}`)}
-                {renderField(User, "Account Manager (Excel)", company.AM)}
-                {renderField(User, "Account Manager (CRM)", crmCompany.am_current)}
-                {renderField(User, "Account Manager (Antigo)", company.AM_OLD)}
-                {renderField(Shield, "NIF", crmCompany.nif)}
-                {renderField(DollarSign, "Investimento em Portais", company['Investimento em portais'])}
-                {renderField(DollarSign, "Investimento Redes Sociais", company['Investimento redes sociais'])}
-                {renderField(Percent, "Percentagem de Importados", company['Percentagem de Importados'])}
-                {renderField(Users, "Concorrência", company.Concorrencia)}
-                {renderField(Building, "Onde compra as viaturas", company['Onde compra as viaturas'])}
-                {renderField(CheckCircle, "Utiliza CRM", company['Utiliza CRM'], true)}
-                {renderField(Tag, "Qual o CRM", company['Qual o CRM'])}
-                {renderField(CheckCircle, "Mercado B2B", company['Mercado b2b'], true)}
-                {renderField(Tag, "Plano Indicado", company['Plano Indicado'])}
-                {renderField(CheckCircle, "Mediador de Crédito", company['Mediador de credito'], true)}
-                {renderField(Globe, "Link Banco de Portugal", company['Link do Banco de Portugal'])}
-                {renderField(Building, "Financeiras com Acordo", company['Financeiras com acordo'])}
-                {renderField(Calendar, "Data Última Visita", company['Data ultima visita'])}
-                {renderField(CheckCircle, "Quer CT", company['Quer CT'], true)}
-                {renderField(CheckCircle, "Quer ser parceiro Credibom", company['Quer ser parceiro Credibom'], true)}
-                {renderField(Hash, "Stock STV", company['Stock STV'])}
-                {renderField(Hash, "Stock na Empresa", company['Stock na empresa'])}
-                {renderField(Tag, "API", company.API)}
-                {renderField(Tag, "Autobiz", company.Autobiz)}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="analytics" className="p-6">
-            <div className="flex justify-end mb-4">
-              <Button onClick={() => setIsCreateAnalyticsOpen(true)}>Criar Nova Análise</Button>
-            </div>
-            <AnalyticsList companyExcelId={company.excel_company_id} onAnalyticsChanged={onDataChange} />
-            <Dialog open={isCreateAnalyticsOpen} onOpenChange={setIsCreateAnalyticsOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Criar Nova Análise</DialogTitle>
-                </DialogHeader>
-                <AnalyticsCreateFormForCompany
-                  companyExcelId={company.excel_company_id}
-                  companyDbId={crmCompany.id}
-                  onSuccess={() => {
-                    setIsCreateAnalyticsOpen(false);
-                    onDataChange();
-                  }}
-                />
-              </DialogContent>
-            </Dialog>
-          </TabsContent>
-
-          <TabsContent value="contacts" className="p-6">
-            <AccountContactsList companyDbId={crmCompany.id} companyExcelId={company.excel_company_id} />
-          </TabsContent>
-
-          <TabsContent value="employees" className="p-6">
-            <EmployeesList companyDbId={crmCompany.id} companyExcelId={company.excel_company_id} />
-          </TabsContent>
-
-          <TabsContent value="deals" className="p-6">
-            <DealsList companyDbId={crmCompany.id} companyExcelId={company.excel_company_id} />
-          </TabsContent>
-
-          <TabsContent value="tasks" className="p-6">
-            <TasksList companyDbId={crmCompany.id} companyExcelId={company.excel_company_id} />
-          </TabsContent>
-
-          <TabsContent value="stands" className="p-6">
-            <StandsList stands={stands} />
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+              <Separator className="my-6" />
+              <p className="text-xs text-muted-foreground">
+                Criado em: {company.created_at ? new Date(company.created_at).toLocaleString() : 'N/A'}
+              </p>
+            </TabsContent>
+            <TabsContent value="stands" className="mt-4">
+              {crmCompany && crmCompany.stands && crmCompany.stands.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {crmCompany.stands.map((stand) => (
+                    <StandCard key={stand.Stand_ID} stand={stand} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">Nenhum stand associado encontrado no CRM principal.</p>
+              )}
+            </TabsContent>
+            <TabsContent value="contacts" className="mt-4">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+                <MessageSquareMore className="mr-2 h-5 w-5" /> Histórico de Contactos
+              </h3>
+              <AccountContactList companyExcelId={company.excel_company_id} />
+            </TabsContent>
+            <TabsContent value="easyvistas" className="mt-4">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+                <Eye className="mr-2 h-5 w-5" /> Registos Easyvista
+              </h3>
+              <EasyvistaList companyExcelId={company.excel_company_id} />
+            </TabsContent>
+            <TabsContent value="deals" className="mt-4">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+                <Handshake className="mr-2 h-5 w-5" /> Negócios
+              </h3>
+              <DealList companyExcelId={company.excel_company_id} />
+            </TabsContent>
+            <TabsContent value="employees" className="mt-4">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+                <Users className="mr-2 h-5 w-5" /> Colaboradores
+              </h3>
+              <EmployeeList companyExcelId={company.excel_company_id} onEmployeeChanged={onDataUpdated} />
+            </TabsContent>
+            <TabsContent value="tasks" className="mt-4">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+                <ListTodo className="mr-2 h-5 w-5" /> Tarefas
+              </h3>
+              <TaskList companyExcelId={company.excel_company_id} onTaskChanged={onDataUpdated} />
+            </TabsContent>
+            <TabsContent value="analytics" className="mt-4">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+                <BarChart2 className="mr-2 h-5 w-5" /> Análises de Campanhas
+              </h3>
+              <AnalyticsList companyExcelId={company.excel_company_id} onAnalyticsChanged={onDataUpdated} />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </ScrollArea>
   );
 };
 
