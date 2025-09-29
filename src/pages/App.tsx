@@ -14,6 +14,7 @@ import AmView from "./AmView"; // Corrigido
 import Products from "./Products"; // Corrigido
 import Campaigns from "./Campaigns"; // Corrigido
 import EasyvistaTypeManagement from "./EasyvistaTypeManagement"; // Corrigido
+import ContactTypeManagement from "./ContactTypeManagement"; // NEW
 import { CrmDataProvider } from "@/context/CrmDataContext";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/company-additional-data/:companyExcelId" element={<CompanyAdditionalDetailPage />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/settings/easyvista-types" element={<EasyvistaTypeManagement />} />
+            <Route path="/settings/contact-types" element={<ContactTypeManagement />} /> {/* NEW */}
             <Route path="/accounts" element={<Accounts />} />
             <Route path="/am-view" element={<AmView />} />
             <Route path="/products" element={<Products />} />

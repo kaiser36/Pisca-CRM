@@ -347,3 +347,19 @@ export interface Analytics {
   company_commercial_name?: string; // For display
   campaign_name?: string; // For display
 }
+
+export interface ContactType { // NEW
+  id: string;
+  user_id: string;
+  name: string;
+  created_at?: string;
+  contact_report_options?: ContactReportOption[];
+}
+
+export interface ContactReportOption { // NEW
+  id: string;
+  user_id: string;
+  contact_type_id: string;
+  report_text: string;
+  created_at?: string;
+}
