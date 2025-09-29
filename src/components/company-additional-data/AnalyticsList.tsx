@@ -14,6 +14,8 @@ import { MoreHorizontal } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import AnalyticsEditForm from '@/components/analytics/AnalyticsEditForm';
 import AnalyticsKPIDashboard from '@/components/analytics/AnalyticsKPIDashboard';
+import { Checkbox } from '@/components/ui/checkbox';
+import AnalyticsComparisonDashboard from '@/components/analytics/AnalyticsComparisonDashboard';
 
 interface AnalyticsListProps {
   companyExcelId: string;
@@ -28,8 +30,7 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedAnalytic, setSelectedAnalytic] = useState<AnalyticsType | null>(null);
 
-  // Adicionar estado para análise selecionada para o dashboard
-  const [selectedAnalyticForDashboard, setSelectedAnalyticForDashboard] = useState<AnalyticsType | null>(null);
+  const [selectedAnalyticsForDashboard, setSelectedAnalyticsForDashboard] = useState<AnalyticsType[]>([]);
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [analyticToDelete, setAnalyticToDelete] = useState<string | null>(null);
@@ -61,8 +62,15 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
     setIsDeleteDialogOpen(true);
   };
 
-  const handleSelectAnalyticForDashboard = (analytic: AnalyticsType) => {
-    setSelectedAnalyticForDashboard(analytic);
+  const handleToggleSelectionForDashboard = (analytic: AnalyticsType) => {
+    setSelectedAnalyticsForDashboard(prevSelected => {
+      const isSelected = prevSelected.some(a => a.id === analytic.id);
+      if (isSelected) {
+        return prevSelected.filter(a => a.id !== analytic.id);
+      } else {
+        return [...prevSelected, analytic];
+      }
+    });
   };
 
   const confirmDelete = async () => {
@@ -72,9 +80,7 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
       showSuccess('Análise apagada com sucesso!');
       loadAnalytics();
       onAnalyticsChanged();
-      if (selectedAnalyticForDashboard?.id === analyticToDelete) {
-        setSelectedAnalyticForDashboard(null);
-      }
+      setSelectedAnalyticsForDashboard(prev => prev.filter(a => a.id !== analyticToDelete));
     } catch (error: any) {
       showError(`Erro ao apagar análise: ${error.message}`);
     } finally {
@@ -109,6 +115,7 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[50px]"></TableHead>
               <TableHead>Campanha</TableHead>
               <TableHead>Período</TableHead>
               <TableHead>Custo</TableHead>
@@ -119,54 +126,57 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
           <TableBody>
             {analytics.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">Nenhuma análise encontrada para esta empresa.</TableCell>
+                <TableCell colSpan={6} className="text-center">Nenhuma análise encontrada para esta empresa.</TableCell>
               </TableRow>
             ) : (
-              analytics.map(item => (
-                <TableRow 
-                  key={item.id} 
-                  className={selectedAnalyticForDashboard?.id === item.id ? 'bg-blue-50 hover:bg-blue-100' : ''}
-                >
-                  <TableCell 
-                    className="font-medium cursor-pointer"
-                    onClick={() => handleSelectAnalyticForDashboard(item)}
+              analytics.map(item => {
+                const isSelected = selectedAnalyticsForDashboard.some(a => a.id === item.id);
+                return (
+                  <TableRow 
+                    key={item.id} 
+                    data-state={isSelected ? 'selected' : ''}
                   >
-                    {item.title}
-                  </TableCell>
-                  <TableCell className="cursor-pointer" onClick={() => handleSelectAnalyticForDashboard(item)}>
-                    {formatDate(item.start_date)} - {formatDate(item.end_date)}
-                  </TableCell>
-                  <TableCell className="cursor-pointer" onClick={() => handleSelectAnalyticForDashboard(item)}>
-                    {formatCurrency(item.total_cost)}
-                  </TableCell>
-                  <TableCell className="cursor-pointer" onClick={() => handleSelectAnalyticForDashboard(item)}>
-                    {formatCurrency(item.revenue)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Abrir menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(item)}>Editar</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(item.id!)} className="text-destructive">Apagar</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
+                    <TableCell>
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => handleToggleSelectionForDashboard(item)}
+                        aria-label={`Selecionar ${item.title}`}
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium">{item.title}</TableCell>
+                    <TableCell>{formatDate(item.start_date)} - {formatDate(item.end_date)}</TableCell>
+                    <TableCell>{formatCurrency(item.total_cost)}</TableCell>
+                    <TableCell>{formatCurrency(item.revenue)}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Abrir menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEdit(item)}>Editar</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDelete(item.id!)} className="text-destructive">Apagar</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>
       </div>
 
-      {selectedAnalyticForDashboard && (
+      {selectedAnalyticsForDashboard.length === 1 && (
         <div className="mt-8">
-          <AnalyticsKPIDashboard analytic={selectedAnalyticForDashboard} />
+          <AnalyticsKPIDashboard analytic={selectedAnalyticsForDashboard[0]} />
         </div>
+      )}
+      
+      {selectedAnalyticsForDashboard.length > 1 && (
+        <AnalyticsComparisonDashboard analytics={selectedAnalyticsForDashboard} />
       )}
 
       {selectedAnalytic && (
