@@ -216,6 +216,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                     "pl-8",
                     isActive('/settings/contact-types') && "bg-sidebar-accent text-sidebar-accent-foreground"
                   )}
+                  onClick={() => console.log('Navegando para /settings/contact-types')}
                 >
                   <ListChecks className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
                   {!isCollapsed && "Tipos de Contato"}

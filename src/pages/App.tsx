@@ -1,20 +1,20 @@
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner"; // Este é o Toaster do sonner
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./Index"; // Corrigido
-import NotFound from "./NotFound"; // Corrigido
-import CRM from "./CRM"; // Corrigido
-import Settings from "./Settings"; // Corrigido
-import CompanyAdditionalData from "./CompanyAdditionalData"; // Corrigido
-import CompanyAdditionalDetailPage from "./CompanyAdditionalDetailPage"; // Corrigido
-import Accounts from "./Accounts"; // Corrigido
-import AmView from "./AmView"; // Corrigido
-import Products from "./Products"; // Corrigido
-import Campaigns from "./Campaigns"; // Corrigido
-import EasyvistaTypeManagement from "./EasyvistaTypeManagement"; // Corrigido
-import ContactTypeManagement from "./ContactTypeManagement"; // Verificar se este ficheiro existe
+import Index from "./Index";
+import NotFound from "./NotFound";
+import CRM from "./CRM";
+import Settings from "./Settings";
+import CompanyAdditionalData from "./CompanyAdditionalData";
+import CompanyAdditionalDetailPage from "./CompanyAdditionalDetailPage";
+import Accounts from "./Accounts";
+import AmView from "./AmView";
+import Products from "./Products";
+import Campaigns from "./Campaigns";
+import EasyvistaTypeManagement from "./EasyvistaTypeManagement";
+import ContactTypeManagement from "./ContactTypeManagement";
 import { CrmDataProvider } from "@/context/CrmDataContext";
 
 const queryClient = new QueryClient();
@@ -22,8 +22,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster /> {/* Este é o Toaster do shadcn/ui, para os toasts mais antigos */}
-      {/* Configurado o Toaster do sonner com z-index alto e posição */}
+      <Toaster />
       <Sonner position="top-right" richColors className="[&>div]:z-[9999]" />
       <BrowserRouter>
         <CrmDataProvider>
@@ -39,7 +38,6 @@ const App = () => (
             <Route path="/am-view" element={<AmView />} />
             <Route path="/products" element={<Products />} />
             <Route path="/campaigns" element={<Campaigns />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </CrmDataProvider>

@@ -1,20 +1,34 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
-import { useSession } from '@/context/SessionContext';
-import { ContactType } from '@/types/crm';
-import { fetchContactTypesWithReports, insertContactType, deleteContactType, insertReportOption, deleteReportOption } from '@/integrations/supabase/utils';
-import { showError, showSuccess } from '@/utils/toast';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { PlusCircle, Trash2, Loader2, MessageSquare, ListChecks } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useSession } from '@/context/SessionContext';
+import { supabase } from '@/integrations/supabase/client';
+import { showError, showSuccess } from '@/utils/toast';
+
+interface ContactType {
+  id: string;
+  name: string;
+  user_id: string;
+  created_at: string;
+  contact_report_options?: ReportOption[];
+}
+
+interface ReportOption {
+  id: string;
+  contact_type_id: string;
+  report_text: string;
+  user_id: string;
+  created_at: string;
+}
 
 const ContactTypeManagement: React.FC = () => {
   const { user } = useSession();
@@ -30,28 +44,59 @@ const ContactTypeManagement: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ type: 'type' | 'report', id: string, name?: string } | null>(null);
 
-  const loadData = useCallback(async () => {
+  const loadData = async () => {
     if (!user) return;
     setIsLoading(true);
     try {
-      const data = await fetchContactTypesWithReports(user.id);
-      setContactTypes(data);
+      // Fetch contact types with their report options
+      const { data: typesData, error: typesError } = await supabase
+        .from('contact_types')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+
+      if (typesError) throw typesError;
+
+      // Fetch report options for each type
+      const { data: reportsData, error: reportsError } = await supabase
+        .from('contact_report_options')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+
+      if (reportsError) throw reportsError;
+
+      // Combine the data
+      const combinedData = typesData.map(type => ({
+        ...type,
+        contact_report_options: reportsData.filter(report => report.contact_type_id === type.id)
+      }));
+
+      setContactTypes(combinedData);
     } catch (error: any) {
       showError(`Erro ao carregar tipos de contato: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  };
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, [user]);
 
   const handleCreateType = async () => {
     if (!user || !newTypeName.trim()) return;
     setIsSubmitting(true);
     try {
-      await insertContactType(user.id, newTypeName.trim());
+      const { error } = await supabase
+        .from('contact_types')
+        .insert({
+          user_id: user.id,
+          name: newTypeName.trim()
+        });
+
+      if (error) throw error;
+
       showSuccess('Tipo de contato criado com sucesso!');
       setNewTypeName('');
       setIsCreateDialogOpen(false);
@@ -67,7 +112,16 @@ const ContactTypeManagement: React.FC = () => {
     if (!user || !newReportText[contactTypeId]?.trim()) return;
     setIsSubmitting(true);
     try {
-      await insertReportOption(user.id, contactTypeId, newReportText[contactTypeId].trim());
+      const { error } = await supabase
+        .from('contact_report_options')
+        .insert({
+          user_id: user.id,
+          contact_type_id: contactTypeId,
+          report_text: newReportText[contactTypeId].trim()
+        });
+
+      if (error) throw error;
+
       showSuccess('Opção de relatório adicionada!');
       setNewReportText(prev => ({ ...prev, [contactTypeId]: '' }));
       loadData();
@@ -88,10 +142,31 @@ const ContactTypeManagement: React.FC = () => {
     setIsSubmitting(true);
     try {
       if (itemToDelete.type === 'type') {
-        await deleteContactType(itemToDelete.id);
+        // First delete all related report options
+        const { error: reportsError } = await supabase
+          .from('contact_report_options')
+          .delete()
+          .eq('contact_type_id', itemToDelete.id);
+
+        if (reportsError) throw reportsError;
+
+        // Then delete the contact type
+        const { error: typeError } = await supabase
+          .from('contact_types')
+          .delete()
+          .eq('id', itemToDelete.id);
+
+        if (typeError) throw typeError;
+
         showSuccess('Tipo de contato apagado.');
       } else {
-        await deleteReportOption(itemToDelete.id);
+        const { error } = await supabase
+          .from('contact_report_options')
+          .delete()
+          .eq('id', itemToDelete.id);
+
+        if (error) throw error;
+
         showSuccess('Opção de relatório apagada.');
       }
       loadData();
@@ -216,65 +291,51 @@ const ContactTypeManagement: React.FC = () => {
                 </Button>
               </div>
             ) : (
-              <Accordion type="multiple" className="space-y-4">
+              <div className="space-y-4">
                 {contactTypes.map((type, index) => (
-                  <AccordionItem 
-                    key={type.id} 
-                    value={type.id}
-                    className="border rounded-lg bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 dark:text-blue-400 font-semibold text-sm">
-                              {index + 1}
-                            </span>
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-900 dark:text-white">
-                              {type.name}
-                            </h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {type.contact_report_options?.length || 0} opções de relatório
-                            </p>
-                          </div>
+                  <div key={type.id} className="border rounded-lg bg-white dark:bg-gray-800 shadow-sm">
+                    <div className="px-4 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                          <span className="text-blue-600 dark:text-blue-400 font-semibold text-sm">
+                            {index + 1}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {type.contact_report_options?.length || 0} relatórios
-                          </Badge>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={(e) => { 
-                              e.stopPropagation(); 
-                              handleDeleteRequest('type', type.id, type.name); 
-                            }}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                        <div>
+                          <h3 className="font-semibold text-gray-900 dark:text-white">
+                            {type.name}
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {type.contact_report_options?.length || 0} opções de relatório
+                          </p>
                         </div>
                       </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <Separator className="mb-4" />
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {type.contact_report_options?.length || 0} relatórios
+                        </Badge>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleDeleteRequest('type', type.id, type.name)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {type.contact_report_options && type.contact_report_options.length > 0 && (
+                      <div className="px-4 pb-4">
+                        <Separator className="mb-4" />
+                        <div className="space-y-4">
                           <h4 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                             <ListChecks className="h-4 w-4" />
                             Opções de Relatório
                           </h4>
-                        </div>
-                        
-                        {type.contact_report_options && type.contact_report_options.length > 0 ? (
                           <div className="grid gap-2">
                             {type.contact_report_options.map((report) => (
-                              <div 
-                                key={report.id} 
-                                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                              >
+                              <div key={report.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                                 <span className="text-gray-700 dark:text-gray-300">
                                   {report.report_text}
                                 </span>
@@ -289,33 +350,30 @@ const ContactTypeManagement: React.FC = () => {
                               </div>
                             ))}
                           </div>
-                        ) : (
-                          <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                            <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                            <p>Nenhuma opção de relatório definida</p>
-                          </div>
-                        )}
-
-                        <div className="flex gap-2 pt-2">
-                          <Input
-                            placeholder="Adicionar nova opção de relatório"
-                            value={newReportText[type.id] || ''}
-                            onChange={(e) => setNewReportText(prev => ({ ...prev, [type.id]: e.target.value }))}
-                            className="flex-1"
-                          />
-                          <Button 
-                            onClick={() => handleAddReport(type.id)} 
-                            disabled={isSubmitting || !newReportText[type.id]?.trim()}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Adicionar'}
-                          </Button>
                         </div>
                       </div>
-                    </AccordionContent>
-                  </AccordionItem>
+                    )}
+                    
+                    <div className="px-4 pb-4">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Adicionar nova opção de relatório"
+                          value={newReportText[type.id] || ''}
+                          onChange={(e) => setNewReportText(prev => ({ ...prev, [type.id]: e.target.value }))}
+                          className="flex-1"
+                        />
+                        <Button 
+                          onClick={() => handleAddReport(type.id)} 
+                          disabled={isSubmitting || !newReportText[type.id]?.trim()}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Adicionar'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </Accordion>
+              </div>
             )}
           </CardContent>
         </Card>
