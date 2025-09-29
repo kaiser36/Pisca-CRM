@@ -146,7 +146,12 @@ const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
       name: "stand_id",
       label: "Stand",
       type: "select",
-      options: companyStands.map(stand => ({ value: stand.Stand_ID, label: stand.Stand_ID + ' - ' + (stand.Stand_Name || stand.Company_Name) })),
+      options: companyStands
+        .filter(stand => stand.Stand_ID?.trim() !== '') // Filter out empty stand IDs
+        .map(stand => ({ 
+          value: stand.Stand_ID, 
+          label: stand.Stand_ID + ' - ' + (stand.Stand_Name || stand.Company_Name) 
+        })),
       placeholder: "Selecione o Stand",
       onValueChange: (value: string) => {
         const selectedStand = companyStands.find(s => s.Stand_ID === value);

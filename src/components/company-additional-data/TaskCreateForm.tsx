@@ -193,7 +193,12 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
       name: "assigned_to_employee_id",
       label: "Atribuído a (AM)",
       type: "select",
-      options: availableAMs.map(am => ({ value: am.id, label: am.account_name || am.am || 'N/A' })),
+      options: availableAMs
+        .filter(am => am.id?.trim() !== '') // Filter out empty AM IDs
+        .map(am => ({ 
+          value: am.id, 
+          label: am.account_name || am.am || 'N/A' 
+        })),
       placeholder: "Selecione um AM",
       disabled: isAMsLoading || availableAMs.length === 0,
     },
