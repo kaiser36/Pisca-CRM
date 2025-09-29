@@ -3,6 +3,53 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Analytics } from '@/types/crm';
+import {
+  Award,
+  DollarSign,
+  Eye,
+  Handshake,
+  LineChart,
+  MousePointerClick,
+  Percent,
+  Rocket,
+  Target,
+  Users,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface KpiCardProps {
+  title: string;
+  value: string;
+  description: string;
+  formula?: string;
+  icon: React.ReactNode;
+  className?: string;
+}
+
+const KpiCard: React.FC<KpiCardProps> = ({ title, value, description, formula, icon, className }) => {
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-xl p-5 shadow-lg transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-2xl text-white",
+        className
+      )}
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex flex-col space-y-1">
+          <p className="text-sm font-medium opacity-80">{title}</p>
+          <p className="text-4xl font-bold">{value}</p>
+          <p className="text-xs opacity-90">{description}</p>
+        </div>
+        <div className="p-3 bg-white/20 rounded-lg">
+          {icon}
+        </div>
+      </div>
+      {formula && (
+        <p className="mt-3 text-xs italic opacity-70">Fórmula: {formula}</p>
+      )}
+    </div>
+  );
+};
 
 interface AnalyticsKPIDashboardProps {
   analytic: Analytics;
@@ -27,6 +74,10 @@ const AnalyticsKPIDashboard: React.FC<AnalyticsKPIDashboardProps> = ({ analytic 
 
     return {
       totalLeads,
+      totalInteractions,
+      views,
+      clicks,
+      total_ads,
       cpl,
       cpm,
       cpc,
@@ -41,92 +92,106 @@ const AnalyticsKPIDashboard: React.FC<AnalyticsKPIDashboardProps> = ({ analytic 
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(value);
   const formatPercentage = (value: number) => `${value.toFixed(2)}%`;
-  const formatNumber = (value: number) => value.toFixed(2);
+  const formatNumber = (value: number, decimals = 2) => value.toFixed(decimals);
+
+  const kpiData = [
+    {
+      title: 'ROI (Retorno Investimento)',
+      value: formatPercentage(calculatedMetrics.roi),
+      description: `De ${formatCurrency(analytic.revenue || 0)} de receita`,
+      formula: '((Receita - Custo) / Custo) * 100',
+      icon: <LineChart className="w-7 h-7" />,
+      className: 'bg-gradient-to-br from-green-500 to-emerald-500',
+    },
+    {
+      title: 'Total de Leads',
+      value: formatNumber(calculatedMetrics.totalLeads, 0),
+      description: `De ${calculatedMetrics.totalInteractions} interações`,
+      formula: 'Chamadas + WhatsApp + Emails',
+      icon: <Users className="w-7 h-7" />,
+      className: 'bg-gradient-to-br from-blue-500 to-sky-500',
+    },
+    {
+      title: 'CPL (Custo por Lead)',
+      value: formatCurrency(calculatedMetrics.cpl),
+      description: `Baseado em ${calculatedMetrics.totalLeads} leads`,
+      formula: 'Custo Total / Total de Leads',
+      icon: <Target className="w-7 h-7" />,
+      className: 'bg-gradient-to-br from-orange-500 to-amber-500',
+    },
+    {
+      title: 'CTR (Taxa de Cliques)',
+      value: formatPercentage(calculatedMetrics.ctr),
+      description: `De ${calculatedMetrics.views} visualizações`,
+      formula: '(Cliques / Visualizações) * 100',
+      icon: <Percent className="w-7 h-7" />,
+      className: 'bg-gradient-to-br from-purple-500 to-violet-500',
+    },
+    {
+      title: 'CPC (Custo por Clique)',
+      value: formatCurrency(calculatedMetrics.cpc),
+      description: `Para ${calculatedMetrics.clicks} cliques`,
+      formula: 'Custo Total / Cliques',
+      icon: <MousePointerClick className="w-7 h-7" />,
+      className: 'bg-gradient-to-br from-rose-500 to-pink-500',
+    },
+    {
+      title: 'CPA (Custo por Interação)',
+      value: formatCurrency(calculatedMetrics.cpa),
+      description: `Para ${calculatedMetrics.totalInteractions} interações`,
+      formula: 'Custo Total / Total de Interações',
+      icon: <Handshake className="w-7 h-7" />,
+      className: 'bg-gradient-to-br from-teal-500 to-cyan-500',
+    },
+    {
+      title: 'CPM (Custo por Mil)',
+      value: formatCurrency(calculatedMetrics.cpm),
+      description: `Para ${calculatedMetrics.views} visualizações`,
+      formula: '(Custo Total / Visualizações) * 1000',
+      icon: <Eye className="w-7 h-7" />,
+      className: 'bg-gradient-to-br from-indigo-500 to-blue-500',
+    },
+    {
+      title: 'Custo por Anúncio',
+      value: formatCurrency(calculatedMetrics.custoPorAnuncio),
+      description: `Média de ${calculatedMetrics.total_ads} anúncios`,
+      formula: 'Custo Total / Total de Anúncios',
+      icon: <DollarSign className="w-7 h-7" />,
+      className: 'bg-gradient-to-br from-slate-600 to-gray-700',
+    },
+    {
+      title: 'Performance por Anúncio',
+      value: formatNumber(calculatedMetrics.performancePorAnuncio),
+      description: 'Leads gerados por anúncio',
+      formula: 'Total de Leads / Total de Anúncios',
+      icon: <Rocket className="w-7 h-7" />,
+      className: 'bg-gradient-to-br from-yellow-500 to-amber-400',
+    },
+    {
+      title: 'Ad Efficiency Score',
+      value: formatCurrency(calculatedMetrics.adEfficiencyScore),
+      description: 'Receita gerada por anúncio',
+      formula: 'Receita / Total de Anúncios',
+      icon: <Award className="w-7 h-7" />,
+      className: 'bg-gradient-to-br from-red-500 to-orange-500',
+    },
+  ];
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Dashboard KPIs</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="p-3">
-          <CardHeader className="p-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Leads</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 text-2xl font-bold">
-            {calculatedMetrics.totalLeads}
-          </CardContent>
-        </Card>
-        <Card className="p-3">
-          <CardHeader className="p-0 pb-2">
-            <CardTitle className="text-sm font-medium">CPL (Custo por Lead)</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 text-2xl font-bold">
-            {formatCurrency(calculatedMetrics.cpl)}
-          </CardContent>
-        </Card>
-        <Card className="p-3">
-          <CardHeader className="p-0 pb-2">
-            <CardTitle className="text-sm font-medium">CPM (Custo por Mil)</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 text-2xl font-bold">
-            {formatCurrency(calculatedMetrics.cpm)}
-          </CardContent>
-        </Card>
-        <Card className="p-3">
-          <CardHeader className="p-0 pb-2">
-            <CardTitle className="text-sm font-medium">CPC (Custo por Clique)</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 text-2xl font-bold">
-            {formatCurrency(calculatedMetrics.cpc)}
-          </CardContent>
-        </Card>
-        <Card className="p-3">
-          <CardHeader className="p-0 pb-2">
-            <CardTitle className="text-sm font-medium">CPA (Custo por Interação)</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 text-2xl font-bold">
-            {formatCurrency(calculatedMetrics.cpa)}
-          </CardContent>
-        </Card>
-        <Card className="p-3">
-          <CardHeader className="p-0 pb-2">
-            <CardTitle className="text-sm font-medium">ROI (Retorno Investimento)</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 text-2xl font-bold">
-            {formatPercentage(calculatedMetrics.roi)}
-          </CardContent>
-        </Card>
-        <Card className="p-3">
-          <CardHeader className="p-0 pb-2">
-            <CardTitle className="text-sm font-medium">CTR (Taxa de Cliques)</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 text-2xl font-bold">
-            {formatPercentage(calculatedMetrics.ctr)}
-          </CardContent>
-        </Card>
-        <Card className="p-3">
-          <CardHeader className="p-0 pb-2">
-            <CardTitle className="text-sm font-medium">Custo por Anúncio</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 text-2xl font-bold">
-            {formatCurrency(calculatedMetrics.custoPorAnuncio)}
-          </CardContent>
-        </Card>
-        <Card className="p-3">
-          <CardHeader className="p-0 pb-2">
-            <CardTitle className="text-sm font-medium">Performance por Anúncio</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 text-2xl font-bold">
-            {formatNumber(calculatedMetrics.performancePorAnuncio)}
-          </CardContent>
-        </Card>
-        <Card className="p-3">
-          <CardHeader className="p-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ad Efficiency Score</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 text-2xl font-bold">
-            {formatNumber(calculatedMetrics.adEfficiencyScore)}
-          </CardContent>
-        </Card>
+      <h3 className="text-xl font-bold text-gray-800 dark:text-white">Dashboard KPIs</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
+        {kpiData.map((kpi) => (
+          <KpiCard
+            key={kpi.title}
+            title={kpi.title}
+            value={kpi.value}
+            description={kpi.description}
+            formula={kpi.formula}
+            icon={kpi.icon}
+            className={kpi.className}
+          />
+        ))}
       </div>
     </div>
   );
