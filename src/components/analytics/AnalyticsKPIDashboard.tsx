@@ -58,10 +58,19 @@ interface AnalyticsKPIDashboardProps {
 
 const AnalyticsKPIDashboard: React.FC<AnalyticsKPIDashboardProps> = ({ analytic }) => {
   const calculatedMetrics = useMemo(() => {
-    const { views = 0, clicks = 0, phone_views = 0, whatsapp_interactions = 0, leads_email = 0, location_clicks = 0, total_ads = 0, total_cost = 0, revenue = 0 } = analytic;
+    // Converter todos os valores para números e tratar nulos/undefined
+    const views = Number(analytic.views) || 0;
+    const clicks = Number(analytic.clicks) || 0;
+    const phone_views = Number(analytic.phone_views) || 0;
+    const whatsapp_interactions = Number(analytic.whatsapp_interactions) || 0;
+    const leads_email = Number(analytic.leads_email) || 0;
+    const location_clicks = Number(analytic.location_clicks) || 0;
+    const total_ads = Number(analytic.total_ads) || 0;
+    const total_cost = Number(analytic.total_cost) || 0;
+    const revenue = Number(analytic.revenue) || 0;
 
-    const totalLeads = (phone_views || 0) + (whatsapp_interactions || 0) + (leads_email || 0);
-    const totalInteractions = (clicks || 0) + (whatsapp_interactions || 0) + (phone_views || 0) + (leads_email || 0) + (location_clicks || 0);
+    const totalLeads = phone_views + whatsapp_interactions + leads_email;
+    const totalInteractions = clicks + whatsapp_interactions + phone_views + leads_email + location_clicks;
 
     const cpl = totalLeads > 0 ? total_cost / totalLeads : 0;
     const cpm = views > 0 ? (total_cost / views) * 1000 : 0;
@@ -88,6 +97,8 @@ const AnalyticsKPIDashboard: React.FC<AnalyticsKPIDashboardProps> = ({ analytic 
       custoPorAnuncio,
       performancePorAnuncio,
       adEfficiencyScore,
+      total_cost,
+      revenue
     };
   }, [analytic]);
 
