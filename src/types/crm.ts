@@ -327,6 +327,7 @@ export interface Analytics {
   user_id: string;
   company_db_id?: string | null;
   company_excel_id: string;
+  campaign_id?: string | null; // NEW: ID da campanha associada
   title: string;
   description?: string | null;
   start_date?: string | null;
@@ -344,4 +345,5 @@ export interface Analytics {
   created_at?: string;
   updated_at?: string;
   company_commercial_name?: string; // For display
+  campaign_name?: string; // For display
 }

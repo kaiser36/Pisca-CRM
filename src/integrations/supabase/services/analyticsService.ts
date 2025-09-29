@@ -11,6 +11,9 @@ export async function fetchAllAnalytics(): Promise<Analytics[]> {
       *,
       company:companies (
         commercial_name
+      ),
+      campaign:campaigns (
+        name
       )
     `)
     .order('created_at', { ascending: false });
@@ -22,7 +25,8 @@ export async function fetchAllAnalytics(): Promise<Analytics[]> {
 
   return data.map(item => ({
       ...item,
-      company_commercial_name: item.company?.commercial_name || 'N/A'
+      company_commercial_name: item.company?.commercial_name || 'N/A',
+      campaign_name: item.campaign?.name || 'N/A'
   })) as Analytics[];
 }
 
@@ -32,7 +36,12 @@ export async function fetchAllAnalytics(): Promise<Analytics[]> {
 export async function fetchAnalyticsByCompanyExcelId(userId: string, companyExcelId: string): Promise<Analytics[]> {
   const { data, error } = await supabase
     .from('analytics')
-    .select('*')
+    .select(`
+      *,
+      campaign:campaigns (
+        name
+      )
+    `)
     .eq('user_id', userId)
     .eq('company_excel_id', companyExcelId)
     .order('created_at', { ascending: false });
@@ -42,13 +51,16 @@ export async function fetchAnalyticsByCompanyExcelId(userId: string, companyExce
     throw error;
   }
 
-  return data as Analytics[];
+  return data.map(item => ({
+    ...item,
+    campaign_name: item.campaign?.name || 'N/A'
+  })) as Analytics[];
 }
 
 /**
  * Creates a new analytic entry.
  */
-export async function createAnalytic(analyticData: Omit<Analytics, 'id' | 'created_at' | 'updated_at' | 'company_commercial_name'>) {
+export async function createAnalytic(analyticData: Omit<Analytics, 'id' | 'created_at' | 'updated_at' | 'company_commercial_name' | 'campaign_name'>) {
     const { data, error } = await supabase
         .from('analytics')
         .insert([analyticData])
@@ -65,7 +77,7 @@ export async function createAnalytic(analyticData: Omit<Analytics, 'id' | 'creat
 /**
  * Updates an existing analytic entry.
  */
-export async function updateAnalytic(analyticId: string, analyticData: Partial<Omit<Analytics, 'id' | 'created_at' | 'updated_at' | 'company_commercial_name' | 'user_id'>>) {
+export async function updateAnalytic(analyticId: string, analyticData: Partial<Omit<Analytics, 'id' | 'created_at' | 'updated_at' | 'company_commercial_name' | 'user_id' | 'campaign_name'>>) {
     const { data, error } = await supabase
         .from('analytics')
         .update(analyticData)
