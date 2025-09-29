@@ -9,6 +9,7 @@ import { insertAccountContact } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { getContactTypes, ContactType } from '@/integrations/supabase/services/contactTypeService';
+import { getContactReportOptionsByContactTypeId, ContactReportOption } from '@/integrations/supabase/services/contactReportOptionService';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,7 +35,7 @@ interface AccountContactCreateFormProps {
 const formSchema = z.object({
   account_am: z.string().nullable().optional(),
   contact_type: z.string().min(1, "Tipo de Contacto é obrigatório").nullable().optional(),
-  report_text: z.string().nullable().optional(),
+  report_text: z.string().nullable().optional(), // Agora será uma seleção
   contact_date: z.date().nullable().optional(),
   contact_method: z.string().min(1, "Meio de Contacto é obrigatório").nullable().optional(),
   commercial_name: z.string().nullable().optional(),
@@ -68,6 +69,36 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
   const [userId, setUserId] = useState<string | null>(null);
   const [companyDbId, setCompanyDbId] = useState<string | null>(null);
   const [contactTypes, setContactTypes] = useState<ContactType[]>([]);
+  const [reportOptions, setReportOptions] = useState<{ value: string; label: string }[]>([]);
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      account_am: '',
+      contact_type: '',
+      report_text: '',
+      contact_date: new Date(),
+      contact_method: '',
+      commercial_name: commercialName || '',
+      company_name: companyName || '',
+      crm_id: '',
+      stand_name: '',
+      subject: '',
+      contact_person_name: '',
+      company_group: '',
+      account_armatis: '',
+      quarter: '',
+      is_credibom_partner: false,
+      send_email: false,
+      email_type: '',
+      email_subject: '',
+      email_body: '',
+      attachment_url: '',
+      sending_email: '',
+    },
+  });
+
+  const selectedContactTypeName = form.watch('contact_type');
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -129,32 +160,32 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     fetchCompanyDbId();
   }, [userId, companyExcelId]);
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      account_am: '',
-      contact_type: '',
-      report_text: '',
-      contact_date: new Date(),
-      contact_method: '',
-      commercial_name: commercialName || '',
-      company_name: companyName || '',
-      crm_id: '',
-      stand_name: '',
-      subject: '',
-      contact_person_name: '',
-      company_group: '',
-      account_armatis: '',
-      quarter: '',
-      is_credibom_partner: false,
-      send_email: false,
-      email_type: '',
-      email_subject: '',
-      email_body: '',
-      attachment_url: '',
-      sending_email: '',
-    },
-  });
+  // Fetch report options based on selected contact type
+  useEffect(() => {
+    const fetchReportOptions = async () => {
+      if (selectedContactTypeName) {
+        const contactType = contactTypes.find(type => type.name === selectedContactTypeName);
+        if (contactType?.id) {
+          try {
+            const options = await getContactReportOptionsByContactTypeId(contactType.id);
+            setReportOptions(options.map(opt => ({ value: opt.report_text, label: opt.report_text })));
+          } catch (error) {
+            console.error('Erro ao buscar opções de relatório:', error);
+            showError('Erro ao carregar opções de relatório');
+            setReportOptions([]);
+          }
+        } else {
+          setReportOptions([]);
+        }
+      } else {
+        setReportOptions([]);
+      }
+      form.setValue('report_text', ''); // Reset report_text when contact_type changes
+    };
+
+    fetchReportOptions();
+  }, [selectedContactTypeName, contactTypes, form]);
+
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
@@ -239,7 +270,14 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     { name: "email_subject", label: "Assunto do Email", type: "text" },
     { name: "attachment_url", label: "URL do Anexo", type: "url" },
     { name: "sending_email", label: "Email de Envio", type: "email" },
-    { name: "report_text", label: "Report", type: "textarea", colSpan: 2 },
+    { 
+      name: "report_text", 
+      label: "Report", 
+      type: "combobox", 
+      colSpan: 2, 
+      options: reportOptions,
+      disabled: reportOptions.length === 0 // Disable if no options
+    },
     { name: "email_body", label: "Corpo do Email", type: "textarea", colSpan: 2 },
   ];
 
@@ -311,12 +349,13 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
                       </Select>
                     ) : field.type === "combobox" ? (
                       <Combobox
-                        options={uniqueContactTypeNames}
+                        options={field.options as { value: string; label: string }[] || []}
                         value={formField.value as string}
                         onChange={formField.onChange}
-                        placeholder="Selecione um tipo de contacto"
-                        searchPlaceholder="Pesquisar tipos de contacto..."
-                        emptyMessage="Nenhum tipo de contacto encontrado."
+                        placeholder={field.name === "contact_type" ? "Selecione um tipo de contacto" : "Selecione uma opção de relatório"}
+                        searchPlaceholder={field.name === "contact_type" ? "Pesquisar tipos de contacto..." : "Pesquisar opções de relatório..."}
+                        emptyMessage={field.name === "contact_type" ? "Nenhum tipo de contacto encontrado." : "Nenhuma opção de relatório encontrada."}
+                        disabled={field.disabled}
                       />
                     ) : (
                       <Input
