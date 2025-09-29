@@ -16,6 +16,7 @@ import Campaigns from "./Campaigns";
 import EasyvistaTypeManagement from "./EasyvistaTypeManagement";
 import ContactTypeManagement from "./ContactTypeManagement";
 import { CrmDataProvider } from "@/context/CrmDataContext";
+import { SessionContextProvider } from "@/context/SessionContext";
 
 const queryClient = new QueryClient();
 
@@ -32,26 +33,29 @@ const App = () => (
       <Toaster />
       <Sonner position="top-right" richColors className="[&>div]:z-[9999]" />
       <BrowserRouter>
-        <CrmDataProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/crm" element={<CRM />} />
-            <Route path="/company-additional-data" element={<CompanyAdditionalData />} />
-            <Route path="/company-additional-data/:companyExcelId" element={<CompanyAdditionalDetailPage />} />
-            
-            <Route path="/test" element={<TestPage />} />
-            
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/settings/easyvista-types" element={<EasyvistaTypeManagement />} />
-            <Route path="/settings/contact-types" element={<ContactTypeManagement />} />
-            
-            <Route path="/accounts" element={<Accounts />} />
-            <Route path="/am-view" element={<AmView />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/campaigns" element={<Campaigns />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </CrmDataProvider>
+        <SessionContextProvider>
+          <CrmDataProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/crm" element={<CRM />} />
+              <Route path="/company-additional-data" element={<CompanyAdditionalData />} />
+              <Route path="/company-additional-data/:companyExcelId" element={<CompanyAdditionalDetailPage />} />
+              
+              <Route path="/test" element={<TestPage />} />
+              
+              {/* Settings routes - specific routes first */}
+              <Route path="/settings/easyvista-types" element={<EasyvistaTypeManagement />} />
+              <Route path="/settings/contact-types" element={<ContactTypeManagement />} />
+              <Route path="/settings" element={<Settings />} />
+              
+              <Route path="/accounts" element={<Accounts />} />
+              <Route path="/am-view" element={<AmView />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/campaigns" element={<Campaigns />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </CrmDataProvider>
+        </SessionContextProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
