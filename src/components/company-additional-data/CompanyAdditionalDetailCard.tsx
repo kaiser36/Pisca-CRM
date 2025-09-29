@@ -265,7 +265,16 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
         </CardHeader>
         <CardContent className="space-y-6">
           <CompanyAdditionalOverviewCards
-            companyExcelId={company.excel_company_id}
+            companyAdditional={company}
+            crmCompany={crmCompany}
+            alerts={alerts}
+            totalPublicados={totalPublicados}
+            totalArquivados={totalArquivados}
+            totalGuardados={totalGuardados}
+            totalLeadsRecebidas={totalLeadsRecebidas}
+            totalLeadsPendentes={totalLeadsPendentes}
+            totalLeadsExpiradas={totalLeadsExpiradas}
+            renderField={renderField}
           />
 
           <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
