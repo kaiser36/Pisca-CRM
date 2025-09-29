@@ -239,7 +239,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     { name: "email_subject", label: "Assunto do Email", type: "text" },
     { name: "attachment_url", label: "URL do Anexo", type: "url" },
     { name: "sending_email", label: "Email de Envio", type: "email" },
-    { name: "report_text", label: "Texto do Relatório", type: "textarea", colSpan: 2 },
+    { name: "report_text", label: "Report", type: "textarea", colSpan: 2 },
     { name: "email_body", label: "Corpo do Email", type: "textarea", colSpan: 2 },
   ];
 
