@@ -195,7 +195,7 @@ const EmployeeCreateForm: React.FC<EmployeeCreateFormProps> = ({
                             formField.onChange(value);
                           }
                         }}
-                        value={field.value}
+                        value={field.value || undefined}
                         disabled={field.disabled}
                       >
                         <SelectTrigger>
