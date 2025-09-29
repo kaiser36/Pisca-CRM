@@ -82,7 +82,7 @@ const AnalyticsEditForm: React.FC<AnalyticsEditFormProps> = ({ analytic, isOpen,
       form.reset({
         ...analytic,
         company_db_id: analytic.company_db_id || "",
-        campaign_id: analytic.campaign_id || '',
+        campaign_id: analytic.campaign_id || 'null-campaign-option',
         start_date: analytic.start_date ? new Date(analytic.start_date) : undefined,
         end_date: analytic.end_date ? new Date(analytic.end_date) : undefined,
         views: analytic.views ?? 0,
@@ -145,7 +145,7 @@ const AnalyticsEditForm: React.FC<AnalyticsEditFormProps> = ({ analytic, isOpen,
       await updateAnalytic(analytic.id, {
         ...values,
         company_excel_id: selectedCompany.Company_id,
-        campaign_id: values.campaign_id === '' ? null : values.campaign_id,
+        campaign_id: values.campaign_id === 'null-campaign-option' ? null : values.campaign_id,
         start_date: values.start_date.toISOString(),
         end_date: values.end_date.toISOString(),
       });
@@ -199,14 +199,14 @@ const AnalyticsEditForm: React.FC<AnalyticsEditFormProps> = ({ analytic, isOpen,
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Campanha</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''} disabled={isLoadingCampaigns}>
+                      <Select onValueChange={field.onChange} value={field.value || 'null-campaign-option'} disabled={isLoadingCampaigns}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione uma campanha" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Nenhuma Campanha</SelectItem>
+                          <SelectItem value="null-campaign-option">Nenhuma Campanha</SelectItem>
                           {availableCampaigns.map((campaign) => (
                             <SelectItem key={campaign.value} value={campaign.value}>
                               {campaign.label}

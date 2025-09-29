@@ -137,7 +137,7 @@ const AnalyticsCreateFormForCompany: React.FC<AnalyticsCreateFormForCompanyProps
         user_id: user.id,
         company_db_id: companyDbId,
         company_excel_id: companyExcelId,
-        campaign_id: values.campaign_id === '' ? null : values.campaign_id,
+        campaign_id: values.campaign_id === 'null-campaign-option' ? null : values.campaign_id,
         start_date: values.start_date.toISOString(),
         end_date: values.end_date.toISOString(),
         title: values.title,
@@ -174,19 +174,19 @@ const AnalyticsCreateFormForCompany: React.FC<AnalyticsCreateFormForCompanyProps
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Campanha</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ''} disabled={isLoadingCampaigns}>
+                  <Select onValueChange={field.onChange} value={field.value || 'null-campaign-option'} disabled={isLoadingCampaigns}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione uma campanha" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Nenhuma Campanha</SelectItem>
+                      <SelectItem value="null-campaign-option">Nenhuma Campanha</SelectItem>
                       {availableCampaigns.length === 0 && !isLoadingCampaigns ? (
                         <SelectItem value="no-options" disabled>Nenhuma campanha disponível</SelectItem>
                       ) : (
                         availableCampaigns
-                          .filter(campaign => campaign.value && campaign.value.trim() !== '') // Garante que apenas IDs de campanha válidos são usados
+                          .filter(campaign => campaign.value && campaign.value.trim() !== '')
                           .map((campaign) => (
                             <SelectItem key={campaign.value} value={campaign.value}>
                               {campaign.label}
