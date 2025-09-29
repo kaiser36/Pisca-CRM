@@ -21,12 +21,14 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { updateContactType, ContactType } from '@/integrations/supabase/services/contactTypeService';
 import { useQueryClient } from '@tanstack/react-query';
 import { Pencil } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
+  report_text: z.string().optional(),
 });
 
 interface ContactTypeEditFormProps {
@@ -41,12 +43,16 @@ const ContactTypeEditForm: React.FC<ContactTypeEditFormProps> = ({ contactType }
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: contactType.name,
+      report_text: contactType.report_text || '',
     },
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (contactType.id) {
-      const updatedContactType = await updateContactType(contactType.id, values);
+      const updatedContactType = await updateContactType(contactType.id, {
+        name: values.name,
+        report_text: values.report_text || null
+      });
       if (updatedContactType) {
         queryClient.invalidateQueries({ queryKey: ['contact_types'] });
         setIsOpen(false);
@@ -75,6 +81,23 @@ const ContactTypeEditForm: React.FC<ContactTypeEditFormProps> = ({ contactType }
                   <FormLabel>Nome</FormLabel>
                   <FormControl>
                     <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="report_text"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Texto do Relatório (opcional)</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Texto padrão para este tipo de contacto..."
+                      className="min-h-[100px]"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

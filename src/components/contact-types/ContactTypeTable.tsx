@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
-import ContactTypeEditForm from './ContactTypeEditForm.tsx';
+import ContactTypeEditForm from './ContactTypeEditForm';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,6 +51,7 @@ const ContactTypeTable = () => {
         <TableHeader>
           <TableRow>
             <TableHead>Nome</TableHead>
+            <TableHead>Texto do Relatório</TableHead>
             <TableHead>Data de Criação</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
@@ -59,6 +60,13 @@ const ContactTypeTable = () => {
           {contactTypes?.map((type: ContactType) => (
             <TableRow key={type.id}>
               <TableCell>{type.name}</TableCell>
+              <TableCell>
+                {type.report_text ? (
+                  <span className="line-clamp-2 max-w-md">{type.report_text}</span>
+                ) : (
+                  <span className="text-muted-foreground">-</span>
+                )}
+              </TableCell>
               <TableCell>{new Date(type.created_at!).toLocaleDateString()}</TableCell>
               <TableCell className="text-right">
                 <ContactTypeEditForm contactType={type} />

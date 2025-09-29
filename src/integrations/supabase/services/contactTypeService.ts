@@ -5,6 +5,7 @@ export interface ContactType {
   id?: string;
   user_id: string;
   name: string;
+  report_text?: string | null;
   created_at?: string;
 }
 

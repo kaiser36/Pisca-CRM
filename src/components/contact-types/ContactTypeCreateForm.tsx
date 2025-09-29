@@ -21,12 +21,14 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { createContactType } from '@/integrations/supabase/services/contactTypeService';
 import { useQueryClient } from '@tanstack/react-query';
 import { PlusCircle } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().nonempty('O nome não pode estar vazio.').min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
+  report_text: z.string().optional(),
 });
 
 const ContactTypeCreateForm = () => {
@@ -37,11 +39,15 @@ const ContactTypeCreateForm = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
+      report_text: '',
     },
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const newContactType = await createContactType({ name: values.name });
+    const newContactType = await createContactType({ 
+      name: values.name,
+      report_text: values.report_text || null
+    });
     if (newContactType) {
       queryClient.invalidateQueries({ queryKey: ['contact_types'] });
       form.reset();
@@ -71,6 +77,23 @@ const ContactTypeCreateForm = () => {
                   <FormLabel>Nome</FormLabel>
                   <FormControl>
                     <Input placeholder="Ex: Reunião Presencial" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="report_text"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Texto do Relatório (opcional)</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Texto padrão para este tipo de contacto..."
+                      className="min-h-[100px]"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
