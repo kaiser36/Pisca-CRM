@@ -169,6 +169,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
           try {
             const options = await getContactReportOptionsByContactTypeId(contactType.id);
             setReportOptions(options.map(opt => ({ value: opt.report_text, label: opt.report_text })));
+            console.log("Fetched report options:", options.map(opt => ({ value: opt.report_text, label: opt.report_text })));
           } catch (error) {
             console.error('Erro ao buscar opções de relatório:', error);
             showError('Erro ao carregar opções de relatório');
@@ -298,7 +299,13 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
               key={field.name}
               control={form.control}
               name={field.name as keyof FormData}
-              render={({ field: formField }) => (
+              render={({ field: formField }) => {
+                console.log(`FormField: ${field.name}, Value:`, formField.value);
+                if (field.name === "report_text") {
+                  console.log("Report Combobox options:", field.options);
+                  console.log("Report Combobox disabled:", field.disabled);
+                }
+                return (
                 <FormItem className={field.colSpan === 2 ? "md:col-span-2" : ""}>
                   <FormLabel>{field.label}</FormLabel>
                   <FormControl>
@@ -368,7 +375,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
                   </FormControl>
                   <FormMessage />
                 </FormItem>
-              )}
+              )}}
             />
           ))}
         </div>

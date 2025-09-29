@@ -67,6 +67,8 @@ export function Combobox({
                   key={option.value}
                   value={option.label} // value is used for searching
                   onSelect={() => {
+                    console.log("Combobox: Selected option:", option.value);
+                    console.log("Combobox: Current value:", value);
                     onChange(option.value === value ? "" : option.value)
                     setOpen(false)
                   }}
