@@ -347,11 +347,3 @@ export interface Analytics {
   company_commercial_name?: string; // For display
   campaign_name?: string; // For display
 }
-
-export interface ContactReportOption { // NEW: Interface for contact report options
-  id?: string;
-  user_id: string;
-  contact_type_id: string;
-  report_text: string;
-  created_at?: string;
-}
