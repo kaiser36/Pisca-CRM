@@ -8,6 +8,7 @@ import { AccountContact } from '@/types/crm';
 import { insertAccountContact } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
+import { getContactTypes, ContactType } from '@/integrations/supabase/services/contactTypeService';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 
 interface AccountContactCreateFormProps {
   companyExcelId: string;
@@ -64,7 +66,8 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [companyDbId, setCompanyDbId] = useState<string | null>(null); // NEW: State for company_db_id
+  const [companyDbId, setCompanyDbId] = useState<string | null>(null);
+  const [contactTypes, setContactTypes] = useState<ContactType[]>([]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -84,7 +87,22 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     return () => subscription.unsubscribe();
   }, []);
 
-  // NEW: Fetch company_db_id based on companyExcelId and userId
+  // Buscar tipos de contacto
+  useEffect(() => {
+    const fetchContactTypes = async () => {
+      try {
+        const types = await getContactTypes();
+        setContactTypes(types);
+      } catch (error) {
+        console.error('Erro ao buscar tipos de contacto:', error);
+        showError('Erro ao carregar tipos de contacto');
+      }
+    };
+
+    fetchContactTypes();
+  }, []);
+
+  // Fetch company_db_id based on companyExcelId and userId
   useEffect(() => {
     const fetchCompanyDbId = async () => {
       if (userId && companyExcelId) {
@@ -95,7 +113,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
           .eq('company_id', companyExcelId)
           .single();
 
-        if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+        if (error && error.code !== 'PGRST116') {
           console.error('Error fetching company_db_id:', error);
           showError(`Falha ao obter o ID interno da empresa: ${error.message}`);
           setCompanyDbId(null);
@@ -110,7 +128,6 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
 
     fetchCompanyDbId();
   }, [userId, companyExcelId]);
-
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -144,7 +161,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
       showError("Utilizador não autenticado. Por favor, faça login para criar o contacto.");
       return;
     }
-    if (!companyDbId) { // NEW: Check if companyDbId is available
+    if (!companyDbId) {
       showError("Não foi possível associar o contacto a uma empresa válida. Por favor, verifique o ID Excel da empresa.");
       return;
     }
@@ -153,7 +170,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     try {
       const newContact: Omit<AccountContact, 'id' | 'created_at'> = {
         user_id: userId,
-        company_db_id: companyDbId, // NEW: Use companyDbId
+        company_db_id: companyDbId,
         company_excel_id: companyExcelId,
         account_am: values.account_am || null,
         contact_type: values.contact_type || null,
@@ -189,9 +206,22 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     }
   };
 
+  // Obter nomes únicos de tipos de contacto
+  const uniqueContactTypeNames = Array.from(
+    new Set(contactTypes.map(type => type.name))
+  ).map(name => ({
+    value: name,
+    label: name
+  }));
+
   const fields = [
     { name: "account_am", label: "AM da Conta", type: "text" },
-    { name: "contact_type", label: "Tipo de Contacto", type: "select", options: ["Chamada", "Email", "Reunião", "Visita", "Outro"] },
+    { 
+      name: "contact_type", 
+      label: "Tipo de Contacto", 
+      type: "combobox", 
+      options: uniqueContactTypeNames 
+    },
     { name: "contact_date", label: "Data do Contacto", type: "date" },
     { name: "contact_method", label: "Meio de Contacto", type: "select", options: ["Telefone", "Email", "Presencial", "Videoconferência", "Outro"] },
     { name: "commercial_name", label: "Nome Comercial", type: "text" },
@@ -279,6 +309,15 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
                           ))}
                         </SelectContent>
                       </Select>
+                    ) : field.type === "combobox" ? (
+                      <Combobox
+                        options={uniqueContactTypeNames}
+                        value={formField.value as string}
+                        onChange={formField.onChange}
+                        placeholder="Selecione um tipo de contacto"
+                        searchPlaceholder="Pesquisar tipos de contacto..."
+                        emptyMessage="Nenhum tipo de contacto encontrado."
+                      />
                     ) : (
                       <Input
                         type={field.type}
