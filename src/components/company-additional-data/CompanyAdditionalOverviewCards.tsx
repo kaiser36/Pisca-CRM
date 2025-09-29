@@ -17,45 +17,84 @@ const CompanyAdditionalOverviewCards: React.FC<CompanyAdditionalOverviewCardsPro
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchCounts = useCallback(async () => {
-    if (!user || !companyExcelId) return;
+    console.log('CompanyAdditionalOverviewCards fetchCounts called with:', { companyExcelId, userId: user?.id });
+    
+    if (!user || !companyExcelId) {
+      console.log('Missing user or companyExcelId, skipping fetch');
+      setIsLoading(false);
+      return;
+    }
 
     setIsLoading(true);
     try {
+      console.log('Fetching counts for tables...');
+      
+      // Fetch Pisca data
+      const piscaPromise = supabase
+        .from('company_additional_excel_data')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('excel_company_id', companyExcelId);
+
+      // Fetch Easyvistas data
+      const easyvistasPromise = supabase
+        .from('Easyvistas')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('company_excel_id', companyExcelId);
+
+      // Fetch Negocios data
+      const negociosPromise = supabase
+        .from('negocios')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('company_excel_id', companyExcelId);
+
       const [piscaRes, easyvistasRes, negociosRes] = await Promise.all([
-        supabase
-          .from('company_additional_excel_data')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('excel_company_id', companyExcelId),
-        supabase
-          .from('Easyvistas')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('company_excel_id', companyExcelId),
-        supabase
-          .from('negocios')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('company_excel_id', companyExcelId),
+        piscaPromise,
+        easyvistasPromise,
+        negociosPromise,
       ]);
 
-      if (piscaRes.error) throw piscaRes.error;
-      if (easyvistasRes.error) throw easyvistasRes.error;
-      if (negociosRes.error) throw negociosRes.error;
+      console.log('API responses:', {
+        pisca: { count: piscaRes.count, error: piscaRes.error },
+        easyvistas: { count: easyvistasRes.count, error: easyvistasRes.error },
+        negocios: { count: negociosRes.count, error: negociosRes.error },
+      });
 
-      setCounts({
+      if (piscaRes.error) {
+        console.error('Pisca fetch error:', piscaRes.error);
+        throw piscaRes.error;
+      }
+      if (easyvistasRes.error) {
+        console.error('Easyvistas fetch error:', easyvistasRes.error);
+        throw easyvistasRes.error;
+      }
+      if (negociosRes.error) {
+        console.error('Negocios fetch error:', negociosRes.error);
+        throw negociosRes.error;
+      }
+
+      const newCounts = {
         pisca: piscaRes.count ?? 0,
         easyvistas: easyvistasRes.count ?? 0,
         negocios: negociosRes.count ?? 0,
-      });
+      };
+
+      console.log('Setting counts:', newCounts);
+      setCounts(newCounts);
     } catch (error: any) {
+      console.error('Error in fetchCounts:', error);
       showError(`Erro ao carregar contagens: ${error.message}`);
+      // Set counts to 0 on error
+      setCounts({ pisca: 0, easyvistas: 0, negocios: 0 });
     } finally {
       setIsLoading(false);
     }
   }, [user, companyExcelId]);
 
   useEffect(() => {
+    console.log('CompanyAdditionalOverviewCards useEffect triggered', { companyExcelId, user: !!user });
     fetchCounts();
   }, [fetchCounts]);
 
@@ -82,6 +121,8 @@ const CompanyAdditionalOverviewCards: React.FC<CompanyAdditionalOverviewCardsPro
       gradient: 'from-green-500 to-emerald-500',
     },
   ];
+
+  console.log('CompanyAdditionalOverviewCards rendering with counts:', counts, 'isLoading:', isLoading);
 
   if (isLoading) {
     return (
