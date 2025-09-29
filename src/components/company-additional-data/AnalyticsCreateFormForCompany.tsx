@@ -182,11 +182,17 @@ const AnalyticsCreateFormForCompany: React.FC<AnalyticsCreateFormForCompanyProps
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="">Nenhuma Campanha</SelectItem>
-                      {availableCampaigns.map((campaign) => (
-                        <SelectItem key={campaign.value} value={campaign.value}>
-                          {campaign.label}
-                        </SelectItem>
-                      ))}
+                      {availableCampaigns.length === 0 && !isLoadingCampaigns ? (
+                        <SelectItem value="no-options" disabled>Nenhuma campanha disponível</SelectItem>
+                      ) : (
+                        availableCampaigns
+                          .filter(campaign => campaign.value && campaign.value.trim() !== '') // Garante que apenas IDs de campanha válidos são usados
+                          .map((campaign) => (
+                            <SelectItem key={campaign.value} value={campaign.value}>
+                              {campaign.label}
+                            </SelectItem>
+                          ))
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
