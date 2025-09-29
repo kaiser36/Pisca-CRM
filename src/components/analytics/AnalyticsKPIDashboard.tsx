@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useMemo, useState } from 'react';
 import { Analytics } from '@/types/crm';
 import {
   Award,
@@ -15,48 +14,16 @@ import {
   Target,
   Users,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import DashboardCard from '@/components/dashboard/DashboardCard';
-
-interface KpiCardProps {
-  title: string;
-  value: string;
-  description: string;
-  formula?: string;
-  icon: React.ReactNode;
-  className?: string;
-}
-
-const KpiCard: React.FC<KpiCardProps> = ({ title, value, description, formula, icon, className }) => {
-  return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-xl p-5 shadow-lg transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-2xl text-white",
-        className
-      )}
-    >
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col space-y-1">
-          <p className="text-sm font-medium opacity-80">{title}</p>
-          <p className="text-4xl font-bold">{value}</p>
-          <p className="text-xs opacity-90">{description}</p>
-        </div>
-        <div className="p-3 bg-white/20 rounded-lg">
-          {icon}
-        </div>
-      </div>
-      {formula && (
-        <p className="mt-3 text-xs italic opacity-70">Fórmula: {formula}</p>
-      )}
-    </div>
-  );
-};
+import ConversionConfigurator from './ConversionConfigurator';
 
 interface AnalyticsKPIDashboardProps {
   analytic: Analytics;
 }
 
 const AnalyticsKPIDashboard: React.FC<AnalyticsKPIDashboardProps> = ({ analytic }) => {
+  const [conversionPercentages, setConversionPercentages] = useState({ phone: 100, whatsapp: 100 });
+
   const calculatedMetrics = useMemo(() => {
     // Converter todos os valores para números e tratar nulos/undefined
     const views = Number(analytic.views) || 0;
@@ -69,7 +36,10 @@ const AnalyticsKPIDashboard: React.FC<AnalyticsKPIDashboardProps> = ({ analytic 
     const total_cost = Number(analytic.total_cost) || 0;
     const revenue = Number(analytic.revenue) || 0;
 
-    const totalLeads = phone_views + whatsapp_interactions + leads_email;
+    const adjustedPhoneLeads = phone_views * (conversionPercentages.phone / 100);
+    const adjustedWhatsappLeads = whatsapp_interactions * (conversionPercentages.whatsapp / 100);
+    const totalLeads = leads_email + adjustedPhoneLeads + adjustedWhatsappLeads;
+
     const totalInteractions = clicks + whatsapp_interactions + phone_views + leads_email + location_clicks;
 
     const cpl = totalLeads > 0 ? total_cost / totalLeads : 0;
@@ -100,33 +70,35 @@ const AnalyticsKPIDashboard: React.FC<AnalyticsKPIDashboardProps> = ({ analytic 
       total_cost,
       revenue
     };
-  }, [analytic]);
+  }, [analytic, conversionPercentages]);
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(value);
   const formatPercentage = (value: number) => `${value.toFixed(2)}%`;
   const formatNumber = (value: number, decimals = 2) => value.toFixed(decimals);
 
+  const { views, clicks, total_ads, totalLeads, totalInteractions, revenue } = calculatedMetrics;
+
   const kpiData = [
     {
       title: 'ROI (Retorno Investimento)',
       value: formatPercentage(calculatedMetrics.roi),
-      description: `De ${formatCurrency(analytic.revenue || 0)} de receita`,
+      description: `De ${formatCurrency(revenue)} de receita`,
       formula: '((Receita - Custo) / Custo) * 100',
       icon: <LineChart className="w-7 h-7" />,
       className: 'bg-gradient-to-br from-green-500 to-emerald-500',
     },
     {
       title: 'Total de Leads',
-      value: formatNumber(calculatedMetrics.totalLeads, 0),
-      description: `De ${calculatedMetrics.totalInteractions} interações`,
-      formula: 'Chamadas + WhatsApp + Emails',
+      value: formatNumber(totalLeads, 0),
+      description: `De ${totalInteractions} interações`,
+      formula: 'Emails + (Chamadas * %) + (WhatsApp * %)',
       icon: <Users className="w-7 h-7" />,
       className: 'bg-gradient-to-br from-blue-500 to-sky-500',
     },
     {
       title: 'CPL (Custo por Lead)',
       value: formatCurrency(calculatedMetrics.cpl),
-      description: `Baseado em ${calculatedMetrics.totalLeads} leads`,
+      description: `Baseado em ${formatNumber(totalLeads, 0)} leads`,
       formula: 'Custo Total / Total de Leads',
       icon: <Target className="w-7 h-7" />,
       className: 'bg-gradient-to-br from-orange-500 to-amber-500',
@@ -134,7 +106,7 @@ const AnalyticsKPIDashboard: React.FC<AnalyticsKPIDashboardProps> = ({ analytic 
     {
       title: 'CTR (Taxa de Cliques)',
       value: formatPercentage(calculatedMetrics.ctr),
-      description: `De ${calculatedMetrics.views} visualizações`,
+      description: `De ${views} visualizações`,
       formula: '(Cliques / Visualizações) * 100',
       icon: <Percent className="w-7 h-7" />,
       className: 'bg-gradient-to-br from-purple-500 to-violet-500',
@@ -142,7 +114,7 @@ const AnalyticsKPIDashboard: React.FC<AnalyticsKPIDashboardProps> = ({ analytic 
     {
       title: 'CPC (Custo por Clique)',
       value: formatCurrency(calculatedMetrics.cpc),
-      description: `Para ${calculatedMetrics.clicks} cliques`,
+      description: `Para ${clicks} cliques`,
       formula: 'Custo Total / Cliques',
       icon: <MousePointerClick className="w-7 h-7" />,
       className: 'bg-gradient-to-br from-rose-500 to-pink-500',
@@ -150,7 +122,7 @@ const AnalyticsKPIDashboard: React.FC<AnalyticsKPIDashboardProps> = ({ analytic 
     {
       title: 'CPA (Custo por Interação)',
       value: formatCurrency(calculatedMetrics.cpa),
-      description: `Para ${calculatedMetrics.totalInteractions} interações`,
+      description: `Para ${totalInteractions} interações`,
       formula: 'Custo Total / Total de Interações',
       icon: <Handshake className="w-7 h-7" />,
       className: 'bg-gradient-to-br from-teal-500 to-cyan-500',
@@ -158,7 +130,7 @@ const AnalyticsKPIDashboard: React.FC<AnalyticsKPIDashboardProps> = ({ analytic 
     {
       title: 'CPM (Custo por Mil)',
       value: formatCurrency(calculatedMetrics.cpm),
-      description: `Para ${calculatedMetrics.views} visualizações`,
+      description: `Para ${views} visualizações`,
       formula: '(Custo Total / Visualizações) * 1000',
       icon: <Eye className="w-7 h-7" />,
       className: 'bg-gradient-to-br from-indigo-500 to-blue-500',
@@ -166,7 +138,7 @@ const AnalyticsKPIDashboard: React.FC<AnalyticsKPIDashboardProps> = ({ analytic 
     {
       title: 'Custo por Anúncio',
       value: formatCurrency(calculatedMetrics.custoPorAnuncio),
-      description: `Média de ${calculatedMetrics.total_ads} anúncios`,
+      description: `Média de ${total_ads} anúncios`,
       formula: 'Custo Total / Total de Anúncios',
       icon: <DollarSign className="w-7 h-7" />,
       className: 'bg-gradient-to-br from-slate-600 to-gray-700',
@@ -192,6 +164,7 @@ const AnalyticsKPIDashboard: React.FC<AnalyticsKPIDashboardProps> = ({ analytic 
   return (
     <div className="space-y-4">
       <h3 className="text-xl font-bold text-gray-800 dark:text-white">Dashboard KPIs</h3>
+      <ConversionConfigurator onConfigChange={setConversionPercentages} />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
         {kpiData.map((kpi) => (
           <DashboardCard
