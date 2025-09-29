@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { MoreHorizontal } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import AnalyticsEditForm from '@/components/analytics/AnalyticsEditForm';
+import AnalyticsKPIDashboard from '@/components/analytics/AnalyticsKPIDashboard';
 
 interface AnalyticsListProps {
   companyExcelId: string;
@@ -26,6 +27,9 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
   
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedAnalytic, setSelectedAnalytic] = useState<AnalyticsType | null>(null);
+
+  // Adicionar estado para análise selecionada para o dashboard
+  const [selectedAnalyticForDashboard, setSelectedAnalyticForDashboard] = useState<AnalyticsType | null>(null);
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [analyticToDelete, setAnalyticToDelete] = useState<string | null>(null);
@@ -57,6 +61,10 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
     setIsDeleteDialogOpen(true);
   };
 
+  const handleSelectAnalyticForDashboard = (analytic: AnalyticsType) => {
+    setSelectedAnalyticForDashboard(analytic);
+  };
+
   const confirmDelete = async () => {
     if (!analyticToDelete) return;
     try {
@@ -64,6 +72,9 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
       showSuccess('Análise apagada com sucesso!');
       loadAnalytics();
       onAnalyticsChanged();
+      if (selectedAnalyticForDashboard?.id === analyticToDelete) {
+        setSelectedAnalyticForDashboard(null);
+      }
     } catch (error: any) {
       showError(`Erro ao apagar análise: ${error.message}`);
     } finally {
@@ -112,11 +123,25 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
               </TableRow>
             ) : (
               analytics.map(item => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.title}</TableCell>
-                  <TableCell>{formatDate(item.start_date)} - {formatDate(item.end_date)}</TableCell>
-                  <TableCell>{formatCurrency(item.total_cost)}</TableCell>
-                  <TableCell>{formatCurrency(item.revenue)}</TableCell>
+                <TableRow 
+                  key={item.id} 
+                  className={selectedAnalyticForDashboard?.id === item.id ? 'bg-blue-50 hover:bg-blue-100' : ''}
+                >
+                  <TableCell 
+                    className="font-medium cursor-pointer"
+                    onClick={() => handleSelectAnalyticForDashboard(item)}
+                  >
+                    {item.title}
+                  </TableCell>
+                  <TableCell className="cursor-pointer" onClick={() => handleSelectAnalyticForDashboard(item)}>
+                    {formatDate(item.start_date)} - {formatDate(item.end_date)}
+                  </TableCell>
+                  <TableCell className="cursor-pointer" onClick={() => handleSelectAnalyticForDashboard(item)}>
+                    {formatCurrency(item.total_cost)}
+                  </TableCell>
+                  <TableCell className="cursor-pointer" onClick={() => handleSelectAnalyticForDashboard(item)}>
+                    {formatCurrency(item.revenue)}
+                  </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -137,6 +162,12 @@ const AnalyticsList: React.FC<AnalyticsListProps> = ({ companyExcelId, onAnalyti
           </TableBody>
         </Table>
       </div>
+
+      {selectedAnalyticForDashboard && (
+        <div className="mt-8">
+          <AnalyticsKPIDashboard analytic={selectedAnalyticForDashboard} />
+        </div>
+      )}
 
       {selectedAnalytic && (
         <AnalyticsEditForm
