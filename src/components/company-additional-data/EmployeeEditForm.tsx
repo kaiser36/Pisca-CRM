@@ -199,7 +199,13 @@ const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({
                             <SelectItem value="no-options" disabled>Nenhuma opção disponível</SelectItem>
                           ) : (
                             field.options?.map((option: any) => (
-                              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                              <SelectItem 
+                                key={option.value} 
+                                value={option.value}
+                                disabled={!option.value || option.value === ''}
+                              >
+                                {option.label}
+                              </SelectItem>
                             ))
                           )}
                         </SelectContent>

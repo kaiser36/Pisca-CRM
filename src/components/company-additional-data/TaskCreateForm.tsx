@@ -275,7 +275,13 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
                             <SelectItem value="no-options" disabled>Nenhuma opção disponível</SelectItem>
                           ) : (
                             field.options?.map((option: any) => (
-                              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
+                              <SelectItem 
+                                key={option.value || option} 
+                                value={option.value || option}
+                                disabled={!option.value || option.value === ''}
+                              >
+                                {option.label || option}
+                              </SelectItem>
                             ))
                           )}
                         </SelectContent>
