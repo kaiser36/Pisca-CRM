@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { PlusCircle, Trash2, Loader2, Edit3, MessageSquare, ListChecks } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, MessageSquare, ListChecks } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -103,6 +103,24 @@ const ContactTypeManagement: React.FC = () => {
       setItemToDelete(null);
     }
   };
+
+  if (!user) {
+    return (
+      <Layout>
+        <div className="p-6 max-w-6xl mx-auto">
+          <div className="text-center py-12">
+            <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              Acesso não autorizado
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400">
+              Por favor, faça login para aceder a esta página
+            </p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
