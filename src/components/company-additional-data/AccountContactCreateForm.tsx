@@ -162,23 +162,32 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
 
   // Fetch report options based on selected contact type
   useEffect(() => {
+    console.log("useEffect: selectedContactTypeName changed to:", selectedContactTypeName);
+    console.log("useEffect: contactTypes available:", contactTypes);
+    
     const fetchReportOptions = async () => {
       if (selectedContactTypeName) {
+        console.log("useEffect: Searching for contact type with name:", selectedContactTypeName);
         const contactType = contactTypes.find(type => type.name === selectedContactTypeName);
+        console.log("useEffect: Found contact type:", contactType);
+        
         if (contactType?.id) {
           try {
+            console.log("useEffect: Fetching report options for contact type ID:", contactType.id);
             const options = await getContactReportOptionsByContactTypeId(contactType.id);
+            console.log("useEffect: Fetched report options:", options);
             setReportOptions(options.map(opt => ({ value: opt.report_text, label: opt.report_text })));
-            console.log("Fetched report options:", options.map(opt => ({ value: opt.report_text, label: opt.report_text })));
           } catch (error) {
             console.error('Erro ao buscar opções de relatório:', error);
             showError('Erro ao carregar opções de relatório');
             setReportOptions([]);
           }
         } else {
+          console.log("useEffect: No contact type found, clearing report options");
           setReportOptions([]);
         }
       } else {
+        console.log("useEffect: No contact type selected, clearing report options");
         setReportOptions([]);
       }
       form.setValue('report_text', ''); // Reset report_text when contact_type changes
@@ -375,7 +384,8 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
                   </FormControl>
                   <FormMessage />
                 </FormItem>
-              )}}
+                );
+              }}
             />
           ))}
         </div>
