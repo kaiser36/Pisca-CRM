@@ -20,7 +20,6 @@ interface CompanyAdditionalOverviewCardsProps {
   totalLeadsPendentes: number;
   totalLeadsExpiradas: number;
   renderField: (Icon: React.ElementType, label: string, value: string | number | boolean | null | undefined) => React.ReactNode;
-  theme?: 'default' | 'blue' | 'green' | 'amber';
 }
 
 const CompanyAdditionalOverviewCards: React.FC<CompanyAdditionalOverviewCardsProps> = ({
@@ -34,42 +33,11 @@ const CompanyAdditionalOverviewCards: React.FC<CompanyAdditionalOverviewCardsPro
   totalLeadsPendentes,
   totalLeadsExpiradas,
   renderField,
-  theme = 'default'
 }) => {
-  // Theme styles for cards
-  const cardThemeStyles = {
-    default: {
-      pisca: 'border-l-4 border-primary/50 bg-primary/5',
-      resumo: 'border-l-4 border-success/50 bg-success/5',
-      alertas: alerts.length > 0 ? 'border-l-4 border-destructive/50 bg-destructive/5' : 'border-l-4 border-yellow-200 bg-yellow-50',
-      overview: 'border-l-4 border-primary rounded-lg'
-    },
-    blue: {
-      pisca: 'border-l-4 border-blue-400 bg-blue-100',
-      resumo: 'border-l-4 border-blue-500 bg-blue-50',
-      alertas: alerts.length > 0 ? 'border-l-4 border-red-400 bg-red-100' : 'border-l-4 border-yellow-400 bg-yellow-50',
-      overview: 'border-l-4 border-blue-500 rounded-lg'
-    },
-    green: {
-      pisca: 'border-l-4 border-green-400 bg-green-100',
-      resumo: 'border-l-4 border-green-500 bg-green-50',
-      alertas: alerts.length > 0 ? 'border-l-4 border-red-400 bg-red-100' : 'border-l-4 border-yellow-400 bg-yellow-50',
-      overview: 'border-l-4 border-green-500 rounded-lg'
-    },
-    amber: {
-      pisca: 'border-l-4 border-amber-400 bg-amber-100',
-      resumo: 'border-l-4 border-amber-500 bg-amber-50',
-      alertas: alerts.length > 0 ? 'border-l-4 border-red-400 bg-red-100' : 'border-l-4 border-yellow-400 bg-yellow-50',
-      overview: 'border-l-4 border-amber-500 rounded-lg'
-    }
-  };
-
-  const currentCardTheme = cardThemeStyles[theme];
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Pisca Card */}
-      <Card className={`p-4 shadow-subtle ${currentCardTheme.pisca} rounded-lg`}>
+      <Card className="p-4 shadow-subtle border-l-4 border-primary/50 bg-primary/5 rounded-lg">
         <CardTitle className="text-lg font-semibold mb-3 flex items-center text-primary">
           <Package className="mr-2 h-5 w-5" /> Pisca
         </CardTitle>
@@ -85,7 +53,7 @@ const CompanyAdditionalOverviewCards: React.FC<CompanyAdditionalOverviewCardsPro
       </Card>
 
       {/* Resumo Card */}
-      <Card className={`p-4 shadow-subtle ${currentCardTheme.resumo} rounded-lg`}>
+      <Card className="p-4 shadow-subtle border-l-4 border-success/50 bg-success/5 rounded-lg">
         <CardTitle className="text-lg font-semibold mb-3 flex items-center text-success">
           <Info className="mr-2 h-5 w-5" /> Resumo
         </CardTitle>
@@ -99,7 +67,7 @@ const CompanyAdditionalOverviewCards: React.FC<CompanyAdditionalOverviewCardsPro
       </Card>
 
       {/* Alertas Card */}
-      <Card className={`p-4 shadow-subtle ${currentCardTheme.alertas} rounded-lg`}>
+      <Card className={`p-4 shadow-subtle border-l-4 ${alerts.length > 0 ? 'border-destructive/50 bg-destructive/5' : 'border-yellow-200 bg-yellow-50'} rounded-lg`}>
         <CardTitle className={`text-lg font-semibold mb-3 flex items-center ${alerts.length > 0 ? 'text-destructive' : 'text-yellow-800'}`}>
           <BellRing className="mr-2 h-5 w-5" /> Alertas
         </CardTitle>
@@ -123,7 +91,7 @@ const CompanyAdditionalOverviewCards: React.FC<CompanyAdditionalOverviewCardsPro
       </Card>
 
       {/* Main Overview Card - Aggregated Data */}
-      <Card className={`p-6 shadow-subtle ${currentCardTheme.overview} md:col-span-3`}>
+      <Card className="p-6 shadow-subtle border-l-4 border-primary rounded-lg md:col-span-3">
         <div className="flex flex-col items-center space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 flex-1 w-full">
             {renderField(Mail, "Email", companyAdditional["Email da empresa"] || crmCompany?.Company_Email)}
