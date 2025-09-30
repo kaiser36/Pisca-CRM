@@ -194,9 +194,9 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
       label: "Atribuído a (AM)",
       type: "select",
       options: availableAMs
-        .filter(am => am.id && typeof am.id === 'string' && am.id.trim() !== '')
+        .filter(am => am.id && (am.am || am.account_name))
         .map(am => ({ 
-          value: am.id, 
+          value: String(am.id), 
           label: am.account_name || am.am || 'N/A' 
         })),
       placeholder: "Selecione um AM",
