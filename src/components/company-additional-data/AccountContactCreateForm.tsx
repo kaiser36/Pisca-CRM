@@ -35,7 +35,7 @@ interface AccountContactCreateFormProps {
 const formSchema = z.object({
   account_am: z.string().nullable().optional(),
   contact_type: z.string().min(1, "Tipo de Contacto é obrigatório").nullable().optional(),
-  report_text: z.string().nullable().optional(), // Agora será uma seleção
+  report_text: z.string().nullable().optional(),
   contact_date: z.date().nullable().optional(),
   contact_method: z.string().min(1, "Meio de Contacto é obrigatório").nullable().optional(),
   commercial_name: z.string().nullable().optional(),
@@ -271,11 +271,11 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     { name: "sending_email", label: "Email de Envio", type: "email" },
     { 
       name: "report_text", 
-      label: "Report", 
+      label: "Texto do Relatório", 
       type: "combobox", 
       colSpan: 2, 
       options: reportOptions,
-      disabled: reportOptions.length === 0 // Disable if no options
+      disabled: !selectedContactTypeName || reportOptions.length === 0
     },
     { name: "email_body", label: "Corpo do Email", type: "textarea", colSpan: 2 },
   ];
