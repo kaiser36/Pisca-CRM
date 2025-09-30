@@ -65,29 +65,6 @@ export async function fetchStandsForCompanyDbIds(userId: string, companyDbIds: s
 }
 
 /**
- * Fetches stands for a specific company database ID.
- */
-export async function fetchStandsByCompanyDbId(userId: string, companyDbId: string): Promise<Stand[]> {
-  if (!companyDbId) {
-    return [];
-  }
-
-  console.log(`[fetchStandsByCompanyDbId] Fetching stands for company DB ID: ${companyDbId}`);
-  const { data: standsData, error: standsError } = await supabase
-    .from('stands')
-    .select('*')
-    .eq('company_db_id', companyDbId);
-
-  if (standsError) {
-    console.error('[fetchStandsByCompanyDbId] Error fetching stands:', standsError);
-    throw new Error(standsError.message);
-  }
-
-  console.log(`[fetchStandsByCompanyDbId] Fetched ${standsData?.length || 0} stands.`);
-  return (standsData || []).map(mapSupabaseStandToCrmStand);
-}
-
-/**
  * Upserts stand data into Supabase.
  */
 export async function upsertStands(stands: Stand[], companyDbIdMap: Map<string, string>): Promise<void> {

@@ -1,124 +1,133 @@
 "use client";
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Users, DollarSign, TrendingUp } from 'lucide-react';
-import { CompanyAdditionalExcelData } from '@/types/crm';
+import { Company, CompanyAdditionalExcelData } from '@/types/crm';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import {
+  Package, Repeat, TrendingUp, Car, CheckCircle, Info, Wallet, BellRing, Upload, Archive, Save, ArrowRight, Download, Hourglass, XCircle as ExpiredIcon, Mail, Globe, Landmark, User, Calendar, Tag, Clock
+} from 'lucide-react';
 
 interface CompanyAdditionalOverviewCardsProps {
-  additionalData: CompanyAdditionalExcelData | null;
+  companyAdditional: CompanyAdditionalExcelData;
+  crmCompany: Company | undefined;
+  alerts: string[];
+  totalPublicados: number;
+  totalArquivados: number;
+  totalGuardados: number;
+  totalLeadsRecebidas: number;
+  totalLeadsPendentes: number;
+  totalLeadsExpiradas: number;
+  renderField: (Icon: React.ElementType, label: string, value: string | number | boolean | null | undefined) => React.ReactNode;
 }
 
-const CompanyAdditionalOverviewCards: React.FC<CompanyAdditionalOverviewCardsProps> = ({ additionalData }) => {
-  if (!additionalData) {
-    return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index} className="p-4 animate-pulse bg-gray-200 rounded-lg">
-            <div className="h-6 w-3/4 mb-3 bg-gray-300 rounded"></div>
-            <div className="h-8 w-1/2 mb-2 bg-gray-300 rounded"></div>
-            <div className="h-4 w-1/4 bg-gray-300 rounded"></div>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  const piscaData = {
-    totalAnuncios: additionalData['Stock na empresa'] || 0,
-    publicados: additionalData['Stock STV'] || 0,
-    api: additionalData['API'] === 'Sim' ? 'Sim' : 'Não',
-  };
-
-  const crmData = {
-    utilizaCRM: additionalData['Utiliza CRM'] ? 'Sim' : 'Não',
-    qualCRM: additionalData['Qual o CRM'] || 'N/A',
-  };
-
-  const investmentData = {
-    socialMedia: additionalData['Investimento redes sociais'] || 0,
-    portals: additionalData['Investimento em portais'] || 0,
-  };
-
-  const businessData = {
-    classification: additionalData['Classificação'] || 'N/A',
-    b2b: additionalData['Mercado b2b'] ? 'Sim' : 'Não',
-  };
-
+const CompanyAdditionalOverviewCards: React.FC<CompanyAdditionalOverviewCardsProps> = ({
+  companyAdditional,
+  crmCompany,
+  alerts,
+  totalPublicados,
+  totalArquivados,
+  totalGuardados,
+  totalLeadsRecebidas,
+  totalLeadsPendentes,
+  totalLeadsExpiradas,
+  renderField,
+}) => {
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Pisca Card */}
-      <Card className="rounded-xl shadow-lg shadow-blue-500/20 bg-gradient-to-br from-blue-500 to-blue-700 text-white p-6">
-        <CardHeader className="p-0 flex-row items-center space-y-0 mb-4">
-          <div className="bg-white/20 p-3 rounded-lg mr-4">
-            <Package className="h-6 w-6 text-white" />
-          </div>
-          <CardTitle className="text-xl font-bold">
-            Pisca
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="text-4xl font-extrabold">{piscaData.totalAnuncios}</div>
-          <p className="text-sm text-white/80">Total de Anúncios</p>
-          <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-white/80 text-xs">Publicados</p>
-              <p className="font-semibold text-lg">{piscaData.publicados}</p>
+      <Card className="p-4 shadow-subtle border-l-4 border-primary/50 bg-primary/5 rounded-lg">
+        <CardTitle className="text-lg font-semibold mb-3 flex items-center text-primary">
+          <Package className="mr-2 h-5 w-5" /> Pisca
+        </CardTitle>
+        <div className="space-y-2">
+          {renderField(Package, "Último Plano", companyAdditional["Plano Indicado"] || crmCompany?.Last_Plan)}
+          {renderField(CheckCircle, "Plano Ativo", crmCompany?.Plan_Active)}
+          {renderField(Calendar, "Expiração do Plano", crmCompany?.Plan_Expiration_Date)}
+          {renderField(Repeat, "Renovação Automática", crmCompany?.Plan_Auto_Renewal)}
+          {renderField(TrendingUp, "Bumps Totais", crmCompany?.Total_Bumps)}
+          {renderField(TrendingUp, "Bumps Atuais", crmCompany?.Current_Bumps)}
+          {renderField(Wallet, "Plafond", crmCompany?.Plafond)}
+        </div>
+      </Card>
+
+      {/* Resumo Card */}
+      <Card className="p-4 shadow-subtle border-l-4 border-success/50 bg-success/5 rounded-lg">
+        <CardTitle className="text-lg font-semibold mb-3 flex items-center text-success">
+          <Info className="mr-2 h-5 w-5" /> Resumo
+        </CardTitle>
+        <div className="space-y-2">
+          {renderField(Tag, "Classificação", companyAdditional["Classificação"])}
+          {renderField(CheckCircle, "Parceiro Credibom", crmCompany?.Is_CRB_Partner)}
+          {renderField(Car, "Simulador Financiamento", crmCompany?.Financing_Simulator_On)}
+          {renderField(Clock, "Último Login", crmCompany?.Last_Login_Date)}
+          {renderField(Calendar, "Data Última Visita", companyAdditional["Data ultima visita"])}
+        </div>
+      </Card>
+
+      {/* Alertas Card */}
+      <Card className={`p-4 shadow-subtle border-l-4 ${alerts.length > 0 ? 'border-destructive/50 bg-destructive/5' : 'border-yellow-200 bg-yellow-50'} rounded-lg`}>
+        <CardTitle className={`text-lg font-semibold mb-3 flex items-center ${alerts.length > 0 ? 'text-destructive' : 'text-yellow-800'}`}>
+          <BellRing className="mr-2 h-5 w-5" /> Alertas
+        </CardTitle>
+        <div className="space-y-2">
+          {alerts.length === 0 ? (
+            <Alert className="bg-transparent border-none p-0 text-yellow-800">
+              <AlertDescription className="flex items-center">
+                <CheckCircle className="mr-2 h-4 w-4" /> Sem alertas pendentes.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            alerts.map((alert, index) => (
+              <Alert key={index} variant="destructive" className="bg-destructive/10 border-destructive/50 text-destructive p-2">
+                <AlertDescription className="flex items-center">
+                  <Info className="mr-2 h-4 w-4" /> {alert}
+                </AlertDescription>
+              </Alert>
+            ))
+          )}
+        </div>
+      </Card>
+
+      {/* Main Overview Card - Aggregated Data */}
+      <Card className="p-6 shadow-subtle border-l-4 border-primary rounded-lg md:col-span-3">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 flex-1 w-full">
+            {renderField(Mail, "Email", companyAdditional["Email da empresa"] || crmCompany?.Company_Email)}
+            {renderField(Globe, "Website", companyAdditional["Site"] || crmCompany?.Website)}
+            {renderField(Landmark, "NIF", crmCompany?.NIF)}
+            {renderField(User, "AM Atual", companyAdditional["AM"] || crmCompany?.AM_Current)}
+            {/* Aggregated Stand Data - Anúncios Pipeline */}
+            <div className="flex items-center text-sm md:col-span-2 flex-wrap gap-x-2">
+              <span className="font-medium flex items-center">
+                <Upload className="mr-1 h-4 w-4 text-muted-foreground" /> Publicados: <span className="ml-1 text-foreground">{totalPublicados}</span>
+              </span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium flex items-center">
+                <Archive className="mr-1 h-4 w-4 text-muted-foreground" /> Arquivados: <span className="ml-1 text-foreground">{totalArquivados}</span>
+              </span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium flex items-center">
+                <Save className="mr-1 h-4 w-4 text-muted-foreground" /> Guardados: <span className="ml-1 text-foreground">{totalGuardados}</span>
+              </span>
             </div>
-            <div>
-              <p className="text-white/80 text-xs">Via API</p>
-              <p className="font-semibold text-lg">{piscaData.api}</p>
+            {/* Aggregated Stand Data - Leads Pipeline */}
+            <div className="flex items-center text-sm md:col-span-2 flex-wrap gap-x-2 mt-2">
+              <span className="font-medium flex items-center text-blue-700">
+                <Download className="mr-1 h-4 w-4 text-blue-700" /> Leads Recebidas: <span className="ml-1">{totalLeadsRecebidas}</span>
+              </span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium flex items-center text-orange-700">
+                <Hourglass className="mr-1 h-4 w-4 text-orange-700" /> Leads Pendentes: <span className="ml-1">{totalLeadsPendentes}</span>
+              </span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium flex items-center text-red-700">
+                <ExpiredIcon className="mr-1 h-4 w-4 text-red-700" /> Leads Expiradas: <span className="ml-1">{totalLeadsExpiradas}</span>
+              </span>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* CRM Card */}
-      <Card className="p-6 shadow-sm rounded-xl">
-        <CardHeader className="p-0 flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            CRM
-          </CardTitle>
-          <Users className="h-5 w-5 text-muted-foreground" />
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="text-2xl font-bold">{crmData.utilizaCRM}</div>
-          <p className="text-xs text-muted-foreground">
-            {crmData.qualCRM}
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Investment Card */}
-      <Card className="p-6 shadow-sm rounded-xl">
-        <CardHeader className="p-0 flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Investimento
-          </CardTitle>
-          <DollarSign className="h-5 w-5 text-muted-foreground" />
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="text-2xl font-bold">€{investmentData.socialMedia + investmentData.portals}</div>
-          <p className="text-xs text-muted-foreground">
-            €{investmentData.socialMedia} (Social) + €{investmentData.portals} (Portais)
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Business Card */}
-      <Card className="p-6 shadow-sm rounded-xl">
-        <CardHeader className="p-0 flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Negócio
-          </CardTitle>
-          <TrendingUp className="h-5 w-5 text-muted-foreground" />
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="text-2xl font-bold">{businessData.classification}</div>
-          <p className="text-xs text-muted-foreground">
-            Mercado B2B: {businessData.b2b}
-          </p>
-        </CardContent>
+        </div>
       </Card>
     </div>
   );
