@@ -63,7 +63,7 @@ const CompanyAdditionalHeader: React.FC<CompanyAdditionalHeaderProps> = ({
   return (
     <div className="mb-6">
       {/* Cover Banner */}
-      <div className="h-44 bg-blue-100 rounded-t-lg shadow-inner bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1557682250-33bd709cbe85?q=80&w=2070&auto=format&fit=crop')" }}></div>
+      <div className="h-28 bg-blue-100 rounded-t-lg shadow-inner bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1557682250-33bd709cbe85?q=80&w=2070&auto=format&fit=crop')" }}></div>
 
       {/* Main Info Section */}
       <div className="px-6">
