@@ -85,7 +85,6 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
       contact_method: '',
       commercial_name: commercialName || '',
       company_name: companyName || '',
-      crm_id: '',
       stand_name: '',
       subject: '',
       contact_person_name: '',
@@ -103,6 +102,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
   });
 
   const selectedContactTypeName = form.watch('contact_type');
+  const sendEmail = form.watch('send_email');
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -299,10 +299,10 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     { name: "quarter", label: "Trimestre", type: "text" },
     { name: "is_credibom_partner", label: "É Parceiro Credibom?", type: "boolean" },
     { name: "send_email", label: "Enviar Email?", type: "boolean" },
-    { name: "email_type", label: "Tipo de Email", type: "text" },
-    { name: "email_subject", label: "Assunto do Email", type: "text" },
-    { name: "attachment_url", label: "URL do Anexo", type: "url" },
-    { name: "sending_email", label: "Email de Envio", type: "email" },
+    { name: "email_type", label: "Tipo de Email", type: "text", conditional: true },
+    { name: "email_subject", label: "Assunto do Email", type: "text", conditional: true },
+    { name: "attachment_url", label: "URL do Anexo", type: "url", conditional: true },
+    { name: "sending_email", label: "Email de Envio", type: "email", conditional: true },
     { 
       name: "report_text", 
       label: "Report", 
@@ -311,7 +311,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
       options: reportOptions,
       disabled: reportOptions.length === 0 // Disable if no options
     },
-    { name: "email_body", label: "Corpo do Email", type: "textarea", colSpan: 2 },
+    { name: "email_body", label: "Corpo do Email", type: "textarea", colSpan: 2, conditional: true },
   ];
 
   return (
@@ -326,84 +326,91 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
           </p>
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {fields.map((field) => (
-            <FormField
-              key={field.name}
-              control={form.control}
-              name={field.name as keyof FormData}
-              render={({ field: formField }) => (
-                <FormItem className={field.colSpan === 2 ? "md:col-span-2" : ""}>
-                  <FormLabel>{field.label}</FormLabel>
-                  <FormControl>
-                    {field.type === "boolean" ? (
-                      <Switch
-                        checked={formField.value as boolean}
-                        onCheckedChange={formField.onChange}
-                      />
-                    ) : field.type === "date" ? (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !formField.value && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {formField.value ? format(formField.value as Date, "PPP") : <span>Selecione uma data</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={formField.value as Date}
-                            onSelect={formField.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    ) : field.type === "textarea" ? (
-                      <Textarea
-                        {...formField}
-                        value={formField.value as string || ''}
-                        onChange={formField.onChange}
-                      />
-                    ) : field.type === "select" ? (
-                      <Select onValueChange={formField.onChange} value={formField.value as string || ''} disabled={field.disabled}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={field.placeholder || `Selecione um ${field.label.toLowerCase()}`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {field.options?.map(option => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : field.type === "combobox" ? (
-                      <Combobox
-                        options={field.options as { value: string; label: string }[] || []}
-                        value={formField.value as string}
-                        onChange={formField.onChange}
-                        placeholder={field.name === "contact_type" ? "Selecione um tipo de contacto" : "Selecione uma opção de relatório"}
-                        searchPlaceholder={field.name === "contact_type" ? "Pesquisar tipos de contacto..." : "Pesquisar opções de relatório..."}
-                        emptyMessage={field.name === "contact_type" ? "Nenhum tipo de contacto encontrado." : "Nenhuma opção de relatório encontrada."}
-                        disabled={field.disabled}
-                      />
-                    ) : (
-                      <Input
-                        type={field.type}
-                        {...formField}
-                        value={formField.value as string || ''}
-                        onChange={formField.onChange}
-                      />
-                    )}
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          ))}
+          {fields.map((field) => {
+            // Skip conditional fields if send_email is false
+            if (field.conditional && !sendEmail) {
+              return null;
+            }
+
+            return (
+              <FormField
+                key={field.name}
+                control={form.control}
+                name={field.name as keyof FormData}
+                render={({ field: formField }) => (
+                  <FormItem className={field.colSpan === 2 ? "md:col-span-2" : ""}>
+                    <FormLabel>{field.label}</FormLabel>
+                    <FormControl>
+                      {field.type === "boolean" ? (
+                        <Switch
+                          checked={formField.value as boolean}
+                          onCheckedChange={formField.onChange}
+                        />
+                      ) : field.type === "date" ? (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !formField.value && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {formField.value ? format(formField.value as Date, "PPP") : <span>Selecione uma data</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={formField.value as Date}
+                              onSelect={formField.onChange}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      ) : field.type === "textarea" ? (
+                        <Textarea
+                          {...formField}
+                          value={formField.value as string || ''}
+                          onChange={formField.onChange}
+                        />
+                      ) : field.type === "select" ? (
+                        <Select onValueChange={formField.onChange} value={formField.value as string || ''} disabled={field.disabled}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={field.placeholder || `Selecione um ${field.label.toLowerCase()}`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {field.options?.map(option => (
+                              <SelectItem key={option} value={option}>{option}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : field.type === "combobox" ? (
+                        <Combobox
+                          options={field.options as { value: string; label: string }[] || []}
+                          value={formField.value as string}
+                          onChange={formField.onChange}
+                          placeholder={field.name === "contact_type" ? "Selecione um tipo de contacto" : "Selecione uma opção de relatório"}
+                          searchPlaceholder={field.name === "contact_type" ? "Pesquisar tipos de contacto..." : "Pesquisar opções de relatório..."}
+                          emptyMessage={field.name === "contact_type" ? "Nenhum tipo de contacto encontrado." : "Nenhuma opção de relatório encontrada."}
+                          disabled={field.disabled}
+                        />
+                      ) : (
+                        <Input
+                          type={field.type}
+                          {...formField}
+                          value={formField.value as string || ''}
+                          onChange={formField.onChange}
+                        />
+                      )}
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            );
+          })}
         </div>
         <div className="flex justify-end space-x-2 mt-6">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
