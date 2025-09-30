@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
 import { useSession } from '@/context/SessionContext'; // Import useSession
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { CompanySearch } from './CompanySearch'; // Import the new search component
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -32,13 +33,22 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         <Button variant="ghost" size="icon" onClick={onToggleSidebar} className="mr-2 lg:hidden">
           <Menu className="h-5 w-5" />
         </Button>
-        <img 
-          src="https://www.piscapisca.pt/assets/img/svg/top-header/pisca-pisca-color.svg" 
-          alt="Pisca CRM Logo" 
-          className="h-8 mr-3"
-        />
-        <h1 className="text-2xl font-bold tracking-tight">Pisca CRM</h1>
+        <Link to="/" className="flex items-center">
+          <img 
+            src="https://www.piscapisca.pt/assets/img/svg/top-header/pisca-pisca-color.svg" 
+            alt="Pisca CRM Logo" 
+            className="h-8 mr-3"
+          />
+          <h1 className="text-2xl font-bold tracking-tight hidden sm:block">Pisca CRM</h1>
+        </Link>
       </div>
+
+      {user && (
+        <div className="flex-1 flex justify-center px-4">
+          <CompanySearch />
+        </div>
+      )}
+
       <div className="flex items-center space-x-4">
         {user && ( // Only show notifications if logged in
           <Popover>

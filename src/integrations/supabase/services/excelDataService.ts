@@ -57,6 +57,39 @@ export async function upsertCompanyAdditionalExcelData(data: CompanyAdditionalEx
 }
 
 /**
+ * Searches for additional company Excel data for a global search component.
+ * Returns a limited number of results for performance.
+ */
+export async function searchCompanyAdditionalExcelData(
+  userId: string,
+  searchTerm: string
+): Promise<CompanyAdditionalExcelData[]> {
+  if (!searchTerm.trim() || !userId) {
+    return [];
+  }
+
+  // RLS will handle the user_id check, so we don't need to add it here.
+  let query = supabase
+    .from('company_additional_excel_data')
+    .select('excel_company_id, "Nome Comercial"');
+
+  const searchPattern = `%${searchTerm.toLowerCase()}%`;
+  query = query.or(
+    `"Nome Comercial".ilike.${searchPattern},excel_company_id.ilike.${searchPattern}`
+  ).limit(10);
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error searching additional company excel data:', error);
+    // Don't throw, just return empty array for a better UX
+    return [];
+  }
+
+  return data as CompanyAdditionalExcelData[];
+}
+
+/**
  * Fetches additional company Excel data for the current authenticated user with pagination and search.
  */
 export async function fetchCompanyAdditionalExcelData(
