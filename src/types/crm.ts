@@ -188,7 +188,7 @@ export interface Easyvista {
   "Pass Pisca"?: string | null;
   "Client ID"?: string | null;
   "Client Secret"?: string | null;
-  "Integração"?: string | null;
+Integração?: string | null;
   "NIF da empresa"?: string | null;
   "Campanha"?: string | null;
   "Duração do acordo"?: string | null;
@@ -249,6 +249,8 @@ export interface Negocio {
   deal_products?: DealProduct[]; // Lista de produtos associados a este negócio
   campaign_id?: string | null; // NEW: ID da campanha associada
   campaign_name?: string | null; // NEW: Nome da campanha para exibição
+  assigned_to_am_id?: string | null; // NEW: ID do AM associado
+  assigned_to_am_name?: string | null; // NEW: Nome do AM para exibição
 }
 
 export interface Product {

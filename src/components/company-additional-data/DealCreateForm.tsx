@@ -1,25 +1,26 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useForm, FormProvider, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Negocio, Product, DealProduct as DealProductType, Campaign } from '@/types/crm';
-import { insertDeal, fetchProducts, fetchCampaigns, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils'; // Import fetchCompaniesByExcelCompanyIds
+import { Negocio, Product, DealProduct as DealProductType, Campaign, Account } from '@/types/crm';
+import { insertDeal, fetchProducts, fetchCampaigns, fetchCompaniesByExcelCompanyIds, fetchAccounts } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, CalendarIcon, PlusCircle } from 'lucide-react';
+import { Loader2, CalendarIcon, PlusCircle, Briefcase, Activity, ShieldAlert, User, FileText, Euro } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format, parseISO, isPast, isFuture } from 'date-fns'; // Import isFuture
+import { format, parseISO, isPast, isFuture } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DealProductFormItem from './DealProductFormItem';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 interface DealCreateFormProps {
   companyExcelId: string;
@@ -50,9 +51,7 @@ const formSchema = z.object({
     (val) => (val === "" ? null : Number(val)),
     z.number().min(0, "Não pode ser negativo").nullable().optional()
   ),
-  currency: z.string().nullable().optional(),
   expected_close_date: z.date().nullable().optional(),
-  stage: z.string().nullable().optional(),
   priority: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
   deal_products: z.array(dealProductSchema).min(1, "Pelo menos um produto é obrigatório para o negócio."),
@@ -66,6 +65,8 @@ const formSchema = z.object({
     (val) => (val === "" ? null : Number(val)),
     z.number().min(0, "O valor final não pode ser negativo").nullable().optional()
   ),
+  assigned_to_am_id: z.string().nullable().optional(),
+  assigned_to_am_name: z.string().nullable().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -75,59 +76,56 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
   const [userId, setUserId] = useState<string | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [availableCampaigns, setAvailableCampaigns] = useState<Campaign[]>([]);
-  const [companyDbId, setCompanyDbId] = useState<string | null>(null); // NEW: State for company_db_id
+  const [availableAMs, setAvailableAMs] = useState<Account[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [companyDbId, setCompanyDbId] = useState<string | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-      } else {
-        setUserId(null);
-      }
+      setUserId(session?.user?.id ?? null);
     });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-      }
-    });
-
+    supabase.auth.getSession().then(({ data: { session } }) => setUserId(session?.user?.id ?? null));
     return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    const loadProductsAndCampaigns = async () => {
+    const loadInitialData = async () => {
       if (!userId) return;
+      setIsLoading(true);
       try {
-        // NEW: Fetch company_db_id
-        const companies = await fetchCompaniesByExcelCompanyIds(userId, [companyExcelId]);
+        const [companies, fetchedProducts, fetchedCampaigns, fetchedAMs] = await Promise.all([
+          fetchCompaniesByExcelCompanyIds(userId, [companyExcelId]),
+          fetchProducts(userId),
+          fetchCampaigns(userId),
+          fetchAccounts(userId)
+        ]);
+
         const currentCompany = companies.find(c => c.Company_id === companyExcelId);
         if (currentCompany) {
           setCompanyDbId(currentCompany.id || null);
         } else {
-          showError(`Empresa com ID Excel '${companyExcelId}' não encontrada no CRM principal.`);
+          showError(`Empresa com ID Excel '${companyExcelId}' não encontrada.`);
           setCompanyDbId(null);
         }
 
-        const fetchedProducts = await fetchProducts(userId);
         setAllProducts(fetchedProducts);
-        const fetchedCampaigns = await fetchCampaigns(userId);
-        // Filter active campaigns that have started and not expired
         setAvailableCampaigns(fetchedCampaigns.filter(c => 
           c.is_active && 
-          (!c.start_date || !isFuture(parseISO(c.start_date))) && // Campaign has started or no start date
-          (!c.end_date || !isPast(parseISO(c.end_date))) // Campaign has not expired or no end date
+          (!c.start_date || !isFuture(parseISO(c.start_date))) &&
+          (!c.end_date || !isPast(parseISO(c.end_date)))
         ));
+        setAvailableAMs(fetchedAMs);
+
       } catch (err: any) {
-        console.error("Erro ao carregar produtos ou campanhas:", err);
-        showError(err.message || "Falha ao carregar a lista de produtos ou campanhas.");
+        console.error("Erro ao carregar dados:", err);
+        showError(err.message || "Falha ao carregar dados necessários.");
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    if (userId) {
-      loadProductsAndCampaigns();
-    }
-  }, [userId, companyExcelId]); // Added companyExcelId to dependencies
+    if (userId) loadInitialData();
+  }, [userId, companyExcelId]);
 
   const formMethods = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -136,9 +134,7 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
       deal_name: '',
       deal_status: 'Prospecting',
       deal_value: 0,
-      currency: 'EUR',
       expected_close_date: undefined,
-      stage: '',
       priority: 'Medium',
       notes: '',
       deal_products: [{ product_id: '', quantity: 1, unit_price_at_deal_time: 0, total_price_at_deal_time: 0, product_name: '', product_category: '', discount_type: 'none', discount_value: 0 }],
@@ -146,325 +142,293 @@ const DealCreateForm: React.FC<DealCreateFormProps> = ({ companyExcelId, commerc
       discount_type: 'none',
       discount_value: 0,
       final_deal_value: 0,
+      assigned_to_am_id: '',
+      assigned_to_am_name: '',
     },
   });
 
   const { watch, setValue, control, handleSubmit, formState: { errors } } = formMethods;
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "deal_products",
-  });
+  const { fields, append, remove } = useFieldArray({ control, name: "deal_products" });
 
-  const allProductTotals = fields.map((field, index) => watch(`deal_products.${index}.total_price_at_deal_time`));
+  const allProductTotals = fields.map((_, index) => watch(`deal_products.${index}.total_price_at_deal_time`));
   const discountType = watch("discount_type");
   const discountValue = watch("discount_value");
   const selectedCampaignId = watch("campaign_id");
+  const assignedToAmId = watch("assigned_to_am_id");
 
   useEffect(() => {
-    if (selectedCampaignId) {
-      const campaign = availableCampaigns.find(c => c.id === selectedCampaignId);
-      // Validate campaign before applying discount
-      if (campaign && campaign.type === 'discount' && campaign.is_active && 
-          (!campaign.start_date || !isFuture(parseISO(campaign.start_date))) &&
-          (!campaign.end_date || !isPast(parseISO(campaign.end_date)))) {
-        setValue("discount_type", campaign.discount_type || 'none', { shouldDirty: true, shouldValidate: true });
-        setValue("discount_value", campaign.discount_value || 0, { shouldDirty: true, shouldValidate: true });
-      } else {
-        // If campaign is invalid or not found, reset discount fields and campaign_id
-        setValue("campaign_id", '', { shouldDirty: true, shouldValidate: true });
-        setValue("discount_type", 'none', { shouldDirty: true, shouldValidate: true });
-        setValue("discount_value", 0, { shouldDirty: true, shouldValidate: true });
-        if (selectedCampaignId) { // Only show error if a campaign was actually selected and became invalid
-          showError("A campanha selecionada não é válida ou está inativa.");
-        }
-      }
+    if (assignedToAmId && availableAMs.length > 0) {
+      const selectedAM = availableAMs.find(am => am.id === assignedToAmId);
+      setValue("assigned_to_am_name", selectedAM?.account_name || selectedAM?.am || null);
+    } else if (!assignedToAmId) {
+      setValue("assigned_to_am_name", null);
+    }
+  }, [assignedToAmId, availableAMs, setValue]);
+
+  useEffect(() => {
+    const campaign = availableCampaigns.find(c => c.id === selectedCampaignId);
+    if (campaign && campaign.type === 'discount') {
+      setValue("discount_type", campaign.discount_type || 'none');
+      setValue("discount_value", campaign.discount_value || 0);
     } else {
-      // If no campaign selected, ensure manual discount is still respected or reset if it was from a campaign
-      setValue("discount_type", 'none', { shouldDirty: true, shouldValidate: true });
-      setValue("discount_value", 0, { shouldDirty: true, shouldValidate: true });
+      setValue("discount_type", 'none');
+      setValue("discount_value", 0);
     }
   }, [selectedCampaignId, availableCampaigns, setValue]);
 
   useEffect(() => {
-    console.log("[DealCreateForm] Parent useEffect triggered for deal calculation.");
-    console.log("[DealCreateForm] Current allProductTotals for calculation:", allProductTotals);
+    const baseValue = allProductTotals.reduce((sum, total) => sum + (total || 0), 0);
+    setValue("deal_value", baseValue);
 
-    const calculatedBaseDealValue = allProductTotals.reduce((sum, total) => {
-      return sum + (total || 0);
-    }, 0);
-
-    if (formMethods.getValues("deal_value") !== calculatedBaseDealValue) {
-      setValue("deal_value", calculatedBaseDealValue, { shouldDirty: true, shouldValidate: true });
-      console.log("[DealCreateForm] Calculated Base Deal Value:", calculatedBaseDealValue);
+    let finalValue = baseValue;
+    if (discountType === 'percentage' && discountValue != null) {
+      finalValue *= (1 - (discountValue / 100));
+    } else if (discountType === 'amount' && discountValue != null) {
+      finalValue -= discountValue;
     }
-
-    let finalValue = calculatedBaseDealValue;
-    if (discountType === 'percentage' && discountValue !== null) {
-      finalValue = calculatedBaseDealValue * (1 - (discountValue / 100));
-    } else if (discountType === 'amount' && discountValue !== null) {
-      finalValue = calculatedBaseDealValue - discountValue;
-    }
-    finalValue = Math.max(0, finalValue);
-
-    if (formMethods.getValues("final_deal_value") !== finalValue) {
-      setValue("final_deal_value", finalValue, { shouldDirty: true, shouldValidate: true });
-      console.log("[DealCreateForm] Calculated Final Deal Value:", finalValue);
-    }
-  }, [allProductTotals, discountType, discountValue, setValue, formMethods]);
-
-  const handleAddProduct = () => {
-    append({ product_id: '', quantity: 1, unit_price_at_deal_time: 0, total_price_at_deal_time: 0, product_name: '', product_category: '', discount_type: 'none', discount_value: 0 });
-  };
+    setValue("final_deal_value", Math.max(0, finalValue));
+  }, [allProductTotals, discountType, discountValue, setValue]);
 
   const onSubmit = async (values: FormData) => {
-    if (!userId) {
-      showError("Utilizador não autenticado. Por favor, faça login para criar o negócio.");
+    if (!userId || !companyDbId) {
+      showError("Utilizador não autenticado ou empresa inválida.");
       return;
     }
-    if (!companyDbId) { // NEW: Check if companyDbId is available
-      showError("Não foi possível associar o negócio a uma empresa válida. Por favor, verifique o ID Excel da empresa.");
-      return;
-    }
-
-    if (Object.keys(errors).length > 0) {
-      console.error("Form validation errors:", errors);
-      showError("Por favor, corrija os erros no formulário.");
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const newDeal: Omit<Negocio, 'id' | 'created_at' | 'updated_at' | 'commercial_name'> = {
         user_id: userId,
         company_excel_id: companyExcelId,
-        company_db_id: companyDbId, // NEW: Include company_db_id
+        company_db_id: companyDbId,
         deal_name: values.deal_name,
         deal_status: values.deal_status || 'Prospecting',
         deal_value: values.deal_value || 0,
-        currency: values.currency || 'EUR',
-        expected_close_date: values.expected_close_date ? values.expected_close_date.toISOString() : null,
-        stage: values.stage || null,
+        currency: 'EUR',
+        expected_close_date: values.expected_close_date?.toISOString() || null,
+        stage: null,
         priority: values.priority || 'Medium',
         notes: values.notes || null,
         deal_products: values.deal_products as DealProductType[],
         campaign_id: values.campaign_id || null,
-        discount_type: values.discount_type || null,
+        discount_type: values.discount_type || 'none',
         discount_value: values.discount_value || null,
         final_deal_value: values.final_deal_value || null,
+        assigned_to_am_id: values.assigned_to_am_id || null,
+        assigned_to_am_name: values.assigned_to_am_name || null,
       };
-
       await insertDeal(newDeal);
       showSuccess("Negócio criado com sucesso!");
       onSave();
     } catch (error: any) {
-      console.error("Erro ao criar negócio:", error);
       showError(error.message || "Falha ao criar o negócio.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const mainFields = [
-    { name: "commercial_name", label: "Nome Comercial da Empresa", type: "text", readOnly: true },
-    { name: "deal_name", label: "Nome do Negócio", type: "text", required: true },
-    { name: "deal_status", label: "Status", type: "select", options: ["Prospecting", "Qualification", "Proposal", "Negotiation", "Closed Won", "Closed Lost"] },
-    { name: "currency", label: "Moeda", type: "select", options: ["EUR", "USD", "GBP"] },
-    { name: "expected_close_date", label: "Data de Fecho Esperada", type: "date" },
-    { name: "stage", label: "Etapa", type: "text" },
-    { name: "priority", label: "Prioridade", type: "select", options: ["Low", "Medium", "High"] },
-    { name: "notes", label: "Notas", type: "textarea", colSpan: 2 },
-  ];
+  const amOptions = useMemo(() => availableAMs.map(am => ({
+    value: am.id,
+    label: am.account_name || am.am || 'N/A'
+  })), [availableAMs]);
 
-  const discountFields = [
-    { name: "deal_value", label: "Valor do Negócio (Pré-Desconto Geral)", type: "number", readOnly: true },
-    { name: "campaign_id", label: "Campanha Aplicada", type: "select", options: availableCampaigns.map(c => ({ value: c.id, label: c.name })), placeholder: "Selecione uma campanha" },
-    { name: "discount_type", label: "Tipo de Desconto Geral", type: "select", options: [{ value: 'none', label: 'Nenhum' }, { value: 'percentage', label: 'Percentagem' }, { value: 'amount', label: 'Valor Fixo' }], readOnly: !!selectedCampaignId },
-    { name: "discount_value", label: "Valor do Desconto Geral", type: "number", conditional: (val: FormData) => val.discount_type !== 'none', readOnly: !!selectedCampaignId },
-    { name: "final_deal_value", label: "Valor Final do Negócio", type: "number", readOnly: true },
-  ];
+  const selectedAMDisplayName = useMemo(() => {
+    return amOptions.find(opt => opt.value === assignedToAmId)?.label || "Selecione um AM";
+  }, [assignedToAmId, amOptions]);
 
   return (
     <FormProvider {...formMethods}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
-        <p className="text-sm text-muted-foreground">
-          A criar negócio para a empresa com ID Excel: <span className="font-semibold">{companyExcelId}</span>
-        </p>
-        {!companyDbId && ( // NEW: Alert if companyDbId is missing
-          <p className="text-sm text-red-500">
-            Não foi possível encontrar a empresa no CRM principal com o ID Excel fornecido. O negócio não poderá ser criado.
-          </p>
-        )}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {mainFields.map((field) => (
-            <FormField
-              key={field.name}
-              control={control}
-              name={field.name as keyof FormData}
-              render={({ field: formField }) => (
-                <FormItem className={field.colSpan === 2 ? "md:col-span-2" : ""}>
-                  <FormLabel>{field.label} {field.required && <span className="text-red-500">*</span>}</FormLabel>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-1">
+        <Card>
+          <CardHeader>
+            <CardTitle>Criar Novo Negócio</CardTitle>
+            <CardDescription>
+              Para a empresa {commercialName || companyExcelId} (ID: {companyExcelId})
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField control={control} name="deal_name" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome do Negócio <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
-                    {field.type === "date" ? (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !formField.value && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {formField.value ? format(formField.value as Date, "PPP") : <span>Selecione uma data</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={formField.value as Date}
-                            onSelect={formField.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    ) : field.type === "textarea" ? (
-                      <Textarea
-                        {...formField}
-                        value={formField.value as string || ''}
-                        onChange={formField.onChange}
-                      />
-                    ) : field.type === "select" ? (
-                      <Select onValueChange={(value) => {
-                        formField.onChange(value);
-                        if (field.name === "discount_type" && value === 'none') {
-                          setValue("discount_value", 0);
-                        }
-                      }} defaultValue={formField.value as string}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {field.options?.map((option: any) => (
-                            <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input
-                        type={field.type}
-                        {...formField}
-                        value={formField.value as string | number || ''}
-                        onChange={(e) => {
-                          if (field.type === "number") {
-                            formField.onChange(e.target.value === '' ? null : Number(e.target.value));
-                          } else {
-                            formField.onChange(e.target.value);
-                          }
-                        }}
-                        readOnly={field.readOnly}
-                      />
-                    )}
+                    <div className="relative">
+                      <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input {...field} placeholder="Ex: Venda de Plano Premium" className="pl-10" />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
-              )}
-            />
-          ))}
-        </div>
-
-        <h3 className="text-lg font-semibold mt-6 mb-3">Produtos do Negócio</h3>
-        <div className="space-y-4">
-          {fields.map((item, index) => (
-            <DealProductFormItem
-              key={item.id}
-              index={index}
-              allProducts={allProducts}
-              onRemove={remove}
-              initialProductId={item.product_id}
-              initialQuantity={item.quantity}
-              initialDiscountType={item.discount_type}
-              initialDiscountValue={item.discount_value}
-            />
-          ))}
-          <Button type="button" variant="outline" onClick={handleAddProduct} className="w-full">
-            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Produto
-          </Button>
-          {errors.deal_products && <p className="text-sm font-medium text-destructive mt-2">{errors.deal_products.message}</p>}
-        </div>
-
-        <h3 className="text-lg font-semibold mt-6 mb-3">Resumo e Desconto Geral</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {discountFields.map((field) => {
-            if (field.conditional && !fields.length) {
-              return null;
-            }
-            if (field.conditional && !field.conditional(formMethods.getValues())) {
-              return null;
-            }
-            return (
-              <FormField
-                key={field.name}
-                control={control}
-                name={field.name as keyof FormData}
-                render={({ field: formField }) => (
-                  <FormItem>
-                    <FormLabel>{field.label}</FormLabel>
+              )} />
+              <FormField control={control} name="deal_status" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value as string}>
                     <FormControl>
-                      {field.type === "select" ? (
-                        <Select onValueChange={(value) => {
-                          formField.onChange(value === "null-campaign" ? null : value);
-                          if (field.name === "discount_type" && value === 'none') {
-                            setValue("discount_value", 0);
-                          }
-                        }} value={formField.value as string || "null-campaign"} disabled={field.readOnly}>
-                          <SelectTrigger>
-                            <SelectValue placeholder={field.placeholder} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {field.name === "campaign_id" && <SelectItem value="null-campaign">Nenhuma Campanha</SelectItem>}
-                            {field.options?.map((option: any) => (
-                              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Input
-                          type={field.type}
-                          {...formField}
-                          value={formField.value as string | number || ''}
-                          onChange={(e) => {
-                            if (field.type === "number") {
-                              formField.onChange(e.target.value === '' ? null : Number(e.target.value));
-                            } else {
-                              formField.onChange(e.target.value);
-                            }
-                          }}
-                          readOnly={field.readOnly}
-                        />
-                      )}
+                      <SelectTrigger>
+                        <Activity className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <SelectValue placeholder="Selecione o status" className="pl-10" />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            );
-          })}
-        </div>
+                    <SelectContent>
+                      {["Prospecting", "Qualification", "Proposal", "Negotiation", "Closed Won", "Closed Lost"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={control} name="expected_close_date" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data de Fecho Esperada</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button variant="outline" className={cn("w-full pl-10 text-left font-normal", !field.value && "text-muted-foreground")}>
+                          <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
+                          {field.value ? format(field.value, "PPP") : <span>Selecione uma data</span>}
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value as Date} onSelect={field.onChange} initialFocus /></PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={control} name="priority" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Prioridade</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value as string}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <ShieldAlert className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <SelectValue placeholder="Selecione a prioridade" className="pl-10" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {["Low", "Medium", "High"].map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={control} name="assigned_to_am_id" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Atribuído a (AM)</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ''} disabled={isLoading}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <SelectValue className="pl-10">{selectedAMDisplayName}</SelectValue>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {isLoading ? <SelectItem value="loading" disabled>A carregar AMs...</SelectItem> : amOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={control} name="notes" render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Notas</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Textarea {...field} placeholder="Adicione notas relevantes sobre o negócio..." className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>Produtos do Negócio</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            {fields.map((item, index) => (
+              <DealProductFormItem key={item.id} index={index} allProducts={allProducts} onRemove={remove} />
+            ))}
+            <Button type="button" variant="outline" onClick={() => append({ product_id: '', quantity: 1, unit_price_at_deal_time: 0, total_price_at_deal_time: 0, product_name: '', product_category: '', discount_type: 'none', discount_value: 0 })} className="w-full">
+              <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Produto
+            </Button>
+            {errors.deal_products && <p className="text-sm font-medium text-destructive mt-2">{errors.deal_products.message || errors.deal_products.root?.message}</p>}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>Resumo e Desconto Geral</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField control={control} name="deal_value" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Valor Base</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input {...field} readOnly className="pl-10 font-semibold" />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={control} name="campaign_id" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Campanha Aplicada</FormLabel>
+                <Select onValueChange={v => field.onChange(v === "null-campaign" ? null : v)} value={field.value || "null-campaign"}>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Selecione uma campanha" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    <SelectItem value="null-campaign">Nenhuma Campanha</SelectItem>
+                    {availableCampaigns.map(c => <SelectItem key={c.id} value={c.id!}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={control} name="discount_type" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tipo de Desconto Geral</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value!} disabled={!!selectedCampaignId}>
+                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum</SelectItem>
+                    <SelectItem value="percentage">Percentagem (%)</SelectItem>
+                    <SelectItem value="amount">Valor Fixo (€)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+            {watch("discount_type") !== 'none' && (
+              <FormField control={control} name="discount_value" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Valor do Desconto Geral</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} value={field.value || ''} onChange={e => field.onChange(e.target.value === '' ? null : Number(e.target.value))} disabled={!!selectedCampaignId} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
+            <FormField control={control} name="final_deal_value" render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Valor Final do Negócio</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Euro className="absolute left-3 top-1/2 -translatey-1/2 h-5 w-5 text-green-600" />
+                    <Input {...field} readOnly className="pl-10 text-lg font-bold text-green-600 border-2 border-gray-300" />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+          </CardContent>
+        </Card>
 
         <div className="flex justify-end space-x-2 mt-6">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isSubmitting || !userId || !companyDbId || !formMethods.formState.isValid}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                A Criar...
-              </>
-            ) : (
-              "Criar Negócio"
-            )}
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancelar</Button>
+          <Button type="submit" disabled={isSubmitting || isLoading || !userId || !companyDbId || !formMethods.formState.isValid}>
+            {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> A Criar...</> : "Criar Negócio"}
           </Button>
         </div>
       </form>

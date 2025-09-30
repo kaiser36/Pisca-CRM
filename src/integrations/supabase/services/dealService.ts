@@ -316,6 +316,8 @@ export async function upsertDeals(deals: Negocio[], userId: string): Promise<voi
       discount_value: deal.discount_value || 0,
       final_deal_value: deal.final_deal_value || 0, // Will be recalculated by triggers or UI
       campaign_id: deal.campaign_id || null, // NEW: Include campaign_id
+      assigned_to_am_id: deal.assigned_to_am_id || null,
+      assigned_to_am_name: deal.assigned_to_am_name || null,
     };
   }).filter(Boolean); // Filter out nulls
 
