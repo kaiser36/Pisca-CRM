@@ -125,19 +125,19 @@ const ActivityTimeline: React.FC = () => {
 
   if (timeline.length === 0) {
     return (
-      <Card>
+      <div className="bg-transparent">
         <CardHeader>
           <CardTitle>Feed de Atividade</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-center py-4">Nenhuma atividade recente para esta empresa.</p>
         </CardContent>
-      </Card>
+      </div>
     );
   }
 
   return (
-    <Card>
+    <div className="bg-transparent">
       <CardHeader>
         <CardTitle>Feed de Atividade</CardTitle>
       </CardHeader>
@@ -173,7 +173,7 @@ const ActivityTimeline: React.FC = () => {
           </div>
         </ScrollArea>
       </CardContent>
-    </Card>
+    </div>
   );
 };
 
