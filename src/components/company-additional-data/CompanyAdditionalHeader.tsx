@@ -89,18 +89,28 @@ const CompanyAdditionalHeader: React.FC<CompanyAdditionalHeaderProps> = ({
               )}
             </div>
 
-            {/* Right-aligned Details */}
-            <div className="text-sm text-gray-600 mt-4 md:mt-0 md:text-right space-y-1">
-              {crmCompany?.Company_Email && <p><span className="font-semibold">Email:</span> {crmCompany.Company_Email}</p>}
-              {crmCompany?.Website && (
-                <p>
-                  <span className="font-semibold">Website:</span>{' '}
-                  <a href={crmCompany.Website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                    {crmCompany.Website}
-                  </a>
-                </p>
+            {/* Right-aligned Details with badges */}
+            <div className="flex flex-col items-end mt-4 md:mt-0 space-y-2">
+              {crmCompany?.Company_Email && (
+                <div className="bg-white/80 backdrop-blur-sm px-3 py-1 rounded-md shadow-sm">
+                  <p className="text-sm font-semibold text-gray-800">Email: {crmCompany.Company_Email}</p>
+                </div>
               )}
-              {crmCompany?.NIF && <p><span className="font-semibold">NIF:</span> {crmCompany.NIF}</p>}
+              {crmCompany?.Website && (
+                <div className="bg-white/80 backdrop-blur-sm px-3 py-1 rounded-md shadow-sm">
+                  <p className="text-sm font-semibold text-gray-800">
+                    Website:{' '}
+                    <a href={crmCompany.Website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      {crmCompany.Website}
+                    </a>
+                  </p>
+                </div>
+              )}
+              {crmCompany?.NIF && (
+                <div className="bg-white/80 backdrop-blur-sm px-3 py-1 rounded-md shadow-sm">
+                  <p className="text-sm font-semibold text-gray-800">NIF: {crmCompany.NIF}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
