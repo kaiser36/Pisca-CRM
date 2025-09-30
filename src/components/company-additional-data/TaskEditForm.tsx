@@ -31,7 +31,7 @@ const formSchema = z.object({
   description: z.string().nullable().optional(),
   due_date: z.date().nullable().optional(),
   status: z.enum(['Pending', 'In Progress', 'Completed', 'Cancelled']).default('Pending'),
-  priority: z.enum(['Low', 'Medium', 'High']).default('Medium'),
+  priority: z.enum(['Very Low', 'Low', 'Medium', 'High', 'Very High']).default('Medium'),
   assigned_to_employee_id: z.string().nullable().optional(),
   assigned_to_employee_name: z.string().nullable().optional(),
   commercial_name: z.string().nullable().optional(),
@@ -195,7 +195,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
     { name: "description", label: "Descrição", type: "textarea", colSpan: 2 },
     { name: "due_date", label: "Data Limite", type: "date" },
     { name: "status", label: "Status", type: "select", options: ['Pending', 'In Progress', 'Completed', 'Cancelled'], placeholder: "Selecione o Status" },
-    { name: "priority", label: "Prioridade", type: "select", options: ['Low', 'Medium', 'High'], placeholder: "Selecione a Prioridade" },
+    { name: "priority", label: "Prioridade", type: "select", options: [{value: 'Very Low', label: 'Muito Baixa'}, {value: 'Low', label: 'Baixa'}, {value: 'Medium', label: 'Média'}, {value: 'High', label: 'Alta'}, {value: 'Very High', label: 'Muito Alta'}], placeholder: "Selecione a Prioridade" },
     {
       name: "assigned_to_employee_id",
       label: "Atribuído a (AM)",

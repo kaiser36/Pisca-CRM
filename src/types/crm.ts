@@ -290,7 +290,7 @@ export interface Task {
   description?: string | null;
   due_date?: string | null; // ISO string for timestamp
   status?: 'Pending' | 'In Progress' | 'Completed' | 'Cancelled' | null;
-  priority?: 'Low' | 'Medium' | 'High' | null;
+  priority?: 'Very Low' | 'Low' | 'Medium' | 'High' | 'Very High' | null;
   assigned_to_employee_id?: string | null; // UUID of the employee
   assigned_to_employee_name?: string | null; // Name of the employee for display
   created_at?: string;
