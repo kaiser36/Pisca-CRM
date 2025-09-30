@@ -63,7 +63,12 @@ const CompanyAdditionalHeader: React.FC<CompanyAdditionalHeaderProps> = ({
   return (
     <div className="mb-6">
       {/* Cover Banner */}
-      <div className="h-28 bg-blue-100 rounded-t-lg shadow-inner bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1557682250-33bd709cbe85?q=80&w=2070&auto=format&fit=crop')" }}></div>
+      <div className="h-28 bg-blue-100 rounded-t-lg shadow-inner bg-cover bg-center relative" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1557682250-33bd709cbe85?q=80&w=2070&auto=format&fit=crop')" }}>
+        {/* ID Excel positioned at top right of cover */}
+        <div className="absolute top-3 right-4 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-md shadow-sm">
+          <p className="text-sm font-semibold text-gray-800">ID Excel: {company.excel_company_id}</p>
+        </div>
+      </div>
 
       {/* Main Info Section */}
       <div className="px-6">
@@ -86,7 +91,6 @@ const CompanyAdditionalHeader: React.FC<CompanyAdditionalHeaderProps> = ({
 
             {/* Right-aligned Details */}
             <div className="text-sm text-gray-600 mt-4 md:mt-0 md:text-right space-y-1">
-              <p><span className="font-semibold">ID Excel:</span> {company.excel_company_id}</p>
               {crmCompany?.Company_Email && <p><span className="font-semibold">Email:</span> {crmCompany.Company_Email}</p>}
               {crmCompany?.Website && <p><span className="font-semibold">Website:</span> <a href={crmCompany.Website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{crmCompany.Website}</a></p>}
               {crmCompany?.NIF && <p><span className="font-semibold">NIF:</span> {crmCompany.NIF}</p>}
