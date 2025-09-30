@@ -28,8 +28,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const [accordionValue, setAccordionValue] = React.useState<string | undefined>(undefined);
 
   React.useEffect(() => {
-    // Updated logic to include /crm in the settings accordion
-    if (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view') || isPathActive('/products') || isPathActive('/campaigns') || isPathActive('/settings/easyvista-types') || isPathActive('/crm')) {
+    // Updated logic to include /settings/contact-types in the settings accordion
+    if (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view') || isPathActive('/products') || isPathActive('/campaigns') || isPathActive('/settings/easyvista-types') || isPathActive('/settings/contact-types') || isPathActive('/crm')) {
       setAccordionValue('settings-accordion');
     } else {
       setAccordionValue(undefined);
@@ -103,7 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             <AccordionTrigger className={cn(
               "flex items-center w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground py-2 px-4 rounded-md transition-colors",
               isCollapsed ? "px-2" : "px-4",
-              (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view') || isPathActive('/products') || isPathActive('/campaigns') || isPathActive('/settings/easyvista-types') || isPathActive('/crm')) && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+              (isPathActive('/settings') || isPathActive('/accounts') || isPathActive('/am-view') || isPathActive('/products') || isPathActive('/campaigns') || isPathActive('/settings/easyvista-types') || isPathActive('/settings/contact-types') || isPathActive('/crm')) && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
             )}>
               <Settings className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3")} />
               {!isCollapsed && "Configurações"}
