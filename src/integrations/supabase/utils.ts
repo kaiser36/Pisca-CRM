@@ -13,3 +13,5 @@ export * from './services/taskService.ts';
 export * from './services/campaignService.ts';
 export * from './services/easyvistaTypeService.ts';
 export * from './services/analyticsService.ts';
+export * from './services/contactTypeService.ts';
+export * from './services/contactReportOptionService.ts';

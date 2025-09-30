@@ -8,6 +8,8 @@ import { AccountContact } from '@/types/crm';
 import { insertAccountContact } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
+import { getContactTypes, ContactType } from '@/integrations/supabase/services/contactTypeService';
+import { getContactReportOptionsByContactTypeId, ContactReportOption } from '@/integrations/supabase/services/contactReportOptionService';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,22 +32,10 @@ interface AccountContactCreateFormProps {
   companyName?: string | null;
 }
 
-// Opções de relatório por tipo de contacto
-const CONTACT_TYPE_REPORT_OPTIONS: Record<string, string[]> = {
-  "Novo cliente": ["Destaques", "Apresentação serviços", "Proposta inicial", "Follow-up inicial"],
-  "Gestão de cliente": ["Acompanhamento mensal", "Revisão contrato", "Upgrade serviços", "Renovação"],
-  "Reclamação": ["Análise problema", "Solução proposta", "Follow-up", "Resolução"],
-  "Suporte técnico": ["Diagnóstico", "Resolução", "Formação", "Manutenção"],
-  "Vendas": ["Proposta comercial", "Negociação", "Fechamento", "Pós-venda"],
-  "Marketing": ["Campanha", "Anúncio", "Promoção", "Evento"],
-  "Financeiro": ["Cobrança", "Pagamento", "Renegociação", "Dívida"],
-  "Outro": ["Informação geral", "Consulta", "Sugestão"]
-};
-
 const formSchema = z.object({
   account_am: z.string().nullable().optional(),
   contact_type: z.string().min(1, "Tipo de Contacto é obrigatório").nullable().optional(),
-  report_text: z.string().nullable().optional(),
+  report_text: z.string().nullable().optional(), // Agora será uma seleção
   contact_date: z.date().nullable().optional(),
   contact_method: z.string().min(1, "Meio de Contacto é obrigatório").nullable().optional(),
   commercial_name: z.string().nullable().optional(),
@@ -78,6 +68,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [companyDbId, setCompanyDbId] = useState<string | null>(null);
+  const [contactTypes, setContactTypes] = useState<ContactType[]>([]);
   const [reportOptions, setReportOptions] = useState<{ value: string; label: string }[]>([]);
 
   const form = useForm<FormData>({
@@ -107,7 +98,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     },
   });
 
-  const selectedContactType = form.watch('contact_type');
+  const selectedContactTypeName = form.watch('contact_type');
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -125,6 +116,21 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     });
 
     return () => subscription.unsubscribe();
+  }, []);
+
+  // Buscar tipos de contacto
+  useEffect(() => {
+    const fetchContactTypes = async () => {
+      try {
+        const types = await getContactTypes();
+        setContactTypes(types);
+      } catch (error) {
+        console.error('Erro ao buscar tipos de contacto:', error);
+        showError('Erro ao carregar tipos de contacto');
+      }
+    };
+
+    fetchContactTypes();
   }, []);
 
   // Fetch company_db_id based on companyExcelId and userId
@@ -154,19 +160,31 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     fetchCompanyDbId();
   }, [userId, companyExcelId]);
 
-  // Atualizar opções de relatório quando o tipo de contacto muda
+  // Fetch report options based on selected contact type
   useEffect(() => {
-    if (selectedContactType && CONTACT_TYPE_REPORT_OPTIONS[selectedContactType]) {
-      const options = CONTACT_TYPE_REPORT_OPTIONS[selectedContactType].map(option => ({
-        value: option,
-        label: option
-      }));
-      setReportOptions(options);
-    } else {
-      setReportOptions([]);
-    }
-    form.setValue('report_text', ''); // Reset report_text when contact_type changes
-  }, [selectedContactType, form]);
+    const fetchReportOptions = async () => {
+      if (selectedContactTypeName) {
+        const contactType = contactTypes.find(type => type.name === selectedContactTypeName);
+        if (contactType?.id) {
+          try {
+            const options = await getContactReportOptionsByContactTypeId(contactType.id);
+            setReportOptions(options.map(opt => ({ value: opt.report_text, label: opt.report_text })));
+          } catch (error) {
+            console.error('Erro ao buscar opções de relatório:', error);
+            showError('Erro ao carregar opções de relatório');
+            setReportOptions([]);
+          }
+        } else {
+          setReportOptions([]);
+        }
+      } else {
+        setReportOptions([]);
+      }
+      form.setValue('report_text', ''); // Reset report_text when contact_type changes
+    };
+
+    fetchReportOptions();
+  }, [selectedContactTypeName, contactTypes, form]);
 
   const onSubmit = async (values: FormData) => {
     if (!userId) {
@@ -218,10 +236,12 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     }
   };
 
-  // Obter tipos de contacto únicos
-  const contactTypeOptions = Object.keys(CONTACT_TYPE_REPORT_OPTIONS).map(type => ({
-    value: type,
-    label: type
+  // Obter nomes únicos de tipos de contacto
+  const uniqueContactTypeNames = Array.from(
+    new Set(contactTypes.map(type => type.name))
+  ).map(name => ({
+    value: name,
+    label: name
   }));
 
   const fields = [
@@ -230,7 +250,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
       name: "contact_type", 
       label: "Tipo de Contacto", 
       type: "combobox", 
-      options: contactTypeOptions 
+      options: uniqueContactTypeNames 
     },
     { name: "contact_date", label: "Data do Contacto", type: "date" },
     { name: "contact_method", label: "Meio de Contacto", type: "select", options: ["Telefone", "Email", "Presencial", "Videoconferência", "Outro"] },
@@ -251,11 +271,11 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     { name: "sending_email", label: "Email de Envio", type: "email" },
     { 
       name: "report_text", 
-      label: "Texto do Relatório", 
+      label: "Report", 
       type: "combobox", 
       colSpan: 2, 
       options: reportOptions,
-      disabled: !selectedContactType || reportOptions.length === 0
+      disabled: reportOptions.length === 0 // Disable if no options
     },
     { name: "email_body", label: "Corpo do Email", type: "textarea", colSpan: 2 },
   ];

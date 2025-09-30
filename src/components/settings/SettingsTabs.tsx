@@ -14,6 +14,7 @@ import DealExcelTemplateCard from './DealExcelTemplateCard';
 import EmployeeExcelTemplateCard from './EmployeeExcelTemplateCard';
 import TaskExcelTemplateCard from './TaskExcelTemplateCard';
 import EasyvistaExcelTemplateCard from './EasyvistaExcelTemplateCard';
+import ContactTypeManager from './ContactTypeManager';
 
 const SettingsTabs: React.FC = () => {
   const handleUploadSuccess = () => {
@@ -28,12 +29,15 @@ const SettingsTabs: React.FC = () => {
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Configurações</h1>
       <Tabs defaultValue="data-upload" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4 h-10 rounded-lg bg-muted/70 p-1">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 h-10 rounded-lg bg-muted/70 p-1">
           <TabsTrigger value="data-upload" className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold">
             Carregar Dados
           </TabsTrigger>
           <TabsTrigger value="templates" className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold">
             Modelos
+          </TabsTrigger>
+          <TabsTrigger value="contact-types" className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold">
+            Tipos de Contacto
           </TabsTrigger>
           <TabsTrigger value="user-profile" className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold">
             Perfil do Utilizador
@@ -78,6 +82,10 @@ const SettingsTabs: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="contact-types" className="mt-6">
+          <ContactTypeManager />
         </TabsContent>
 
         <TabsContent value="user-profile" className="mt-6">
