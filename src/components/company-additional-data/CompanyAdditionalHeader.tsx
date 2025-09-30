@@ -92,7 +92,14 @@ const CompanyAdditionalHeader: React.FC<CompanyAdditionalHeaderProps> = ({
             {/* Right-aligned Details */}
             <div className="text-sm text-gray-600 mt-4 md:mt-0 md:text-right space-y-1">
               {crmCompany?.Company_Email && <p><span className="font-semibold">Email:</span> {crmCompany.Company_Email}</p>}
-              {crmCompany?.Website && <p><span className="font-semibold">Website:</span> <a href={crmCompany.Website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{crmCompany.Website}</a></p>}
+              {crmCompany?.Website && (
+                <p>
+                  <span className="font-semibold">Website:</span>{' '}
+                  <a href={crmCompany.Website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    {crmCompany.Website}
+                  </a>
+                </p>
+              )}
               {crmCompany?.NIF && <p><span className="font-semibold">NIF:</span> {crmCompany.NIF}</p>}
             </div>
           </div>
