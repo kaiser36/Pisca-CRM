@@ -33,9 +33,10 @@ interface CompanyAdditionalDetailCardProps {
   company: CompanyAdditionalExcelData | null;
   onDataUpdated: () => void;
   initialTab?: string;
+  theme?: 'default' | 'blue' | 'green' | 'amber';
 }
 
-const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = ({ company, onDataUpdated, initialTab = 'details' }) => {
+const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = ({ company, onDataUpdated, initialTab = 'details', theme = 'default' }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateContactDialogOpen, setIsCreateContactDialogOpen] = useState(false);
   const [isCreateEasyvistaDialogOpen, setIsCreateEasyvistaDialogOpen] = useState(false);
@@ -48,6 +49,32 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   const [dealsError, setDealsError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Theme styles
+  const themeStyles = {
+    default: {
+      card: 'bg-card border-border',
+      header: 'bg-transparent',
+      tabs: 'bg-muted/70'
+    },
+    blue: {
+      card: 'bg-blue-50 border-blue-200',
+      header: 'bg-blue-100',
+      tabs: 'bg-blue-100'
+    },
+    green: {
+      card: 'bg-green-50 border-green-200',
+      header: 'bg-green-100',
+      tabs: 'bg-green-100'
+    },
+    amber: {
+      card: 'bg-amber-50 border-amber-200',
+      header: 'bg-amber-100',
+      tabs: 'bg-amber-100'
+    }
+  };
+
+  const currentTheme = themeStyles[theme];
 
   // Update activeTab when initialTab prop changes
   useEffect(() => {
@@ -171,7 +198,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
   // Calculate aggregated leads data
   const totalLeadsRecebidas = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Leads_Recebidas || 0), 0) || 0;
   const totalLeadsPendentes = crmCompany?.stands.reduce((sum, stand) => sum + (stand.Leads_Pendentes || 0), 0) || 0;
-  const totalLeadsExpiradas = crmCompany?.stands.reduce((sum, stand) => sum + (stand.leads_expiradas || 0), 0) || 0; // Corrected here
+  const totalLeadsExpiradas = crmCompany?.stands.reduce((sum, stand) => sum + (stand.leads_expiradas || 0), 0) || 0;
 
   // Alert logic
   const alerts: string[] = [];
@@ -193,7 +220,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
     alerts.push("A última visita foi há mais de 3 meses.");
   }
 
-  // 4. Se o ultimo login foi à mais de uma semana atras (This alert was missing in the original logic, adding it based on previous context)
+  // 4. Se o ultimo login foi à mais de uma semana atras
   const lastLoginDate = crmCompany?.Last_Login_Date;
   if (lastLoginDate) {
     try {
@@ -239,8 +266,8 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
   return (
     <ScrollArea className="h-full w-full pr-4">
-      <Card className="w-full shadow-md rounded-lg">
-        <CardHeader className="pb-4">
+      <Card className={`w-full shadow-md rounded-lg ${currentTheme.card}`}>
+        <CardHeader className={`pb-4 ${currentTheme.header}`}>
           <CompanyAdditionalHeader
             company={company}
             companyDisplayName={companyDisplayName}
@@ -275,10 +302,11 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
             totalLeadsPendentes={totalLeadsPendentes}
             totalLeadsExpiradas={totalLeadsExpiradas}
             renderField={renderField}
+            theme={theme}
           />
 
           <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-8 h-10 rounded-lg bg-muted/70 p-1">
+            <TabsList className={`grid w-full grid-cols-2 sm:grid-cols-8 h-10 rounded-lg ${currentTheme.tabs} p-1`}>
               <TabsTrigger
                 value="details"
                 className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
