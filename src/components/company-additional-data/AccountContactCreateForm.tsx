@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, CalendarIcon } from 'lucide-react';
+import { Loader2, CalendarIcon, User, Building2, Store, Users, Briefcase, Phone, MessageSquare, FileText, LayoutList, Handshake, Mail, Type, Link, AtSign, Info } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -23,6 +23,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Combobox } from '@/components/ui/combobox';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface AccountContactCreateFormProps {
   companyExcelId: string;
@@ -35,12 +36,11 @@ interface AccountContactCreateFormProps {
 const formSchema = z.object({
   account_am: z.string().nullable().optional(),
   contact_type: z.string().min(1, "Tipo de Contacto é obrigatório").nullable().optional(),
-  report_text: z.string().nullable().optional(), // Agora será uma seleção
+  report_text: z.string().nullable().optional(),
   contact_date: z.date().nullable().optional(),
   contact_method: z.string().min(1, "Meio de Contacto é obrigatório").nullable().optional(),
   commercial_name: z.string().nullable().optional(),
   company_name: z.string().nullable().optional(),
-  crm_id: z.string().nullable().optional(),
   stand_name: z.string().nullable().optional(),
   subject: z.string().nullable().optional(),
   contact_person_name: z.string().nullable().optional(),
@@ -106,25 +106,14 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-      } else {
-        setUserId(null);
-      }
+      setUserId(session?.user?.id ?? null);
     });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-      }
-    });
-
+    supabase.auth.getSession().then(({ data: { session } }) => setUserId(session?.user?.id ?? null));
     return () => subscription.unsubscribe();
   }, []);
 
-  // Buscar tipos de contacto
   useEffect(() => {
-    const fetchContactTypes = async () => {
+    const fetchInitialData = async () => {
       try {
         const types = await getContactTypes();
         setContactTypes(types);
@@ -133,64 +122,48 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
         showError('Erro ao carregar tipos de contacto');
       }
     };
-
-    fetchContactTypes();
+    fetchInitialData();
   }, []);
 
-  // Fetch company data, AMs, stands and employees
   useEffect(() => {
-    const loadData = async () => {
+    const loadCompanyData = async () => {
       if (userId && companyExcelId) {
         setIsLoadingData(true);
         try {
-          // Fetch company details to get the default AM and db_id
-          const companies = await fetchCompaniesByExcelCompanyIds(userId, [companyExcelId]);
+          const [companies, fetchedAMs] = await Promise.all([
+            fetchCompaniesByExcelCompanyIds(userId, [companyExcelId]),
+            fetchAccounts(userId)
+          ]);
+          
+          setAvailableAMs(fetchedAMs);
           const currentCompany = companies.find(c => c.Company_id === companyExcelId);
 
           if (currentCompany) {
             setCompanyDbId(currentCompany.id || null);
-            if (currentCompany.AM_Current) {
-              form.setValue('account_am', currentCompany.AM_Current);
-            }
+            if (currentCompany.AM_Current) form.setValue('account_am', currentCompany.AM_Current);
             
-            // Get stand names from company data
-            const standNames = currentCompany.stands
-              .map(stand => stand.Stand_Name)
-              .filter((name): name is string => name !== undefined && name !== null && name !== '');
+            const standNames = currentCompany.stands.map(s => s.Stand_Name).filter((n): n is string => !!n);
             setAvailableStands(standNames);
-            console.log('Stands encontrados:', standNames);
             
-            // Fetch employees for this company
             const employees = await fetchEmployeesByCompanyExcelId(userId, companyExcelId);
-            const employeeNames = employees.map(emp => emp.nome_colaborador);
-            setAvailableEmployees(employeeNames);
-            console.log('Colaboradores encontrados:', employeeNames);
+            setAvailableEmployees(employees.map(e => e.nome_colaborador));
           } else {
-            showError(`Empresa com ID Excel '${companyExcelId}' não encontrada no CRM principal.`);
+            showError(`Empresa com ID Excel '${companyExcelId}' não encontrada.`);
             setCompanyDbId(null);
-            setAvailableStands([]);
-            setAvailableEmployees([]);
           }
-
-          // Fetch all available AMs
-          const fetchedAMs = await fetchAccounts(userId);
-          setAvailableAMs(fetchedAMs);
-
         } catch (error: any) {
-          console.error('Erro ao carregar dados para o formulário de contacto:', error);
           showError(`Falha ao carregar dados: ${error.message}`);
         } finally {
           setIsLoadingData(false);
         }
       }
     };
-
-    loadData();
+    loadCompanyData();
   }, [userId, companyExcelId, form]);
 
-  // Fetch report options based on selected contact type
   useEffect(() => {
     const fetchReportOptions = async () => {
+      form.setValue('report_text', '');
       if (selectedContactTypeName) {
         const contactType = contactTypes.find(type => type.name === selectedContactTypeName);
         if (contactType?.id) {
@@ -198,7 +171,6 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
             const options = await getContactReportOptionsByContactTypeId(contactType.id);
             setReportOptions(options.map(opt => ({ value: opt.report_text, label: opt.report_text })));
           } catch (error) {
-            console.error('Erro ao buscar opções de relatório:', error);
             showError('Erro ao carregar opções de relatório');
             setReportOptions([]);
           }
@@ -208,22 +180,15 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
       } else {
         setReportOptions([]);
       }
-      form.setValue('report_text', ''); // Reset report_text when contact_type changes
     };
-
     fetchReportOptions();
   }, [selectedContactTypeName, contactTypes, form]);
 
   const onSubmit = async (values: FormData) => {
-    if (!userId) {
-      showError("Utilizador não autenticado. Por favor, faça login para criar o contacto.");
+    if (!userId || !companyDbId) {
+      showError("Utilizador ou empresa inválida. Não é possível guardar o contacto.");
       return;
     }
-    if (!companyDbId) {
-      showError("Não foi possível associar o contacto a uma empresa válida. Por favor, verifique o ID Excel da empresa.");
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const newContact: Omit<AccountContact, 'id' | 'created_at'> = {
@@ -233,11 +198,11 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
         account_am: values.account_am || null,
         contact_type: values.contact_type || null,
         report_text: values.report_text || null,
-        contact_date: values.contact_date ? values.contact_date.toISOString() : null,
+        contact_date: values.contact_date?.toISOString() || null,
         contact_method: values.contact_method || null,
         commercial_name: values.commercial_name || null,
         company_name: values.company_name || null,
-        crm_id: null, // Removido do formulário
+        crm_id: null,
         stand_name: values.stand_name || null,
         subject: values.subject || null,
         contact_person_name: values.contact_person_name || null,
@@ -252,179 +217,253 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
         attachment_url: values.attachment_url || null,
         sending_email: values.sending_email || null,
       };
-
       await insertAccountContact(newContact);
-      showSuccess("Contacto de conta criado com sucesso!");
+      showSuccess("Contacto criado com sucesso!");
       onSave();
     } catch (error: any) {
-      console.error("Erro ao criar contacto de conta:", error);
-      showError(error.message || "Falha ao criar o contacto de conta.");
+      showError(error.message || "Falha ao criar o contacto.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Obter nomes únicos de tipos de contacto
-  const uniqueContactTypeNames = Array.from(
-    new Set(contactTypes.map(type => type.name))
-  ).map(name => ({
-    value: name,
-    label: name
-  }));
-
-  const fields = [
-    { 
-      name: "account_am", 
-      label: "AM da Conta", 
-      type: "select", 
-      options: availableAMs.map(am => am.am).filter((am): am is string => am !== null),
-      placeholder: "Selecione um AM",
-      disabled: isLoadingData
-    },
-    { 
-      name: "contact_type", 
-      label: "Tipo de Contacto", 
-      type: "combobox", 
-      options: uniqueContactTypeNames 
-    },
-    { name: "contact_date", label: "Data do Contacto", type: "date" },
-    { name: "contact_method", label: "Meio de Contacto", type: "select", options: ["Telefone", "Email", "Presencial", "Videoconferência", "Outro"] },
-    { name: "commercial_name", label: "Nome Comercial", type: "text" },
-    { name: "company_name", label: "Nome da Empresa", type: "text" },
-    { name: "stand_name", label: "Nome do Stand", type: "select", options: availableStands, placeholder: availableStands.length === 0 ? "Nenhum stand disponível" : "Selecione um stand", disabled: isLoadingData || availableStands.length === 0 },
-    { name: "contact_person_name", label: "Pessoa de Contacto", type: "select", options: availableEmployees, placeholder: availableEmployees.length === 0 ? "Nenhum colaborador disponível" : "Selecione um colaborador", disabled: isLoadingData || availableEmployees.length === 0 },
-    { name: "subject", label: "Assunto", type: "text" },
-    { name: "company_group", label: "Grupo da Empresa", type: "text" },
-    { name: "account_armatis", label: "Account Armatis", type: "text" },
-    { name: "quarter", label: "Trimestre", type: "text" },
-    { name: "is_credibom_partner", label: "É Parceiro Credibom?", type: "boolean" },
-    { name: "send_email", label: "Enviar Email?", type: "boolean" },
-    { name: "email_type", label: "Tipo de Email", type: "text", conditional: true },
-    { name: "email_subject", label: "Assunto do Email", type: "text", conditional: true },
-    { name: "attachment_url", label: "URL do Anexo", type: "url", conditional: true },
-    { name: "sending_email", label: "Email de Envio", type: "email", conditional: true },
-    { 
-      name: "report_text", 
-      label: "Report", 
-      type: "combobox", 
-      colSpan: 2, 
-      options: reportOptions,
-      disabled: reportOptions.length === 0 // Disable if no options
-    },
-    { name: "email_body", label: "Corpo do Email", type: "textarea", colSpan: 2, conditional: true },
-  ];
+  const uniqueContactTypeNames = Array.from(new Set(contactTypes.map(type => type.name))).map(name => ({ value: name, label: name }));
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4">
-        <p className="text-sm text-muted-foreground">
-          A criar contacto para a empresa com ID Excel: <span className="font-semibold">{companyExcelId}</span>
-        </p>
-        {!companyDbId && (
-          <p className="text-sm text-red-500">
-            Não foi possível encontrar a empresa no CRM principal com o ID Excel fornecido. O contacto não poderá ser criado.
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-1 md:p-4">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold tracking-tight">Adicionar Novo Contacto</h2>
+          <p className="text-muted-foreground">
+            A registar um contacto para a empresa: <span className="font-semibold text-primary">{commercialName || companyName}</span>
           </p>
-        )}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {fields.map((field) => {
-            // Skip conditional fields if send_email is false
-            if (field.conditional && !sendEmail) {
-              return null;
-            }
+          {!companyDbId && !isLoadingData && <p className="text-sm text-destructive">Aviso: Empresa não encontrada no CRM. O contacto não pode ser guardado.</p>}
+        </div>
 
-            return (
-              <FormField
-                key={field.name}
-                control={form.control}
-                name={field.name as keyof FormData}
-                render={({ field: formField }) => (
-                  <FormItem className={field.colSpan === 2 ? "md:col-span-2" : ""}>
-                    <FormLabel>{field.label}</FormLabel>
-                    <FormControl>
-                      {field.type === "boolean" ? (
-                        <Switch
-                          checked={formField.value as boolean}
-                          onCheckedChange={formField.onChange}
-                        />
-                      ) : field.type === "date" ? (
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full justify-start text-left font-normal",
-                                !formField.value && "text-muted-foreground"
-                              )}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {formField.value ? format(formField.value as Date, "PPP") : <span>Selecione uma data</span>}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
-                            <Calendar
-                              mode="single"
-                              selected={formField.value as Date}
-                              onSelect={formField.onChange}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      ) : field.type === "textarea" ? (
-                        <Textarea
-                          {...formField}
-                          value={formField.value as string || ''}
-                          onChange={formField.onChange}
-                        />
-                      ) : field.type === "select" ? (
-                        <Select onValueChange={formField.onChange} value={formField.value as string || ''} disabled={field.disabled}>
-                          <SelectTrigger>
-                            <SelectValue placeholder={field.placeholder || `Selecione um ${field.label.toLowerCase()}`} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {field.options?.map(option => (
-                              <SelectItem key={option} value={option}>{option}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : field.type === "combobox" ? (
-                        <Combobox
-                          options={field.options as { value: string; label: string }[] || []}
-                          value={formField.value as string}
-                          onChange={formField.onChange}
-                          placeholder={field.name === "contact_type" ? "Selecione um tipo de contacto" : "Selecione uma opção de relatório"}
-                          searchPlaceholder={field.name === "contact_type" ? "Pesquisar tipos de contacto..." : "Pesquisar opções de relatório..."}
-                          emptyMessage={field.name === "contact_type" ? "Nenhum tipo de contacto encontrado." : "Nenhuma opção de relatório encontrada."}
-                          disabled={field.disabled}
-                        />
-                      ) : (
-                        <Input
-                          type={field.type}
-                          {...formField}
-                          value={formField.value as string || ''}
-                          onChange={formField.onChange}
-                        />
-                      )}
-                    </FormControl>
+        <Card>
+          <CardHeader><CardTitle>Informações do Contacto</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField control={form.control} name="contact_date" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Data do Contacto</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full pl-10 text-left font-normal", !field.value && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {field.value ? format(field.value, "PPP") : <span>Selecione uma data</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}/>
+            <FormField control={form.control} name="contact_method" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Meio de Contacto</FormLabel>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Select onValueChange={field.onChange} value={field.value || ''}>
+                    <SelectTrigger className="pl-10"><SelectValue placeholder="Selecione o meio" /></SelectTrigger>
+                    <SelectContent>{["Telefone", "Email", "Presencial", "Videoconferência", "Outro"].map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}/>
+            <FormField control={form.control} name="contact_type" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tipo de Contacto</FormLabel>
+                <div className="relative">
+                  <LayoutList className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Combobox options={uniqueContactTypeNames} value={field.value} onChange={field.onChange} placeholder="Selecione o tipo" searchPlaceholder="Pesquisar tipo..." emptyMessage="Nenhum tipo encontrado." />
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}/>
+            <FormField control={form.control} name="report_text" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Report</FormLabel>
+                <div className="relative">
+                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Combobox options={reportOptions} value={field.value} onChange={field.onChange} placeholder="Selecione o report" searchPlaceholder="Pesquisar report..." emptyMessage="Nenhum report encontrado." disabled={reportOptions.length === 0} />
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}/>
+            <div className="md:col-span-2">
+              <FormField control={form.control} name="subject" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Assunto</FormLabel>
+                  <div className="relative">
+                    <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input {...field} value={field.value || ''} placeholder="Descreva o assunto do contacto..." className="pl-10" />
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}/>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>Detalhes da Empresa e Pessoas</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField control={form.control} name="account_am" render={({ field }) => (
+              <FormItem>
+                <FormLabel>AM da Conta</FormLabel>
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Select onValueChange={field.onChange} value={field.value || ''} disabled={isLoadingData}>
+                    <SelectTrigger className="pl-10"><SelectValue placeholder="Selecione um AM" /></SelectTrigger>
+                    <SelectContent>{availableAMs.map(am => am.am ? <SelectItem key={am.id} value={am.am}>{am.am}</SelectItem> : null)}</SelectContent>
+                  </Select>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}/>
+            <FormField control={form.control} name="contact_person_name" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Pessoa de Contacto</FormLabel>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Select onValueChange={field.onChange} value={field.value || ''} disabled={isLoadingData || availableEmployees.length === 0}>
+                    <SelectTrigger className="pl-10"><SelectValue placeholder="Selecione um colaborador" /></SelectTrigger>
+                    <SelectContent>{availableEmployees.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}/>
+            <FormField control={form.control} name="stand_name" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome do Stand</FormLabel>
+                <div className="relative">
+                  <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Select onValueChange={field.onChange} value={field.value || ''} disabled={isLoadingData || availableStands.length === 0}>
+                    <SelectTrigger className="pl-10"><SelectValue placeholder="Selecione um stand" /></SelectTrigger>
+                    <SelectContent>{availableStands.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}/>
+            <FormField control={form.control} name="company_group" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Grupo da Empresa</FormLabel>
+                <div className="relative">
+                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input {...field} value={field.value || ''} placeholder="Ex: Grupo Auto" className="pl-10" />
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}/>
+            <FormField control={form.control} name="account_armatis" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Account Armatis</FormLabel>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input {...field} value={field.value || ''} placeholder="Nome do account" className="pl-10" />
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}/>
+            <FormField control={form.control} name="quarter" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Trimestre</FormLabel>
+                <div className="relative">
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input {...field} value={field.value || ''} placeholder="Ex: Q1 2024" className="pl-10" />
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}/>
+            <FormField control={form.control} name="is_credibom_partner" render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm md:col-span-2">
+                <div className="space-y-0.5">
+                  <FormLabel>É Parceiro Credibom?</FormLabel>
+                  <p className="text-sm text-muted-foreground">Indica se a empresa tem parceria ativa com a Credibom.</p>
+                </div>
+                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+              </FormItem>
+            )}/>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Campanha de Email</CardTitle>
+                <CardDescription>Ative para enviar um email como parte deste contacto.</CardDescription>
+              </div>
+              <FormField control={form.control} name="send_email" render={({ field }) => (
+                <FormItem><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>
+              )}/>
+            </div>
+          </CardHeader>
+          {sendEmail && (
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+              <FormField control={form.control} name="email_type" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Email</FormLabel>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input {...field} value={field.value || ''} placeholder="Ex: Proposta, Follow-up" className="pl-10" />
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}/>
+              <FormField control={form.control} name="email_subject" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Assunto do Email</FormLabel>
+                  <div className="relative">
+                    <Info className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input {...field} value={field.value || ''} placeholder="Assunto do email a enviar" className="pl-10" />
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}/>
+              <FormField control={form.control} name="sending_email" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email de Envio</FormLabel>
+                  <div className="relative">
+                    <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input {...field} value={field.value || ''} type="email" placeholder="O seu email de envio" className="pl-10" />
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}/>
+              <FormField control={form.control} name="attachment_url" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL do Anexo</FormLabel>
+                  <div className="relative">
+                    <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input {...field} value={field.value || ''} type="url" placeholder="https://..." className="pl-10" />
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}/>
+              <div className="md:col-span-2">
+                <FormField control={form.control} name="email_body" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Corpo do Email</FormLabel>
+                    <div className="relative">
+                      <MessageSquare className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Textarea {...field} value={field.value || ''} placeholder="Escreva a sua mensagem..." className="pl-10 min-h-[120px]" />
+                    </div>
                     <FormMessage />
                   </FormItem>
-                )}
-              />
-            );
-          })}
-        </div>
-        <div className="flex justify-end space-x-2 mt-6">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-            Cancelar
-          </Button>
+                )}/>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancelar</Button>
           <Button type="submit" disabled={isSubmitting || !userId || !companyDbId}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                A Criar...
-              </>
-            ) : (
-              "Criar Contacto"
-            )}
+            {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> A Guardar...</> : "Guardar Contacto"}
           </Button>
         </div>
       </form>
