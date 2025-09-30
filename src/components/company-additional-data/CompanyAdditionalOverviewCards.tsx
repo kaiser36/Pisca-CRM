@@ -36,9 +36,9 @@ const CompanyAdditionalOverviewCards: React.FC<CompanyAdditionalOverviewCardsPro
 }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {/* Pisca Card */}
-      <Card className="p-4 shadow-subtle border-l-4 border-primary/50 bg-primary/5 rounded-lg">
-        <CardTitle className="text-lg font-semibold mb-3 flex items-center text-primary">
+      {/* Pisca Card - Tema azul DodgerBlue */}
+      <Card className="p-4 shadow-subtle border-l-4 border-[#1E90FF] bg-[#1E90FF]/5 rounded-lg">
+        <CardTitle className="text-lg font-semibold mb-3 flex items-center text-[#1E90FF]">
           <Package className="mr-2 h-5 w-5" /> Pisca
         </CardTitle>
         <div className="space-y-2">
