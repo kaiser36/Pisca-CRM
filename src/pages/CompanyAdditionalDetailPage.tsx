@@ -1,126 +1,132 @@
-import { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+"use client";
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom'; // NEW: Import useLocation
+import Layout from '@/components/layout/Layout';
+import { CompanyAdditionalExcelData, Company } from '@/types/crm';
+import { fetchCompanyAdditionalExcelData, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { Company, CompanyAdditionalExcelData } from '@/types';
+import { showError } from '@/utils/toast';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Terminal, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
-import { toast } from 'sonner';
 import CompanyAdditionalDetailCard from '@/components/company-additional-data/CompanyAdditionalDetailCard';
-import CompanyAdditionalDataTabs from '@/components/company-additional-data/CompanyAdditionalDataTabs';
 
-const CompanyAdditionalDetailPage = () => {
-  const { companyId } = useParams();
+const CompanyAdditionalDetailPage: React.FC = () => {
+  const { companyExcelId } = useParams<{ companyExcelId: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
-  
+  const location = useLocation(); // NEW: Initialize useLocation
   const [company, setCompany] = useState<CompanyAdditionalExcelData | null>(null);
-  const [crmCompany, setCrmCompany] = useState<Company | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const initialTab = useMemo(() => {
-    const params = new URLSearchParams(location.search);
-    return params.get('tab') || 'overview';
-  }, [location.search]);
-
-  const loadCompanyDetails = async () => {
-    if (!companyId) {
-      setError("ID da empresa não fornecido.");
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Fetch additional data
-      const { data: additionalData, error: additionalError } = await supabase
-        .from('company_additional_excel_data')
-        .select('*')
-        .eq('excel_company_id', companyId)
-        .single();
-
-      if (additionalError && additionalError.code !== 'PGRST116') { // Ignore 'single row not found'
-        throw additionalError;
-      }
-      setCompany(additionalData);
-
-      // Fetch main company data from CRM
-      const { data: crmData, error: crmError } = await supabase
-        .from('companies')
-        .select(`
-          *,
-          stands (*),
-          employees (*),
-          negocios (*),
-          tasks (*),
-          account_contacts (*)
-        `)
-        .eq('company_id', companyId)
-        .single();
-
-      if (crmError) {
-        throw crmError;
-      }
-      setCrmCompany(crmData);
-
-    } catch (err: any) {
-      console.error("Erro ao carregar detalhes da empresa:", err);
-      setError(`Falha ao carregar dados: ${err.message}`);
-      toast.error(`Falha ao carregar dados: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadCompanyDetails();
-  }, [companyId]);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      } else {
+        setUserId(null);
+      }
+    });
 
-  if (loading) {
-    return <div className="flex justify-center items-center h-screen"><RefreshCw className="animate-spin h-8 w-8" /></div>;
-  }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      }
+    });
 
-  if (error && !company && !crmCompany) {
-    return <div className="text-center py-10 text-red-500">{error}</div>;
-  }
-  
-  if (!crmCompany) {
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const loadCompanyDetails = useCallback(async () => {
+    if (!userId || !companyExcelId) {
+      setIsLoading(false);
+      setError("ID da empresa ou utilizador não autenticado.");
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Fetch the specific additional company data
+      const { data: additionalData } = await fetchCompanyAdditionalExcelData(userId, 1, 1, companyExcelId);
+      const fetchedAdditionalCompany = additionalData.find(c => c.excel_company_id === companyExcelId);
+
+      if (!fetchedAdditionalCompany) {
+        setError("Empresa adicional não encontrada.");
+        return;
+      }
+
+      // Fetch CRM company data for the associated excel_company_id
+      const crmCompanies = await fetchCompaniesByExcelCompanyIds(userId, [companyExcelId]);
+      const crmCompany = crmCompanies.find(c => c.Company_id === companyExcelId);
+
+      setCompany({
+        ...fetchedAdditionalCompany,
+        crmCompany: crmCompany || undefined,
+      });
+
+    } catch (err: any) {
+      console.error("Erro ao carregar detalhes da empresa adicional:", err);
+      setError(err.message || "Falha ao carregar os detalhes da empresa adicional.");
+      showError(err.message || "Falha ao carregar os detalhes da empresa adicional.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, companyExcelId]);
+
+  useEffect(() => {
+    if (userId && companyExcelId) {
+      loadCompanyDetails();
+    }
+  }, [userId, companyExcelId, loadCompanyDetails]);
+
+  const handleBack = () => {
+    navigate('/company-additional-data');
+  };
+
+  // NEW: Determine initial tab from URL
+  const queryParams = new URLSearchParams(location.search);
+  const initialTab = queryParams.get('tab') || 'details';
+
+  if (isLoading) {
     return (
-        <div className="container mx-auto p-4">
-            <Button onClick={() => navigate(-1)} variant="outline" className="mb-4">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-            </Button>
-            <div className="text-center py-10">
-                <h2 className="text-2xl font-bold mb-2">Empresa não encontrada</h2>
-                <p className="text-gray-500">A empresa com o ID '{companyId}' não foi encontrada na base de dados principal.</p>
-            </div>
+      <Layout>
+        <div className="container mx-auto p-6">
+          <Skeleton className="h-10 w-48 mb-4" />
+          <Skeleton className="h-[500px] w-full" />
         </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="container mx-auto p-6">
+          <Button variant="outline" onClick={handleBack} className="mb-4">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar à Lista
+          </Button>
+          <Alert variant="destructive">
+            <Terminal className="h-4 w-4" />
+            <AlertTitle>Erro</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-        <Button onClick={() => navigate(-1)} variant="outline">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+    <Layout>
+      <div className="container mx-auto p-6">
+        <Button variant="outline" onClick={handleBack} className="mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar à Lista
         </Button>
-        <h1 className="text-2xl font-bold text-center">{crmCompany?.commercial_name || crmCompany?.company_name || 'Detalhes da Empresa'}</h1>
-        <Button onClick={loadCompanyDetails} variant="outline">
-          <RefreshCw className="mr-2 h-4 w-4" /> Atualizar
-        </Button>
+        {company && <CompanyAdditionalDetailCard company={company} onDataUpdated={loadCompanyDetails} initialTab={initialTab} />} {/* NEW: Pass initialTab */}
       </div>
-      
-      {crmCompany && (
-        <CompanyAdditionalDataTabs 
-          companyAdditional={company}
-          crmCompany={crmCompany}
-          onDataUpdated={loadCompanyDetails}
-          initialTab={initialTab}
-        />
-      )}
-    </div>
+    </Layout>
   );
 };
 
