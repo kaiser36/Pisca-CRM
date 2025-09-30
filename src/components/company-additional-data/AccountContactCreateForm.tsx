@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { AccountContact } from '@/types/crm';
-import { insertAccountContact } from '@/integrations/supabase/utils';
+import { AccountContact, Account, Company } from '@/types/crm';
+import { insertAccountContact, fetchAccounts, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { getContactTypes, ContactType } from '@/integrations/supabase/services/contactTypeService';
@@ -70,6 +70,8 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
   const [companyDbId, setCompanyDbId] = useState<string | null>(null);
   const [contactTypes, setContactTypes] = useState<ContactType[]>([]);
   const [reportOptions, setReportOptions] = useState<{ value: string; label: string }[]>([]);
+  const [availableAMs, setAvailableAMs] = useState<Account[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -133,32 +135,41 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     fetchContactTypes();
   }, []);
 
-  // Fetch company_db_id based on companyExcelId and userId
+  // Fetch company data, AMs, and company_db_id
   useEffect(() => {
-    const fetchCompanyDbId = async () => {
+    const loadData = async () => {
       if (userId && companyExcelId) {
-        const { data, error } = await supabase
-          .from('companies')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('company_id', companyExcelId)
-          .single();
+        setIsLoadingData(true);
+        try {
+          // Fetch company details to get the default AM and db_id
+          const companies = await fetchCompaniesByExcelCompanyIds(userId, [companyExcelId]);
+          const currentCompany = companies.find(c => c.Company_id === companyExcelId);
 
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching company_db_id:', error);
-          showError(`Falha ao obter o ID interno da empresa: ${error.message}`);
-          setCompanyDbId(null);
-        } else if (data) {
-          setCompanyDbId(data.id);
-        } else {
-          showError(`Empresa com ID Excel '${companyExcelId}' não encontrada no CRM principal.`);
-          setCompanyDbId(null);
+          if (currentCompany) {
+            setCompanyDbId(currentCompany.id || null);
+            if (currentCompany.AM_Current) {
+              form.setValue('account_am', currentCompany.AM_Current);
+            }
+          } else {
+            showError(`Empresa com ID Excel '${companyExcelId}' não encontrada no CRM principal.`);
+            setCompanyDbId(null);
+          }
+
+          // Fetch all available AMs
+          const fetchedAMs = await fetchAccounts(userId);
+          setAvailableAMs(fetchedAMs);
+
+        } catch (error: any) {
+          console.error('Erro ao carregar dados para o formulário de contacto:', error);
+          showError(`Falha ao carregar dados: ${error.message}`);
+        } finally {
+          setIsLoadingData(false);
         }
       }
     };
 
-    fetchCompanyDbId();
-  }, [userId, companyExcelId]);
+    loadData();
+  }, [userId, companyExcelId, form]);
 
   // Fetch report options based on selected contact type
   useEffect(() => {
@@ -245,7 +256,14 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
   }));
 
   const fields = [
-    { name: "account_am", label: "AM da Conta", type: "text" },
+    { 
+      name: "account_am", 
+      label: "AM da Conta", 
+      type: "select", 
+      options: availableAMs.map(am => am.am).filter((am): am is string => am !== null),
+      placeholder: "Selecione um AM",
+      disabled: isLoadingData
+    },
     { 
       name: "contact_type", 
       label: "Tipo de Contacto", 
@@ -336,9 +354,9 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
                         onChange={formField.onChange}
                       />
                     ) : field.type === "select" ? (
-                      <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
+                      <Select onValueChange={formField.onChange} value={formField.value as string || ''} disabled={field.disabled}>
                         <SelectTrigger>
-                          <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
+                          <SelectValue placeholder={field.placeholder || `Selecione um ${field.label.toLowerCase()}`} />
                         </SelectTrigger>
                         <SelectContent>
                           {field.options?.map(option => (
