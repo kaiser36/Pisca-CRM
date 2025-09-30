@@ -19,7 +19,7 @@ import { format, parseISO } from 'date-fns';
 
 const CompanyAdditionalDetailPage: React.FC = () => {
   const { id } = useParams();
-  const searchParams = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [company, setCompany] = useState<CompanyAdditionalExcelData | null>(null);
   const [crmCompany, setCrmCompany] = useState<Company | null>(null);
   const [stands, setStands] = useState<Stand[]>([]);
@@ -88,7 +88,7 @@ const CompanyAdditionalDetailPage: React.FC = () => {
   const totalGuardados = useMemo(() => stands.reduce((acc, stand) => acc + (stand.Guardados || 0), 0), [stands]);
   const totalLeadsRecebidas = useMemo(() => stands.reduce((acc, stand) => acc + (stand.Leads_Recebidas || 0), 0), [stands]);
   const totalLeadsPendentes = useMemo(() => stands.reduce((acc, stand) => acc + (stand.Leads_Pendentes || 0), 0), [stands]);
-  const totalLeadsExpiradas = useMemo(() => stands.reduce((acc, stand) => acc + (stand.Leads_Expiradas || 0), 0), [stands]);
+  const totalLeadsExpiradas = useMemo(() => stands.reduce((acc, stand) => acc + (stand.leads_expiradas || 0), 0), [stands]);
 
   const alerts = useMemo(() => {
     const alertsList: string[] = [];
@@ -172,19 +172,19 @@ const CompanyAdditionalDetailPage: React.FC = () => {
           )}
         </TabsContent>
         <TabsContent value="deals">
-          {company && <DealList companyExcelId={company.excel_company_id} commercialName={company['Nome Comercial']} onDataUpdated={loadCompanyDetails} />}
+          {company && <DealList companyExcelId={company.excel_company_id} />}
         </TabsContent>
         <TabsContent value="tasks">
-          {company && <TaskList companyExcelId={company.excel_company_id} commercialName={company['Nome Comercial']} onDataUpdated={loadCompanyDetails} />}
+          {company && <TaskList companyExcelId={company.excel_company_id} onTaskChanged={loadCompanyDetails} />}
         </TabsContent>
         <TabsContent value="employees">
-          {company && <EmployeeList companyExcelId={company.excel_company_id} commercialName={company['Nome Comercial']} onDataUpdated={loadCompanyDetails} />}
+          {company && <EmployeeList companyExcelId={company.excel_company_id} onEmployeeChanged={loadCompanyDetails} />}
         </TabsContent>
         <TabsContent value="contacts">
-          {company && <AccountContactList companyExcelId={company.excel_company_id} commercialName={company['Nome Comercial']} onDataUpdated={loadCompanyDetails} />}
+          {company && <AccountContactList companyExcelId={company.excel_company_id} />}
         </TabsContent>
         <TabsContent value="easyvista">
-          {company && <EasyvistaList companyExcelId={company.excel_company_id} commercialName={company['Nome Comercial']} onDataUpdated={loadCompanyDetails} />}
+          {company && <EasyvistaList companyExcelId={company.excel_company_id} />}
         </TabsContent>
       </Tabs>
     </div>
