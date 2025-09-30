@@ -66,30 +66,6 @@ const CompanyAdditionalOverviewCards: React.FC<CompanyAdditionalOverviewCardsPro
         </div>
       </Card>
 
-      {/* Alertas Card */}
-      <Card className={`p-4 shadow-subtle border-l-4 ${alerts.length > 0 ? 'border-destructive/50 bg-destructive/5' : 'border-yellow-200 bg-yellow-50'} rounded-lg`}>
-        <CardTitle className={`text-lg font-semibold mb-3 flex items-center ${alerts.length > 0 ? 'text-destructive' : 'text-yellow-800'}`}>
-          <BellRing className="mr-2 h-5 w-5" /> Alertas
-        </CardTitle>
-        <div className="space-y-2">
-          {alerts.length === 0 ? (
-            <Alert className="bg-transparent border-none p-0 text-yellow-800">
-              <AlertDescription className="flex items-center">
-                <CheckCircle className="mr-2 h-4 w-4" /> Sem alertas pendentes.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            alerts.map((alert, index) => (
-              <Alert key={index} variant="destructive" className="bg-destructive/10 border-destructive/50 text-destructive p-2">
-                <AlertDescription className="flex items-center">
-                  <Info className="mr-2 h-4 w-4" /> {alert}
-                </AlertDescription>
-              </Alert>
-            ))
-          )}
-        </div>
-      </Card>
-
       {/* Main Overview Card - Aggregated Data */}
       <Card className="p-6 shadow-subtle border-l-4 border-primary rounded-lg md:col-span-3">
         <div className="flex flex-col items-center space-y-4">

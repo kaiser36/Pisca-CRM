@@ -261,7 +261,7 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
           isCreateAnalysisDialogOpen={isCreateAnalysisDialogOpen}
           setIsCreateAnalysisDialogOpen={setIsCreateAnalysisDialogOpen}
         />
-        <CardContent className="space-y-6 px-6">
+        <CardContent className="space-y-6 px-4">
           <CompanyAdditionalOverviewCards
             companyAdditional={company}
             crmCompany={crmCompany}
