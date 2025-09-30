@@ -49,9 +49,26 @@ const CompanyAdditionalDetailPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch the specific additional company data
-      const { data: additionalData } = await fetchCompanyAdditionalExcelData(userId, 1, 1, companyExcelId);
-      const fetchedAdditionalCompany = additionalData.find(c => c.excel_company_id === companyExcelId);
+      // Try to fetch the company directly by excel_company_id first
+      const { data: directData, error: directError } = await supabase
+        .from('company_additional_excel_data')
+        .select('*')
+        .eq('excel_company_id', companyExcelId)
+        .eq('user_id', userId)
+        .single();
+
+      let fetchedAdditionalCompany: CompanyAdditionalExcelData | null = null;
+
+      if (directData && !directError) {
+        fetchedAdditionalCompany = directData;
+      } else {
+        // Fallback: try the paginated search method
+        const { data: additionalData } = await fetchCompanyAdditionalExcelData(userId, 1, 100, companyExcelId);
+        const foundCompany = additionalData.find(c => c.excel_company_id === companyExcelId);
+        if (foundCompany) {
+          fetchedAdditionalCompany = foundCompany;
+        }
+      }
 
       if (!fetchedAdditionalCompany) {
         setError("Empresa adicional não encontrada.");
@@ -193,7 +210,7 @@ const CompanyAdditionalDetailPage: React.FC = () => {
                     )}
                     {company["Classificação"] && (
                       <div className="flex items-center">
-                        <span className="font-medium text-gray-600">Classificação:</span>
+                        <span className="font-medium text-gray-800">Classificação:</span>
                         <span className="ml-2 text-gray-800">{company["Classificação"]}</span>
                       </div>
                     )}
