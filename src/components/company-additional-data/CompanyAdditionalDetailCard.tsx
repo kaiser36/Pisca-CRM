@@ -276,52 +276,52 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
           />
 
           <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-8 h-10 rounded-lg bg-muted/70 p-1">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-10 rounded-lg bg-muted/70 p-1 overflow-x-auto">
               <TabsTrigger
                 value="details"
-                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold whitespace-nowrap"
               >
                 Detalhes
               </TabsTrigger>
               <TabsTrigger
                 value="stands"
-                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold whitespace-nowrap"
               >
                 Stands
               </TabsTrigger>
               <TabsTrigger
                 value="contacts"
-                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold whitespace-nowrap"
               >
                 Contactos
               </TabsTrigger>
               <TabsTrigger
                 value="easyvistas"
-                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold whitespace-nowrap"
               >
                 Easyvistas
               </TabsTrigger>
               <TabsTrigger
                 value="deals"
-                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold whitespace-nowrap"
               >
                 Negócios
               </TabsTrigger>
               <TabsTrigger
                 value="employees"
-                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold whitespace-nowrap"
               >
                 Colaboradores
               </TabsTrigger>
               <TabsTrigger
                 value="tasks"
-                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold whitespace-nowrap"
               >
                 Tarefas
               </TabsTrigger>
               <TabsTrigger
                 value="analytics"
-                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold"
+                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold whitespace-nowrap"
               >
                 Análises
               </TabsTrigger>
