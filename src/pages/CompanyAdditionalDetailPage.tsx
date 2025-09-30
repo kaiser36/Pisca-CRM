@@ -12,6 +12,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CompanyAdditionalDetailCard from '@/components/company-additional-data/CompanyAdditionalDetailCard';
+import AlertsCard from '@/components/company-additional-data/AlertsCard';
+import ActivityTimeline from '@/components/company-additional-data/ActivityTimeline';
+import { Negocio } from '@/types/crm';
+import { fetchDealsByCompanyExcelId } from '@/integrations/supabase/utils';
 
 const CompanyAdditionalDetailPage: React.FC = () => {
   const { companyExcelId } = useParams<{ companyExcelId: string }>();
@@ -21,6 +25,8 @@ const CompanyAdditionalDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [deals, setDeals] = useState<Negocio[]>([]);
+  const [isDealsLoading, setIsDealsLoading] = useState(true);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -48,6 +54,7 @@ const CompanyAdditionalDetailPage: React.FC = () => {
     }
     setIsLoading(true);
     setError(null);
+    setIsDealsLoading(true);
     try {
       // Try to fetch the company directly by excel_company_id first
       const { data: directData, error: directError } = await supabase
@@ -84,12 +91,17 @@ const CompanyAdditionalDetailPage: React.FC = () => {
         crmCompany: crmCompany || undefined,
       });
 
+      // Fetch deals for the alerts card
+      const fetchedDeals = await fetchDealsByCompanyExcelId(userId, companyExcelId);
+      setDeals(fetchedDeals);
+
     } catch (err: any) {
       console.error("Erro ao carregar detalhes da empresa adicional:", err);
       setError(err.message || "Falha ao carregar os detalhes da empresa adicional.");
       showError(err.message || "Falha ao carregar os detalhes da empresa adicional.");
     } finally {
       setIsLoading(false);
+      setIsDealsLoading(false);
     }
   }, [userId, companyExcelId]);
 
@@ -147,14 +159,7 @@ const CompanyAdditionalDetailPage: React.FC = () => {
             </div>
             {/* Secondary Column - 30% */}
             <div className="w-full lg:w-1/4 bg-gray-100 border-l border-gray-200 rounded-l-lg p-6 shadow-sm">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-800">Ações Rápidas</h3>
-                <div className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start" disabled>
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-                  </Button>
-                </div>
-              </div>
+              {/* Empty secondary column on error */}
             </div>
           </div>
         </div>
@@ -177,109 +182,12 @@ const CompanyAdditionalDetailPage: React.FC = () => {
           {/* Secondary Column - 30% */}
           <div className="w-full lg:w-1/4 bg-gray-100 border-l border-gray-200 rounded-l-lg p-6 shadow-sm">
             <div className="space-y-6">
-              {/* Quick Actions Section */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-800">Ações Rápidas</h3>
-                <div className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start" onClick={handleBack}>
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Voltar à Lista
-                  </Button>
-                </div>
-              </div>
-
-              {/* Company Info Section */}
-              {company && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800">Informações Rápidas</h3>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex items-center">
-                      <span className="font-medium text-gray-600">ID Excel:</span>
-                      <span className="ml-2 text-gray-800">{company.excel_company_id}</span>
-                    </div>
-                    {company["Nome Comercial"] && (
-                      <div className="flex items-center">
-                        <span className="font-medium text-gray-600">Nome Comercial:</span>
-                        <span className="ml-2 text-gray-800">{company["Nome Comercial"]}</span>
-                      </div>
-                    )}
-                    {company["Email da empresa"] && (
-                      <div className="flex items-center">
-                        <span className="font-medium text-gray-600">Email:</span>
-                        <span className="ml-2 text-gray-800 text-xs">{company["Email da empresa"]}</span>
-                      </div>
-                    )}
-                    {company["Classificação"] && (
-                      <div className="flex items-center">
-                        <span className="font-medium text-gray-800">Classificação:</span>
-                        <span className="ml-2 text-gray-800">{company["Classificação"]}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+              {isDealsLoading ? (
+                <Skeleton className="h-32 w-full" />
+              ) : (
+                <AlertsCard crmCompany={company?.crmCompany} deals={deals} companyAdditional={company} />
               )}
-
-              {/* Status Section */}
-              {company?.crmCompany && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800">Status CRM</h3>
-                  <div className="space-y-3 text-sm">
-                    {company.crmCompany.Plan_Active !== undefined && (
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-600">Plano Ativo:</span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          company.crmCompany.Plan_Active 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {company.crmCompany.Plan_Active ? 'Ativo' : 'Inativo'}
-                        </span>
-                      </div>
-                    )}
-                    {company.crmCompany.Is_CRB_Partner !== undefined && (
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-600">Parceiro CRB:</span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          company.crmCompany.Is_CRB_Partner 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {company.crmCompany.Is_CRB_Partner ? 'Sim' : 'Não'}
-                        </span>
-                      </div>
-                    )}
-                    {company.crmCompany.Financing_Simulator_On !== undefined && (
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-600">Simulador:</span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          company.crmCompany.Financing_Simulator_On 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {company.crmCompany.Financing_Simulator_On ? 'Ativo' : 'Inativo'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Navigation Help */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-800">Navegação</h3>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <p>Use as abas acima para explorar:</p>
-                  <ul className="list-disc list-inside space-y-1 ml-2">
-                    <li>Detalhes completos da empresa</li>
-                    <li>Stands e pontos de venda</li>
-                    <li>Histórico de contactos</li>
-                    <li>Registos Easyvista</li>
-                    <li>Negócios e oportunidades</li>
-                    <li>Colaboradores e equipa</li>
-                    <li>Tarefas pendentes</li>
-                    <li>Análises de campanhas</li>
-                  </ul>
-                </div>
-              </div>
+              <ActivityTimeline />
             </div>
           </div>
         </div>
