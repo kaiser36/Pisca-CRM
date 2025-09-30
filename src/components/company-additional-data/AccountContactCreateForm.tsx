@@ -20,6 +20,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 
 interface AccountContactCreateFormProps {
   companyExcelId: string;
@@ -28,6 +29,18 @@ interface AccountContactCreateFormProps {
   commercialName?: string | null;
   companyName?: string | null;
 }
+
+// Opções de relatório por tipo de contacto
+const CONTACT_TYPE_REPORT_OPTIONS: Record<string, string[]> = {
+  "Novo cliente": ["Destaques", "Apresentação serviços", "Proposta inicial", "Follow-up inicial"],
+  "Gestão de cliente": ["Acompanhamento mensal", "Revisão contrato", "Upgrade serviços", "Renovação"],
+  "Reclamação": ["Análise problema", "Solução proposta", "Follow-up", "Resolução"],
+  "Suporte técnico": ["Diagnóstico", "Resolução", "Formação", "Manutenção"],
+  "Vendas": ["Proposta comercial", "Negociação", "Fechamento", "Pós-venda"],
+  "Marketing": ["Campanha", "Anúncio", "Promoção", "Evento"],
+  "Financeiro": ["Cobrança", "Pagamento", "Renegociação", "Dívida"],
+  "Outro": ["Informação geral", "Consulta", "Sugestão"]
+};
 
 const formSchema = z.object({
   account_am: z.string().nullable().optional(),
@@ -64,53 +77,8 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [companyDbId, setCompanyDbId] = useState<string | null>(null); // NEW: State for company_db_id
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-      } else {
-        setUserId(null);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // NEW: Fetch company_db_id based on companyExcelId and userId
-  useEffect(() => {
-    const fetchCompanyDbId = async () => {
-      if (userId && companyExcelId) {
-        const { data, error } = await supabase
-          .from('companies')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('company_id', companyExcelId)
-          .single();
-
-        if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
-          console.error('Error fetching company_db_id:', error);
-          showError(`Falha ao obter o ID interno da empresa: ${error.message}`);
-          setCompanyDbId(null);
-        } else if (data) {
-          setCompanyDbId(data.id);
-        } else {
-          showError(`Empresa com ID Excel '${companyExcelId}' não encontrada no CRM principal.`);
-          setCompanyDbId(null);
-        }
-      }
-    };
-
-    fetchCompanyDbId();
-  }, [userId, companyExcelId]);
-
+  const [companyDbId, setCompanyDbId] = useState<string | null>(null);
+  const [reportOptions, setReportOptions] = useState<{ value: string; label: string }[]>([]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -139,12 +107,73 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     },
   });
 
+  const selectedContactType = form.watch('contact_type');
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      } else {
+        setUserId(null);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Fetch company_db_id based on companyExcelId and userId
+  useEffect(() => {
+    const fetchCompanyDbId = async () => {
+      if (userId && companyExcelId) {
+        const { data, error } = await supabase
+          .from('companies')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('company_id', companyExcelId)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching company_db_id:', error);
+          showError(`Falha ao obter o ID interno da empresa: ${error.message}`);
+          setCompanyDbId(null);
+        } else if (data) {
+          setCompanyDbId(data.id);
+        } else {
+          showError(`Empresa com ID Excel '${companyExcelId}' não encontrada no CRM principal.`);
+          setCompanyDbId(null);
+        }
+      }
+    };
+
+    fetchCompanyDbId();
+  }, [userId, companyExcelId]);
+
+  // Atualizar opções de relatório quando o tipo de contacto muda
+  useEffect(() => {
+    if (selectedContactType && CONTACT_TYPE_REPORT_OPTIONS[selectedContactType]) {
+      const options = CONTACT_TYPE_REPORT_OPTIONS[selectedContactType].map(option => ({
+        value: option,
+        label: option
+      }));
+      setReportOptions(options);
+    } else {
+      setReportOptions([]);
+    }
+    form.setValue('report_text', ''); // Reset report_text when contact_type changes
+  }, [selectedContactType, form]);
+
   const onSubmit = async (values: FormData) => {
     if (!userId) {
       showError("Utilizador não autenticado. Por favor, faça login para criar o contacto.");
       return;
     }
-    if (!companyDbId) { // NEW: Check if companyDbId is available
+    if (!companyDbId) {
       showError("Não foi possível associar o contacto a uma empresa válida. Por favor, verifique o ID Excel da empresa.");
       return;
     }
@@ -153,7 +182,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     try {
       const newContact: Omit<AccountContact, 'id' | 'created_at'> = {
         user_id: userId,
-        company_db_id: companyDbId, // NEW: Use companyDbId
+        company_db_id: companyDbId,
         company_excel_id: companyExcelId,
         account_am: values.account_am || null,
         contact_type: values.contact_type || null,
@@ -189,9 +218,20 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     }
   };
 
+  // Obter tipos de contacto únicos
+  const contactTypeOptions = Object.keys(CONTACT_TYPE_REPORT_OPTIONS).map(type => ({
+    value: type,
+    label: type
+  }));
+
   const fields = [
     { name: "account_am", label: "AM da Conta", type: "text" },
-    { name: "contact_type", label: "Tipo de Contacto", type: "select", options: ["Chamada", "Email", "Reunião", "Visita", "Outro"] },
+    { 
+      name: "contact_type", 
+      label: "Tipo de Contacto", 
+      type: "combobox", 
+      options: contactTypeOptions 
+    },
     { name: "contact_date", label: "Data do Contacto", type: "date" },
     { name: "contact_method", label: "Meio de Contacto", type: "select", options: ["Telefone", "Email", "Presencial", "Videoconferência", "Outro"] },
     { name: "commercial_name", label: "Nome Comercial", type: "text" },
@@ -209,7 +249,14 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     { name: "email_subject", label: "Assunto do Email", type: "text" },
     { name: "attachment_url", label: "URL do Anexo", type: "url" },
     { name: "sending_email", label: "Email de Envio", type: "email" },
-    { name: "report_text", label: "Texto do Relatório", type: "textarea", colSpan: 2 },
+    { 
+      name: "report_text", 
+      label: "Texto do Relatório", 
+      type: "combobox", 
+      colSpan: 2, 
+      options: reportOptions,
+      disabled: !selectedContactType || reportOptions.length === 0
+    },
     { name: "email_body", label: "Corpo do Email", type: "textarea", colSpan: 2 },
   ];
 
@@ -279,6 +326,16 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
                           ))}
                         </SelectContent>
                       </Select>
+                    ) : field.type === "combobox" ? (
+                      <Combobox
+                        options={field.options as { value: string; label: string }[] || []}
+                        value={formField.value as string}
+                        onChange={formField.onChange}
+                        placeholder={field.name === "contact_type" ? "Selecione um tipo de contacto" : "Selecione uma opção de relatório"}
+                        searchPlaceholder={field.name === "contact_type" ? "Pesquisar tipos de contacto..." : "Pesquisar opções de relatório..."}
+                        emptyMessage={field.name === "contact_type" ? "Nenhum tipo de contacto encontrado." : "Nenhuma opção de relatório encontrada."}
+                        disabled={field.disabled}
+                      />
                     ) : (
                       <Input
                         type={field.type}
