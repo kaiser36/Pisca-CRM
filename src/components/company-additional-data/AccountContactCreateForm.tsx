@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Combobox } from '@/components/ui/combobox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { MultiSelect } from '@/components/ui/multi-select';
 
 interface AccountContactCreateFormProps {
   companyExcelId: string;
@@ -36,7 +37,7 @@ interface AccountContactCreateFormProps {
 const formSchema = z.object({
   account_am: z.string().nullable().optional(),
   contact_type: z.string().min(1, "Tipo de Contacto é obrigatório").nullable().optional(),
-  report_text: z.string().nullable().optional(),
+  report_text: z.array(z.string()).optional(),
   contact_date: z.date().nullable().optional(),
   contact_method: z.string().min(1, "Meio de Contacto é obrigatório").nullable().optional(),
   commercial_name: z.string().nullable().optional(),
@@ -80,7 +81,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     defaultValues: {
       account_am: '',
       contact_type: '',
-      report_text: '',
+      report_text: [],
       contact_date: new Date(),
       contact_method: '',
       commercial_name: commercialName || '',
@@ -163,13 +164,23 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
 
   useEffect(() => {
     const fetchReportOptions = async () => {
-      form.setValue('report_text', '');
+      form.setValue('report_text', []);
       if (selectedContactTypeName) {
         const contactType = contactTypes.find(type => type.name === selectedContactTypeName);
         if (contactType?.id) {
           try {
             const options = await getContactReportOptionsByContactTypeId(contactType.id);
-            setReportOptions(options.map(opt => ({ value: opt.report_text, label: opt.report_text })));
+            const dynamicOptions = options.map(opt => ({ value: opt.report_text, label: opt.report_text }));
+            
+            const staticOptions = [
+                { value: 'Destaques', label: 'Destaques' },
+                { value: 'Plano não renovado', label: 'Plano não renovado' },
+            ];
+            
+            const combinedOptions = [...dynamicOptions, ...staticOptions];
+            const uniqueOptions = Array.from(new Map(combinedOptions.map(item => [item.value, item])).values());
+
+            setReportOptions(uniqueOptions);
           } catch (error) {
             showError('Erro ao carregar opções de relatório');
             setReportOptions([]);
@@ -197,7 +208,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
         company_excel_id: companyExcelId,
         account_am: values.account_am || null,
         contact_type: values.contact_type || null,
-        report_text: values.report_text || null,
+        report_text: values.report_text?.join(', ') || null,
         contact_date: values.contact_date?.toISOString() || null,
         contact_method: values.contact_method || null,
         commercial_name: values.commercial_name || null,
@@ -285,8 +296,17 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
               <FormItem>
                 <FormLabel>Report</FormLabel>
                 <div className="relative">
-                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Combobox options={reportOptions} value={field.value} onChange={field.onChange} placeholder="Selecione o report" searchPlaceholder="Pesquisar report..." emptyMessage="Nenhum report encontrado." disabled={reportOptions.length === 0} />
+                  <FileText className="absolute left-3 top-3.5 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                  <MultiSelect
+                    options={reportOptions}
+                    selected={field.value || []}
+                    onChange={field.onChange}
+                    placeholder="Selecione o(s) report(s)"
+                    searchPlaceholder="Pesquisar report..."
+                    emptyMessage="Nenhum report encontrado."
+                    disabled={reportOptions.length === 0}
+                    className="pl-10"
+                  />
                 </div>
                 <FormMessage />
               </FormItem>
