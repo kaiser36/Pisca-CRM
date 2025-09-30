@@ -1,10 +1,9 @@
 "use client";
 
 import React from 'react';
-import { CompanyAdditionalExcelData, Company } from '@/types/crm';
-import { CardTitle, CardDescription } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { CompanyAdditionalExcelData } from '@/types/crm';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PlusCircle, Eye, Handshake, UserPlus, ListTodo, Pencil, BarChart2 } from 'lucide-react';
@@ -62,23 +61,42 @@ const CompanyAdditionalHeader: React.FC<CompanyAdditionalHeaderProps> = ({
   const crmCompany = company.crmCompany;
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-      <div className="flex items-center gap-2">
-        <Avatar className="h-16 w-16 mr-3">
-          <AvatarImage src={company["Logotipo"] || undefined} alt={companyDisplayName} />
-          <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
-            {firstLetter}
-          </AvatarFallback>
-        </Avatar>
-        <div>
-          <CardTitle className="text-2xl font-bold">{companyDisplayName}</CardTitle>
-          <CardDescription className="text-muted-foreground">ID Excel: {company.excel_company_id}</CardDescription>
+    <div className="mb-6">
+      {/* Cover Banner */}
+      <div className="h-44 bg-blue-100 rounded-t-lg shadow-inner bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1557682250-33bd709cbe85?q=80&w=2070&auto=format&fit=crop')" }}></div>
+
+      {/* Main Info Section */}
+      <div className="px-6">
+        <div className="flex flex-col md:flex-row items-start md:items-end -mt-14">
+          {/* Logo */}
+          <Avatar className="h-28 w-28 border-4 border-white bg-card shadow-lg flex-shrink-0">
+            <AvatarImage src={company["Logotipo"] || undefined} alt={companyDisplayName} />
+            <AvatarFallback className="text-3xl font-bold">{firstLetter}</AvatarFallback>
+          </Avatar>
+
+          {/* Name and Details Flex Container */}
+          <div className="flex flex-col md:flex-row justify-between items-start w-full md:pl-6">
+            {/* Company Name & Status */}
+            <div className="mt-4 md:mt-0">
+              <h1 className="text-3xl font-bold text-gray-800">{companyDisplayName}</h1>
+              {isCompanyClosed && (
+                <Badge variant="destructive" className="mt-1">Empresa Encerrada</Badge>
+              )}
+            </div>
+
+            {/* Right-aligned Details */}
+            <div className="text-sm text-gray-600 mt-4 md:mt-0 md:text-right space-y-1">
+              <p><span className="font-semibold">ID Excel:</span> {company.excel_company_id}</p>
+              {crmCompany?.Company_Email && <p><span className="font-semibold">Email:</span> {crmCompany.Company_Email}</p>}
+              {crmCompany?.Website && <p><span className="font-semibold">Website:</span> <a href={crmCompany.Website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{crmCompany.Website}</a></p>}
+              {crmCompany?.NIF && <p><span className="font-semibold">NIF:</span> {crmCompany.NIF}</p>}
+            </div>
+          </div>
         </div>
-        {isCompanyClosed && (
-          <Badge variant="destructive" className="text-sm px-3 py-1">Empresa Encerrada</Badge>
-        )}
       </div>
-      <div className="flex flex-wrap gap-2">
+
+      {/* Action Buttons */}
+      <div className="px-6 pt-6 flex flex-wrap gap-2 border-t border-border mt-6">
         <Dialog open={isCreateContactDialogOpen} onOpenChange={setIsCreateContactDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:text-primary">

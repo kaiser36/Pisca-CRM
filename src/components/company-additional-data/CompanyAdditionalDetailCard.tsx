@@ -239,31 +239,29 @@ const CompanyAdditionalDetailCard: React.FC<CompanyAdditionalDetailCardProps> = 
 
   return (
     <ScrollArea className="h-full w-full pr-4">
-      <Card className="w-full shadow-md rounded-lg">
-        <CardHeader className="pb-4">
-          <CompanyAdditionalHeader
-            company={company}
-            companyDisplayName={companyDisplayName}
-            firstLetter={firstLetter}
-            isCompanyClosed={isCompanyClosed}
-            onDataUpdated={onDataUpdated}
-            isEditDialogOpen={isEditDialogOpen}
-            setIsEditDialogOpen={setIsEditDialogOpen}
-            isCreateContactDialogOpen={isCreateContactDialogOpen}
-            setIsCreateContactDialogOpen={setIsCreateContactDialogOpen}
-            isCreateEasyvistaDialogOpen={isCreateEasyvistaDialogOpen}
-            setIsCreateEasyvistaDialogOpen={setIsCreateEasyvistaDialogOpen}
-            isCreateDealDialogOpen={isCreateDealDialogOpen}
-            setIsCreateDealDialogOpen={setIsCreateDealDialogOpen}
-            isCreateEmployeeDialogOpen={isCreateEmployeeDialogOpen}
-            setIsCreateEmployeeDialogOpen={setIsCreateEmployeeDialogOpen}
-            isCreateTaskDialogOpen={isCreateTaskDialogOpen}
-            setIsCreateTaskDialogOpen={setIsCreateTaskDialogOpen}
-            isCreateAnalysisDialogOpen={isCreateAnalysisDialogOpen}
-            setIsCreateAnalysisDialogOpen={setIsCreateAnalysisDialogOpen}
-          />
-        </CardHeader>
-        <CardContent className="space-y-6">
+      <Card className="w-full shadow-md rounded-lg overflow-hidden">
+        <CompanyAdditionalHeader
+          company={company}
+          companyDisplayName={companyDisplayName}
+          firstLetter={firstLetter}
+          isCompanyClosed={isCompanyClosed}
+          onDataUpdated={onDataUpdated}
+          isEditDialogOpen={isEditDialogOpen}
+          setIsEditDialogOpen={setIsEditDialogOpen}
+          isCreateContactDialogOpen={isCreateContactDialogOpen}
+          setIsCreateContactDialogOpen={setIsCreateContactDialogOpen}
+          isCreateEasyvistaDialogOpen={isCreateEasyvistaDialogOpen}
+          setIsCreateEasyvistaDialogOpen={setIsCreateEasyvistaDialogOpen}
+          isCreateDealDialogOpen={isCreateDealDialogOpen}
+          setIsCreateDealDialogOpen={setIsCreateDealDialogOpen}
+          isCreateEmployeeDialogOpen={isCreateEmployeeDialogOpen}
+          setIsCreateEmployeeDialogOpen={setIsCreateEmployeeDialogOpen}
+          isCreateTaskDialogOpen={isCreateTaskDialogOpen}
+          setIsCreateTaskDialogOpen={setIsCreateTaskDialogOpen}
+          isCreateAnalysisDialogOpen={isCreateAnalysisDialogOpen}
+          setIsCreateAnalysisDialogOpen={setIsCreateAnalysisDialogOpen}
+        />
+        <CardContent className="space-y-6 px-6">
           <CompanyAdditionalOverviewCards
             companyAdditional={company}
             crmCompany={crmCompany}
