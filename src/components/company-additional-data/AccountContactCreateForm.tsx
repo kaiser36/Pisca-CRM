@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { AccountContact, Account, Company } from '@/types/crm';
-import { insertAccountContact, fetchAccounts, fetchCompaniesByExcelCompanyIds } from '@/integrations/supabase/utils';
+import { insertAccountContact, fetchAccounts, fetchCompaniesByExcelCompanyIds, fetchEmployeesByCompanyExcelId } from '@/integrations/supabase/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { getContactTypes, ContactType } from '@/integrations/supabase/services/contactTypeService';
@@ -72,6 +72,8 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
   const [reportOptions, setReportOptions] = useState<{ value: string; label: string }[]>([]);
   const [availableAMs, setAvailableAMs] = useState<Account[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [availableStands, setAvailableStands] = useState<string[]>([]);
+  const [availableEmployees, setAvailableEmployees] = useState<string[]>([]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -135,7 +137,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     fetchContactTypes();
   }, []);
 
-  // Fetch company data, AMs, and company_db_id
+  // Fetch company data, AMs, stands and employees
   useEffect(() => {
     const loadData = async () => {
       if (userId && companyExcelId) {
@@ -150,9 +152,24 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
             if (currentCompany.AM_Current) {
               form.setValue('account_am', currentCompany.AM_Current);
             }
+            
+            // Get stand names from company data
+            const standNames = currentCompany.stands
+              .map(stand => stand.Stand_Name)
+              .filter((name): name is string => name !== undefined && name !== null && name !== '');
+            setAvailableStands(standNames);
+            console.log('Stands encontrados:', standNames);
+            
+            // Fetch employees for this company
+            const employees = await fetchEmployeesByCompanyExcelId(userId, companyExcelId);
+            const employeeNames = employees.map(emp => emp.nome_colaborador);
+            setAvailableEmployees(employeeNames);
+            console.log('Colaboradores encontrados:', employeeNames);
           } else {
             showError(`Empresa com ID Excel '${companyExcelId}' não encontrada no CRM principal.`);
             setCompanyDbId(null);
+            setAvailableStands([]);
+            setAvailableEmployees([]);
           }
 
           // Fetch all available AMs
@@ -220,7 +237,7 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
         contact_method: values.contact_method || null,
         commercial_name: values.commercial_name || null,
         company_name: values.company_name || null,
-        crm_id: values.crm_id || null,
+        crm_id: null, // Removido do formulário
         stand_name: values.stand_name || null,
         subject: values.subject || null,
         contact_person_name: values.contact_person_name || null,
@@ -274,10 +291,9 @@ const AccountContactCreateForm: React.FC<AccountContactCreateFormProps> = ({
     { name: "contact_method", label: "Meio de Contacto", type: "select", options: ["Telefone", "Email", "Presencial", "Videoconferência", "Outro"] },
     { name: "commercial_name", label: "Nome Comercial", type: "text" },
     { name: "company_name", label: "Nome da Empresa", type: "text" },
-    { name: "crm_id", label: "ID CRM", type: "text" },
-    { name: "stand_name", label: "Nome do Stand", type: "text" },
+    { name: "stand_name", label: "Nome do Stand", type: "select", options: availableStands, placeholder: availableStands.length === 0 ? "Nenhum stand disponível" : "Selecione um stand", disabled: isLoadingData || availableStands.length === 0 },
+    { name: "contact_person_name", label: "Pessoa de Contacto", type: "select", options: availableEmployees, placeholder: availableEmployees.length === 0 ? "Nenhum colaborador disponível" : "Selecione um colaborador", disabled: isLoadingData || availableEmployees.length === 0 },
     { name: "subject", label: "Assunto", type: "text" },
-    { name: "contact_person_name", label: "Pessoa de Contacto", type: "text" },
     { name: "company_group", label: "Grupo da Empresa", type: "text" },
     { name: "account_armatis", label: "Account Armatis", type: "text" },
     { name: "quarter", label: "Trimestre", type: "text" },
