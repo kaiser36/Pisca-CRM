@@ -201,7 +201,7 @@ const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSave, onCancel }) =
       label: "Atribuído a (AM)",
       type: "select",
       options: availableAMs
-        .filter(am => am.id && am.id.trim() !== '') // Changed from am.id?.trim() to am.id && am.id.trim()
+        .filter(am => am.id && typeof am.id === 'string' && am.id.trim() !== '')
         .map(am => ({ 
           value: am.id, 
           label: am.account_name || am.am || 'N/A' 
