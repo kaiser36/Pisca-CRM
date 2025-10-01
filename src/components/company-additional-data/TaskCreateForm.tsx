@@ -262,8 +262,12 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
                       />
                     ) : field.type === "select" ? (
                       <Select
-                        onValueChange={formField.onChange}
-                        value={String(formField.value || '')}
+                        onValueChange={(value) => {
+                          // Ensure empty string becomes null
+                          const finalValue = value === '' ? null : value;
+                          formField.onChange(finalValue);
+                        }}
+                        value={formField.value as string || ''}
                         disabled={field.disabled}
                       >
                         <SelectTrigger>
@@ -279,15 +283,17 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
                           {field.options?.length === 0 ? (
                             <SelectItem value="no-options" disabled>Nenhuma opção disponível</SelectItem>
                           ) : (
-                            field.options?.map((option: any) => (
-                              <SelectItem 
-                                key={option.value || option} 
-                                value={option.value || option}
-                                disabled={!option.value || option.value === ''}
-                              >
-                                {option.label || option}
-                              </SelectItem>
-                            ))
+                            <>
+                              <SelectItem value="" disabled>Selecione uma opção</SelectItem>
+                              {field.options?.map((option: any) => (
+                                <SelectItem 
+                                  key={option.value} 
+                                  value={option.value}
+                                >
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </>
                           )}
                         </SelectContent>
                       </Select>
