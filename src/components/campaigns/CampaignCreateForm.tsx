@@ -259,10 +259,7 @@ const CampaignCreateForm: React.FC<CampaignCreateFormProps> = ({ onSave, onCance
                           </PopoverContent>
                         </Popover>
                       ) : field.type === "select" ? (
-                        <Select 
-                          onValueChange={formField.onChange} 
-                          value={formField.value === null ? undefined : (formField.value as string)}
-                        >
+                        <Select onValueChange={formField.onChange} value={formField.value as string}>
                           <SelectTrigger>
                             <SelectValue placeholder={`Selecione um ${field.label.toLowerCase()}`} />
                           </SelectTrigger>

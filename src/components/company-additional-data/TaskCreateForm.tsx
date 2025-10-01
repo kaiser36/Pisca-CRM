@@ -138,7 +138,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
 
   // Memoized value for displaying the selected AM's name
   const selectedAMDisplayName = useMemo(() => {
-    if (assignedToEmployeeId && assignedToEmployeeId.trim() !== '' && availableAMs.length > 0) {
+    if (assignedToEmployeeId && availableAMs.length > 0) {
       const selectedAM = availableAMs.find(am => am.id === assignedToEmployeeId);
       return selectedAM?.account_name || selectedAM?.am || null;
     }
@@ -262,12 +262,8 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
                       />
                     ) : field.type === "select" ? (
                       <Select
-                        onValueChange={(value) => {
-                          // Ensure empty string becomes null
-                          const finalValue = value === '' ? null : value;
-                          formField.onChange(finalValue);
-                        }}
-                        value={formField.value as string || ''}
+                        onValueChange={formField.onChange}
+                        value={String(formField.value || '')}
                         disabled={field.disabled}
                       >
                         <SelectTrigger>
@@ -283,17 +279,15 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
                           {field.options?.length === 0 ? (
                             <SelectItem value="no-options" disabled>Nenhuma opção disponível</SelectItem>
                           ) : (
-                            <>
-                              <SelectItem value="" disabled>Selecione uma opção</SelectItem>
-                              {field.options?.map((option: any) => (
-                                <SelectItem 
-                                  key={option.value} 
-                                  value={option.value}
-                                >
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </>
+                            field.options?.map((option: any) => (
+                              <SelectItem 
+                                key={option.value || option} 
+                                value={option.value || option}
+                                disabled={!option.value || option.value === ''}
+                              >
+                                {option.label || option}
+                              </SelectItem>
+                            ))
                           )}
                         </SelectContent>
                       </Select>
