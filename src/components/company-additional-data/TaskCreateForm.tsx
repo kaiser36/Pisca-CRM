@@ -138,7 +138,7 @@ const TaskCreateForm: React.FC<TaskCreateFormProps> = ({ companyExcelId, onSave,
 
   // Memoized value for displaying the selected AM's name
   const selectedAMDisplayName = useMemo(() => {
-    if (assignedToEmployeeId && availableAMs.length > 0) {
+    if (assignedToEmployeeId && assignedToEmployeeId.trim() !== '' && availableAMs.length > 0) {
       const selectedAM = availableAMs.find(am => am.id === assignedToEmployeeId);
       return selectedAM?.account_name || selectedAM?.am || null;
     }
